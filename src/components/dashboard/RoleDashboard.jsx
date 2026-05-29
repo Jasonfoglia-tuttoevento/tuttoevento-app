@@ -1,7 +1,6 @@
 import OrganizerArea from "./OrganizerArea";
 import ArtistArea from "./ArtistArea";
 import ArtistBookings from "./ArtistBookings";
-import OrganizerBookings from "./OrganizerBookings";
 import PromoterArea from "./PromoterArea";
 
 export default function RoleDashboard({
@@ -66,24 +65,20 @@ export default function RoleDashboard({
 }) {
   if (user.role === "organizer") {
     return (
-      <>
-        <OrganizerArea
-          currentUser={user}
-          events={events}
-          artists={artists}
-          bookings={bookings}
-          title={title}
-          setTitle={setTitle}
-          date={date}
-          setDate={setDate}
-          artist={artist}
-          setArtist={setArtist}
-          promoter={promoter}
-          setPromoter={setPromoter}
-        />
-
-        <OrganizerBookings bookings={bookings} />
-      </>
+      <OrganizerArea
+        currentUser={user}
+        events={events}
+        artists={artists}
+        bookings={bookings}
+        title={title}
+        setTitle={setTitle}
+        date={date}
+        setDate={setDate}
+        artist={artist}
+        setArtist={setArtist}
+        promoter={promoter}
+        setPromoter={setPromoter}
+      />
     );
   }
 
