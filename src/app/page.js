@@ -19,8 +19,8 @@ export default function Home() {
                 </h1>
 
                 <p className="text-lg md:text-xl text-black/55 mt-6 max-w-2xl leading-relaxed">
-                  La dashboard per gestire eventi, richieste booking,
-                  media kit artisti, chat, analitiche ed estratti conto.
+                  La dashboard per gestire eventi, richieste booking, media kit
+                  artisti, chat, analitiche ed estratti conto.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3 mt-8">
