@@ -1,224 +1,88 @@
-"use client";
+import Link from "next/link";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-export default function RegisterPage() {
-  const router = useRouter();
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const [role, setRole] = useState("organizer");
-
-  const [businessMode, setBusinessMode] = useState("both");
-
-  const [loading, setLoading] = useState(false);
-
-  async function handleRegister(e) {
-    e.preventDefault();
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role,
-          businessMode,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || "Errore registrazione");
-        return;
-      }
-
-      alert("Registrazione completata");
-
-      router.push("/login");
-
-    } catch (err) {
-
-      console.log(err);
-
-      alert("Errore tecnico");
-
-    } finally {
-
-      setLoading(false);
-
-    }
-  }
-
+export default function Home() {
   return (
-    <main className="min-h-screen bg-[#f5f5f6] flex items-center justify-center p-6">
-      <div className="w-full max-w-[620px] bg-white rounded-[36px] border border-black/5 p-8 shadow-sm">
-        <div className="mb-8">
-          <p className="uppercase tracking-[4px] text-[#ff5a00] text-xs font-black mb-3">
-            TuttoEvento
-          </p>
-
-          <h1 className="text-5xl font-black tracking-[-0.05em] leading-none">
-            Crea il tuo account
-          </h1>
-
-          <p className="text-black/50 mt-4 text-lg">
-            Gestisci eventi, artisti, locali e booking.
-          </p>
+    <main className="min-h-screen bg-[#f8f9fa] text-[#111] overflow-hidden selection:bg-[#ff5a00] selection:text-white">
+      {/* NAVBAR */}
+      <nav className="fixed top-0 w-full z-50 backdrop-blur-md bg-white/70 border-b border-gray-100/50">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
+            <span className="font-black tracking-tight text-xl">TuttoEvento</span>
+          </div>
+          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-600">
+            <a href="#features" className="hover:text-[#ff5a00] transition">Funzioni</a>
+          </div>
+          <Link href="/login" className="bg-[#111] text-white px-5 py-2 rounded-full text-sm font-bold hover:scale-105 transition">
+            Accedi
+          </Link>
         </div>
+      </nav>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <input
-            placeholder="Nome"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full bg-[#f7f7f7] border border-black/10 rounded-2xl p-4 outline-none"
-          />
-
-          <input
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-[#f7f7f7] border border-black/10 rounded-2xl p-4 outline-none"
-          />
-
-          <input
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-[#f7f7f7] border border-black/10 rounded-2xl p-4 outline-none"
-          />
-
-          <div className="pt-2">
-            <p className="text-sm font-black mb-3">
-              Tipologia account
-            </p>
-
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setRole("organizer")}
-                className={
-                  role === "organizer"
-                    ? "bg-[#ff5a00] text-white rounded-2xl p-4 font-black"
-                    : "bg-[#f7f7f7] border border-black/10 rounded-2xl p-4 font-black"
-                }
-              >
-                Locale
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRole("artist")}
-                className={
-                  role === "artist"
-                    ? "bg-[#ff5a00] text-white rounded-2xl p-4 font-black"
-                    : "bg-[#f7f7f7] border border-black/10 rounded-2xl p-4 font-black"
-                }
-              >
-                Artista
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRole("promoter")}
-                className={
-                  role === "promoter"
-                    ? "bg-[#ff5a00] text-white rounded-2xl p-4 font-black"
-                    : "bg-[#f7f7f7] border border-black/10 rounded-2xl p-4 font-black"
-                }
-              >
-                Promoter
-              </button>
-            </div>
+      {/* HERO SECTION */}
+      <section className="pt-32 pb-20 px-6 relative overflow-hidden">
+        {/* Background Glow 3D */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#ff5a00]/20 to-orange-300/20 rounded-full blur-[120px] -z-10" />
+        
+        <div className="max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-1.5 mb-8 shadow-sm">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nuova Piattaforma</span>
           </div>
 
-          {role === "organizer" && (
-            <div className="pt-4">
-              <p className="text-sm font-black mb-3">
-                Modalità di gestione eventi
-              </p>
+          <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9] mb-8">
+            Gestisci eventi <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff5a00] to-orange-600">senza limiti.</span>
+          </h1>
 
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => setBusinessMode("self_service")}
-                  className={
-                    businessMode === "self_service"
-                      ? "w-full bg-[#ff5a00] text-white rounded-2xl p-4 text-left"
-                      : "w-full bg-[#f7f7f7] border border-black/10 rounded-2xl p-4 text-left"
-                  }
-                >
-                  <p className="font-black">
-                    Gestione Autonoma
-                  </p>
+          <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+            La piattaforma all-in-one per organizer, artisti e promoter. <br />
+            Booking, analytics e chat in un unico ecosistema.
+          </p>
 
-                  <p className="text-sm opacity-70 mt-1">
-                    Organizzo gli eventi in autonomia tramite la piattaforma.
-                  </p>
-                </button>
+          <div className="flex items-center justify-center gap-4">
+            <Link href="/register" className="bg-[#ff5a00] text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-[#e04e00] transition shadow-xl shadow-orange-500/20">
+              Inizia gratis
+            </Link>
+            <Link href="/login" className="bg-white text-[#111] border border-gray-200 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-50 transition">
+              Accedi
+            </Link>
+          </div>
+        </div>
+      </section>
 
-                <button
-                  type="button"
-                  onClick={() => setBusinessMode("managed")}
-                  className={
-                    businessMode === "managed"
-                      ? "w-full bg-[#ff5a00] text-white rounded-2xl p-4 text-left"
-                      : "w-full bg-[#f7f7f7] border border-black/10 rounded-2xl p-4 text-left"
-                  }
-                >
-                  <p className="font-black">
-                    Gestione TuttoEvento
-                  </p>
-
-                  <p className="text-sm opacity-70 mt-1">
-                    Voglio un referente TuttoEvento per la gestione completa.
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setBusinessMode("both")}
-                  className={
-                    businessMode === "both"
-                      ? "w-full bg-[#ff5a00] text-white rounded-2xl p-4 text-left"
-                      : "w-full bg-[#f7f7f7] border border-black/10 rounded-2xl p-4 text-left"
-                  }
-                >
-                  <p className="font-black">
-                    Entrambe
-                  </p>
-
-                  <p className="text-sm opacity-70 mt-1">
-                    Deciderò di volta in volta per ogni evento.
-                  </p>
-                </button>
-              </div>
+      {/* FEATURE CARDS */}
+      <section id="features" className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Card 1 */}
+            <div className="group bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition duration-300">
+              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl mb-6">🚀</div>
+              <h3 className="text-2xl font-black mb-3">Booking Smart</h3>
+              <p className="text-gray-500">Crea eventi, gestisci artisti e invia richieste in pochi click. Tutto automatico.</p>
             </div>
-          )}
 
-          <button
-            disabled={loading}
-            className="w-full bg-[#111] text-white rounded-2xl py-4 font-black mt-6"
-          >
-            {loading ? "Creazione..." : "CREA ACCOUNT"}
-          </button>
-        </form>
-      </div>
+            {/* Card 2 */}
+            <div className="group bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition duration-300">
+              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl mb-6">💬</div>
+              <h3 className="text-2xl font-black mb-3">Chat Integrata</h3>
+              <p className="text-gray-500">Comunica direttamente con organizer e artisti senza uscire dalla piattaforma.</p>
+            </div>
+
+            {/* Card 3 */}
+            <div className="group bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition duration-300">
+              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl mb-6">📊</div>
+              <h3 className="text-2xl font-black mb-3">Analytics</h3>
+              <p className="text-gray-500">Monitora incassi, margini e performance in tempo reale.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t border-gray-100 py-12 text-center text-gray-400 text-sm">
+        <p>© 2026 TuttoEvento. Tutti i diritti riservati.</p>
+      </footer>
     </main>
   );
 }

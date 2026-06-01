@@ -2,121 +2,122 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#f7f4ef] text-[#111] overflow-x-hidden">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#f7f4ef]/90 backdrop-blur-xl border-b border-black/5">
-        <div className="max-w-7xl mx-auto px-5 md:px-8 py-4 flex items-center justify-between gap-5">
+    <main className="min-h-screen bg-white text-[#111] overflow-x-hidden">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-2xl border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <img
-              src="/logo.png"
-              alt="TuttoEvento"
-              className="h-12 md:h-14 w-auto object-contain"
-            />
+            <img src="/logo.png" alt="TuttoEvento" className="h-10 w-auto" />
           </Link>
-
-          <nav className="hidden md:flex items-center gap-9 text-sm font-black uppercase tracking-[1.5px]">
-            <a href="#cose" className="hover:text-[#ff5a00]">
-              Cos'è
-            </a>
-            <a href="#funzioni" className="hover:text-[#ff5a00]">
-              Funzioni
-            </a>
-            <a href="#aree" className="hover:text-[#ff5a00]">
-              Aree
-            </a>
+          
+          <nav className="hidden md:flex gap-8 text-sm font-semibold tracking-wider uppercase text-gray-600">
+            <a href="#cose" className="hover:text-[#ff5a00] transition">Cos'è</a>
+            <a href="#funzioni" className="hover:text-[#ff5a00] transition">Funzioni</a>
+            <a href="#aree" className="hover:text-[#ff5a00] transition">Aree</a>
           </nav>
 
-          <Link
-            href="/login"
-            className="rounded-2xl border border-[#ff5a00] bg-white/70 px-5 py-3 text-sm font-black uppercase tracking-[1px] hover:bg-[#ff5a00] hover:text-white transition"
-          >
+          <Link href="/login" className="bg-[#ff5a00] text-white px-6 py-2.5 rounded-full font-bold text-sm hover:bg-[#ff6b1a] transition shadow-lg shadow-orange-500/20">
             Accedi
           </Link>
         </div>
       </header>
 
-      <section className="relative min-h-screen flex items-center pt-28 pb-16 px-5 md:px-8">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-[420px] h-[420px] rounded-full bg-[#ff5a00]/10 blur-3xl" />
-          <div className="absolute bottom-10 -left-32 w-[420px] h-[420px] rounded-full bg-black/5 blur-3xl" />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 items-center">
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center pt-20 px-6">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#ff5a00]/5 via-white to-gray-50" />
+        
+        <div className="relative max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
-            <p className="uppercase tracking-[5px] text-[#ff5a00] text-xs font-black mb-6">
-              Eventi · artisti · organizer · promoter
-            </p>
+            <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-full px-4 py-1.5 mb-8">
+              <span className="w-2 h-2 bg-[#ff5a00] rounded-full animate-pulse" />
+              <span className="text-xs font-semibold tracking-wider uppercase text-[#ff5a00]">Piattaforma Live</span>
+            </div>
 
-            <h1 className="text-6xl md:text-8xl font-black tracking-[-0.08em] leading-[0.86]">
-              La piattaforma che connette eventi, artisti e locali.
+            <h1 className="text-6xl md:text-8xl font-black leading-[0.9] tracking-tight">
+              Gestisci eventi{" "}
+              <span className="text-[#ff5a00]">
+                senza limiti
+              </span>
             </h1>
 
-            <p className="mt-7 text-lg md:text-xl text-black/60 max-w-2xl leading-relaxed">
-              TuttoEvento è il gestionale per creare booking, gestire artisti,
-              organizzare eventi, monitorare incassi, cachet, chat, richieste e
-              disponibilità.
+            <p className="mt-6 text-xl text-gray-600 max-w-xl leading-relaxed">
+              La piattaforma all-in-one per organizer, artisti e promoter. 
+              Booking, chat, analytics e pagamenti in un unico posto.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 mt-9">
-              <Link
-                href="/login"
-                className="bg-[#ff5a00] text-white rounded-2xl px-8 py-4 font-black text-center shadow-xl shadow-orange-500/20 hover:scale-[1.02] transition"
-              >
-                Accedi alla piattaforma
+            <div className="flex gap-4 mt-10">
+              <Link href="/register" className="bg-[#ff5a00] text-white px-8 py-4 rounded-2xl font-bold hover:scale-105 transition shadow-xl shadow-orange-500/20">
+                Inizia gratis
               </Link>
-
-              <Link
-                href="/register"
-                className="bg-[#111] text-white rounded-2xl px-8 py-4 font-black text-center hover:scale-[1.02] transition"
-              >
-                Crea account
+              <Link href="#cose" className="border border-gray-300 text-gray-900 px-8 py-4 rounded-2xl font-bold hover:bg-gray-50 transition">
+                Scopri di più
               </Link>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mt-10 max-w-xl">
-              <MiniStat value="3" label="Aree operative" />
-              <MiniStat value="1" label="Dashboard unica" />
-              <MiniStat value="24/7" label="Accesso cloud" />
+            <div className="flex items-center gap-8 mt-12 pt-8 border-t border-gray-200">
+              <div>
+                <p className="text-3xl font-bold text-[#ff5a00]">500+</p>
+                <p className="text-sm text-gray-500 mt-1">Eventi gestiti</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-[#ff5a00]">50+</p>
+                <p className="text-sm text-gray-500 mt-1">Artisti attivi</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-[#ff5a00]">24/7</p>
+                <p className="text-sm text-gray-500 mt-1">Supporto cloud</p>
+              </div>
             </div>
           </div>
 
+          {/* Preview Card */}
           <div className="relative">
-            <div className="absolute -inset-4 bg-[#ff5a00]/10 rounded-[46px] blur-2xl" />
+            <div className="absolute -inset-4 bg-gradient-to-r from-[#ff5a00]/20 to-orange-400/20 rounded-[2.5rem] blur-2xl" />
+            <div className="relative bg-white border border-gray-200 rounded-[2rem] p-8 shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-400" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                  <div className="w-3 h-3 rounded-full bg-green-400" />
+                </div>
+                <div className="text-xs text-gray-400 font-mono">Dashboard</div>
+              </div>
 
-            <div className="relative bg-[#111] text-white rounded-[42px] p-6 md:p-8 shadow-2xl overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-[#ff5a00]/30 rounded-bl-full" />
-
-              <div className="relative">
-                <p className="text-xs uppercase tracking-[3px] text-white/40 font-black">
-                  Dashboard preview
-                </p>
-
-                <h2 className="text-4xl md:text-5xl font-black tracking-[-0.06em] mt-4 leading-none">
-                  Eventi, musica e pubblico. Tutto in un unico posto.
-                </h2>
-
-                <div className="grid grid-cols-1 gap-4 mt-8">
-                  <PreviewCard
-                    title="Booking"
-                    text="Crea eventi, scegli artisti e invia richieste."
-                  />
-                  <PreviewCard
-                    title="Chat"
-                    text="Conversazioni collegate a booking ed eventi."
-                  />
-                  <PreviewCard
-                    title="Analitiche"
-                    text="Incassi, cachet, margini ed estratti conto."
-                  />
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <p className="text-sm text-gray-500">Prossimo evento</p>
+                      <p className="text-lg font-bold mt-1">Summer Festival 2026</p>
+                    </div>
+                    <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">In corso</span>
+                  </div>
+                  <div className="flex gap-6 text-sm">
+                    <div>
+                      <p className="text-gray-500">Ticket</p>
+                      <p className="font-bold mt-1">342/500</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Incasso</p>
+                      <p className="font-bold mt-1">€12.450</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-8 bg-white text-[#111] rounded-[28px] p-5">
-                  <p className="text-xs uppercase tracking-[2px] text-black/35 font-black">
-                    Stato piattaforma
-                  </p>
-                  <p className="text-3xl font-black mt-2">Beta privata</p>
-                  <p className="text-sm text-black/50 mt-1">
-                    Accesso riservato ad account registrati.
-                  </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <p className="text-2xl font-bold text-[#ff5a00]">12</p>
+                    <p className="text-xs text-gray-500 mt-1">Booking attivi</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <p className="text-2xl font-bold text-[#ff5a00]">€3.2k</p>
+                    <p className="text-xs text-gray-500 mt-1">Cachet mese</p>
+                  </div>
+                </div>
+
+                <div className="bg-orange-50 rounded-2xl p-5 border border-orange-100">
+                  <p className="font-bold mb-2">💬 Nuovi messaggi</p>
+                  <p className="text-sm text-gray-600">3 booking in attesa di conferma</p>
                 </div>
               </div>
             </div>
@@ -124,191 +125,55 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="cose" className="px-5 md:px-8 py-16">
-        <div className="max-w-7xl mx-auto bg-white rounded-[42px] border border-black/5 p-7 md:p-12 shadow-sm">
-          <p className="uppercase tracking-[4px] text-[#ff5a00] text-xs font-black">
-            Cos'è
-          </p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 mt-5 items-end">
-            <h2 className="text-4xl md:text-6xl font-black tracking-[-0.07em] leading-none">
-              Una piattaforma per trasformare un evento in un sistema.
-            </h2>
-
-            <p className="text-lg text-black/60 leading-relaxed">
-              Ogni ruolo entra nella propria area: gli organizer creano eventi
-              e inviano booking, gli artisti gestiscono media kit e
-              disponibilità, i promoter collaborano allo sviluppo commerciale.
-              Tutto collegato a Supabase e pronto per lavorare online.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section id="funzioni" className="px-5 md:px-8 py-16">
+      {/* Features Grid */}
+      <section id="funzioni" className="px-6 py-32 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="uppercase tracking-[4px] text-[#ff5a00] text-xs font-black">
-              Funzioni
-            </p>
-
-            <h2 className="text-4xl md:text-6xl font-black tracking-[-0.07em] mt-3">
-              Tutto quello che serve per gestire una serata.
+          <div className="text-center mb-20">
+            <p className="text-[#ff5a00] text-sm font-bold tracking-[3px] uppercase mb-4">Funzioni</p>
+            <h2 className="text-5xl md:text-7xl font-black tracking-tight">
+              Tutto ciò che ti serve
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <FeatureCard
-              icon="📅"
-              title="Booking eventi"
-              text="Crea eventi, seleziona artisti, invia richieste e monitora gli stati."
-            />
-
-            <FeatureCard
-              icon="🎙️"
-              title="Media kit artista"
-              text="Bio, cachet, generi, città, social, rider e date disponibili."
-            />
-
-            <FeatureCard
-              icon="💬"
-              title="Chat operativa"
-              text="Conversazioni dirette tra organizer e artisti collegate ai booking."
-            />
-
-            <FeatureCard
-              icon="📊"
-              title="Analitiche"
-              text="Controllo su incassi, costi artista, margini e performance eventi."
-            />
-
-            <FeatureCard
-              icon="💶"
-              title="Estratto conto"
-              text="Gestione economica per organizer e artisti con dati salvati online."
-            />
-
-            <FeatureCard
-              icon="☁️"
-              title="Cloud Supabase"
-              text="Dati condivisi online: utenti, eventi, booking, chat e profili."
-            />
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { icon: "📅", title: "Booking Smart", desc: "Crea eventi e gestisci artisti in pochi click" },
+              { icon: "💬", title: "Chat Integrata", desc: "Comunica direttamente con organizer e artisti" },
+              { icon: "📊", title: "Analytics", desc: "Monitora incassi, margini e performance in tempo reale" },
+              { icon: "🎤", title: "Media Kit", desc: "Profilo artista completo con cachet e disponibilità" },
+              { icon: "💶", title: "Pagamenti", desc: "Gestione automatica di cachet e commissioni" },
+              { icon: "☁️", title: "Cloud Sync", desc: "Dati sincronizzati su tutti i dispositivi" },
+            ].map((feature, i) => (
+              <div key={i} className="group bg-white border border-gray-200 rounded-3xl p-8 hover:shadow-xl transition duration-300">
+                <div className="text-4xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">{feature.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section id="aree" className="px-5 md:px-8 py-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="uppercase tracking-[4px] text-[#ff5a00] text-xs font-black">
-              Le aree
-            </p>
-
-            <h2 className="text-5xl md:text-7xl font-black tracking-[-0.08em] mt-3">
-              Scegli la tua area.
-            </h2>
-
-            <p className="text-black/55 mt-4 text-lg">
-              Accedi con le tue credenziali: verrai portato alla dashboard
-              nuova in base al tuo ruolo.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <AreaCard
-              emoji="🏢"
-              title="Area Organizer"
-              description="Gestisci eventi, artisti, cachet, booking, incassi e promoter associati."
-              href="/login?role=organizer"
-            />
-
-            <AreaCard
-              emoji="🎙️"
-              title="Area Artisti"
-              description="Crea il tuo media kit, imposta cachet, disponibilità, calendario e booking."
-              href="/login?role=artist"
-            />
-
-            <AreaCard
-              emoji="👥"
-              title="Area Promoter"
-              description="Accedi all’area promoter per collaborazioni e sviluppo commerciale."
-              href="/login?role=promoter"
-            />
+      {/* CTA Section */}
+      <section className="px-6 py-32">
+        <div className="max-w-5xl mx-auto bg-gradient-to-r from-[#ff5a00] to-orange-600 rounded-[3rem] p-12 md:p-20 text-center relative overflow-hidden shadow-2xl">
+          <div className="relative">
+            <h2 className="text-4xl md:text-6xl font-black mb-6 text-white">Pronto a rivoluzionare i tuoi eventi?</h2>
+            <p className="text-white/90 text-lg mb-10 max-w-2xl mx-auto">Unisciti a centinaia di organizer e artisti che già usano TuttoEvento.</p>
+            <Link href="/register" className="inline-block bg-white text-[#ff5a00] px-10 py-5 rounded-2xl font-bold text-lg hover:scale-105 transition shadow-2xl">
+              Crea account gratuito
+            </Link>
           </div>
         </div>
       </section>
 
-      <footer className="bg-[#080808] text-white">
-        <div className="max-w-7xl mx-auto px-5 md:px-8 py-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <img
-              src="/logo.png"
-              alt="TuttoEvento"
-              className="h-12 w-auto object-contain"
-            />
-
-            <p className="text-white/65 font-bold text-center">
-              Connettiamo talenti, creiamo eventi, costruiamo opportunità.
-            </p>
-
-            <p className="text-white/35 text-sm">© 2026 TuttoEvento</p>
-          </div>
+      {/* Footer */}
+      <footer className="bg-[#0a0a0a] text-white py-12 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <img src="/logo.png" alt="TuttoEvento" className="h-8 brightness-0 invert" />
+          <p className="text-white/40 text-sm">© 2026 TuttoEvento. Tutti i diritti riservati.</p>
         </div>
       </footer>
     </main>
-  );
-}
-
-function MiniStat({ value, label }) {
-  return (
-    <div className="bg-white/70 border border-black/5 rounded-2xl p-4">
-      <p className="text-2xl font-black">{value}</p>
-      <p className="text-xs text-black/45 font-bold mt-1">{label}</p>
-    </div>
-  );
-}
-
-function PreviewCard({ title, text }) {
-  return (
-    <div className="bg-white/10 border border-white/10 rounded-3xl p-5">
-      <p className="text-xl font-black">{title}</p>
-      <p className="text-sm text-white/55 mt-2 leading-relaxed">{text}</p>
-    </div>
-  );
-}
-
-function FeatureCard({ icon, title, text }) {
-  return (
-    <div className="bg-white rounded-[32px] border border-black/5 p-7 shadow-sm hover:-translate-y-1 transition">
-      <div className="text-4xl mb-5">{icon}</div>
-
-      <h3 className="text-2xl font-black tracking-[-0.04em]">{title}</h3>
-
-      <p className="text-black/55 mt-3 leading-relaxed">{text}</p>
-    </div>
-  );
-}
-
-function AreaCard({ emoji, title, description, href }) {
-  return (
-    <div className="group bg-white rounded-[38px] border border-black/5 p-7 md:p-8 text-center shadow-sm hover:shadow-2xl hover:-translate-y-1 transition overflow-hidden">
-      <div className="mx-auto w-20 h-20 rounded-[28px] bg-[#ff5a00]/10 flex items-center justify-center text-5xl mb-7 group-hover:scale-105 transition">
-        {emoji}
-      </div>
-
-      <h3 className="text-3xl font-black tracking-[-0.05em]">{title}</h3>
-
-      <p className="text-black/55 mt-4 leading-relaxed min-h-[96px]">
-        {description}
-      </p>
-
-      <Link
-        href={href}
-        className="inline-flex items-center justify-center mt-7 bg-[#ff5a00] text-white rounded-2xl px-9 py-4 font-black shadow-lg shadow-orange-500/20 hover:bg-[#111] transition"
-      >
-        Accedi
-      </Link>
-    </div>
   );
 }
