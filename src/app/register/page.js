@@ -1,88 +1,496 @@
+"use client";
+ 
 import Link from "next/link";
-
-export default function Home() {
+import { useEffect, useRef, useState } from "react";
+ 
+/* ============================================================
+   TuttoEvento — Landing Page
+   Stile: Apple-like, bianco/arancio, animazioni 3D, futuristico
+   Next.js (App Router) — drop-in replacement per app/page.tsx
+   Dipendenze: solo Next.js + Tailwind (già nel tuo progetto)
+   ============================================================ */
+ 
+/* Hook: reveal on scroll (IntersectionObserver, zero librerie) */
+function useReveal() {
+  useEffect(() => {
+    const els = document.querySelectorAll("[data-reveal]");
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-visible");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
+ 
+/* Card 3D che segue il mouse (tilt) */
+function TiltCard({ children, className = "", glow = "rgba(255,90,0,0.25)" }) {
+  const ref = useRef(null);
+  const [style, setStyle] = useState({});
+ 
+  function handleMove(e) {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    const rx = (py - 0.5) * -10;
+    const ry = (px - 0.5) * 12;
+    setStyle({
+      transform: `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px)`,
+      "--mx": `${px * 100}%`,
+      "--my": `${py * 100}%`,
+      "--glow": glow,
+    });
+  }
+  function reset() {
+    setStyle({ transform: "perspective(900px) rotateX(0) rotateY(0) translateY(0)" });
+  }
+ 
   return (
-    <main className="min-h-screen bg-[#f8f9fa] text-[#111] overflow-hidden selection:bg-[#ff5a00] selection:text-white">
-      {/* NAVBAR */}
-      <nav className="fixed top-0 w-full z-50 backdrop-blur-md bg-white/70 border-b border-gray-100/50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
-            <span className="font-black tracking-tight text-xl">TuttoEvento</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-600">
-            <a href="#features" className="hover:text-[#ff5a00] transition">Funzioni</a>
-          </div>
-          <Link href="/login" className="bg-[#111] text-white px-5 py-2 rounded-full text-sm font-bold hover:scale-105 transition">
-            Accedi
+    <div
+      ref={ref}
+      onMouseMove={handleMove}
+      onMouseLeave={reset}
+      style={style}
+      className={`te-tilt ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+ 
+export default function Home() {
+  useReveal();
+ 
+  // parallax leggero dell'aura del hero
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+ 
+  return (
+    <main className="te-root">
+      {/* ---------- STILI ---------- */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700&display=swap');
+ 
+        .te-root {
+          --orange: #ff5a00;
+          --orange-soft: #ff8246;
+          --ink: #0a0a0b;
+          --paper: #fbfaf8;
+          --muted: #6b6b73;
+          font-family: 'Manrope', system-ui, sans-serif;
+          background: var(--paper);
+          color: var(--ink);
+          min-height: 100vh;
+          overflow-x: hidden;
+          position: relative;
+        }
+        .te-root ::selection { background: var(--orange); color: #fff; }
+        .te-display { font-family: 'Sora', sans-serif; letter-spacing: -0.03em; }
+ 
+        /* grana sottile per profondità "premium" */
+        .te-grain::before {
+          content: "";
+          position: fixed; inset: 0; z-index: 1; pointer-events: none;
+          opacity: 0.035;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+ 
+        /* reveal */
+        [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1); }
+        [data-reveal].is-visible { opacity: 1; transform: none; }
+        [data-reveal][data-delay="1"] { transition-delay: .08s; }
+        [data-reveal][data-delay="2"] { transition-delay: .16s; }
+        [data-reveal][data-delay="3"] { transition-delay: .24s; }
+ 
+        /* tilt cards */
+        .te-tilt { transition: transform .25s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; will-change: transform; position: relative; }
+        .te-tilt::after {
+          content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+          background: radial-gradient(420px circle at var(--mx,50%) var(--my,50%), var(--glow,rgba(255,90,0,.18)), transparent 45%);
+          opacity: 0; transition: opacity .3s;
+        }
+        .te-tilt:hover::after { opacity: 1; }
+ 
+        /* float orbs */
+        @keyframes te-float { 0%,100%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(0,-26px) scale(1.04);} }
+        @keyframes te-float2 { 0%,100%{ transform: translate(0,0);} 50%{ transform: translate(18px,18px);} }
+        @keyframes te-spin { to { transform: rotate(360deg); } }
+        @keyframes te-pulse { 0%,100%{ opacity:.5;} 50%{ opacity:1;} }
+        @keyframes te-marquee { from { transform: translateX(0);} to { transform: translateX(-50%);} }
+ 
+        /* hero headline shimmer */
+        .te-shimmer {
+          background: linear-gradient(100deg, var(--orange) 0%, var(--orange-soft) 40%, #ffb98a 50%, var(--orange-soft) 60%, var(--orange) 100%);
+          background-size: 200% 100%;
+          -webkit-background-clip: text; background-clip: text; color: transparent;
+          animation: te-shimmer-move 6s linear infinite;
+        }
+        @keyframes te-shimmer-move { to { background-position: -200% 0; } }
+ 
+        /* bottone magnetico */
+        .te-cta { position: relative; isolation: isolate; }
+        .te-cta::before {
+          content:""; position:absolute; inset:-2px; border-radius:999px; z-index:-1;
+          background: conic-gradient(from 0deg, var(--orange), #ffb98a, var(--orange));
+          opacity:0; transition:opacity .35s; filter: blur(8px);
+        }
+        .te-cta:hover::before { opacity:.55; animation: te-spin 4s linear infinite; }
+ 
+        .te-glass {
+          background: rgba(255,255,255,0.62);
+          backdrop-filter: blur(18px) saturate(160%);
+          -webkit-backdrop-filter: blur(18px) saturate(160%);
+          border: 1px solid rgba(255,255,255,0.7);
+          box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 30px 60px -30px rgba(20,12,0,.25);
+        }
+ 
+        @media (prefers-reduced-motion: reduce) {
+          .te-tilt, [data-reveal] { transition: none !important; transform: none !important; }
+          .te-shimmer, .te-cta::before { animation: none !important; }
+        }
+      `}</style>
+ 
+      <div className="te-grain" />
+ 
+      {/* ===================== NAVBAR ===================== */}
+      <nav className="fixed top-0 inset-x-0 z-50 px-4 pt-4">
+        <div className="te-glass max-w-6xl mx-auto rounded-full px-5 h-14 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="relative grid place-items-center w-8 h-8 rounded-xl bg-[var(--orange)] text-white font-black te-display shadow-[0_6px_16px_-4px_rgba(255,90,0,.6)]">
+              T
+              <span className="absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white" />
+            </span>
+            <span className="te-display font-extrabold text-lg tracking-tight">TuttoEvento</span>
           </Link>
-        </div>
-      </nav>
-
-      {/* HERO SECTION */}
-      <section className="pt-32 pb-20 px-6 relative overflow-hidden">
-        {/* Background Glow 3D */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#ff5a00]/20 to-orange-300/20 rounded-full blur-[120px] -z-10" />
-        
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-1.5 mb-8 shadow-sm">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nuova Piattaforma</span>
+ 
+          <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-[var(--muted)]">
+            <a href="#features" className="hover:text-[var(--orange)] transition">Funzioni</a>
+            <a href="#marketplace" className="hover:text-[var(--orange)] transition">Marketplace</a>
+            <a href="#come-funziona" className="hover:text-[var(--orange)] transition">Come funziona</a>
           </div>
-
-          <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9] mb-8">
-            Gestisci eventi <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff5a00] to-orange-600">senza limiti.</span>
-          </h1>
-
-          <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-            La piattaforma all-in-one per organizer, artisti e promoter. <br />
-            Booking, analytics e chat in un unico ecosistema.
-          </p>
-
-          <div className="flex items-center justify-center gap-4">
-            <Link href="/register" className="bg-[#ff5a00] text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-[#e04e00] transition shadow-xl shadow-orange-500/20">
+ 
+          <div className="flex items-center gap-2">
+            <Link href="/login" className="hidden sm:block text-sm font-bold text-[var(--ink)] px-4 py-2 rounded-full hover:bg-black/5 transition">
+              Accedi
+            </Link>
+            <Link href="/register" className="te-cta bg-[var(--ink)] text-white text-sm font-bold px-5 py-2.5 rounded-full hover:scale-[1.04] transition">
               Inizia gratis
             </Link>
-            <Link href="/login" className="bg-white text-[#111] border border-gray-200 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-50 transition">
+          </div>
+        </div>
+      </nav>
+ 
+      {/* ===================== HERO ===================== */}
+      <section className="relative pt-40 pb-28 px-6">
+        {/* aure 3D di sfondo con parallax */}
+        <div
+          aria-hidden
+          className="absolute top-[-120px] left-1/2 -translate-x-1/2 w-[680px] h-[680px] rounded-full -z-10 blur-[120px]"
+          style={{
+            background: "radial-gradient(circle, rgba(255,90,0,.32), rgba(255,130,70,.12) 55%, transparent 70%)",
+            transform: `translate(-50%, ${scrollY * 0.15}px)`,
+            animation: "te-float 9s ease-in-out infinite",
+          }}
+        />
+        <div
+          aria-hidden
+          className="absolute top-[120px] right-[-80px] w-[360px] h-[360px] rounded-full -z-10 blur-[90px]"
+          style={{ background: "radial-gradient(circle, rgba(255,185,138,.4), transparent 70%)", animation: "te-float2 11s ease-in-out infinite" }}
+        />
+ 
+        <div className="max-w-5xl mx-auto text-center">
+          <div data-reveal className="inline-flex items-center gap-2 te-glass rounded-full px-4 py-1.5 mb-8">
+            <span className="w-2 h-2 rounded-full bg-green-500" style={{ animation: "te-pulse 2s infinite" }} />
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Live · La nuova piattaforma per eventi</span>
+          </div>
+ 
+          <h1 data-reveal data-delay="1" className="te-display text-5xl sm:text-7xl md:text-[5.5rem] font-extrabold leading-[0.92] mb-7">
+            L'ecosistema per <br className="hidden sm:block" />
+            <span className="te-shimmer">artisti, promoter</span> <br className="hidden sm:block" />
+            e organizzatori.
+          </h1>
+ 
+          <p data-reveal data-delay="2" className="text-lg sm:text-xl text-[var(--muted)] max-w-2xl mx-auto mb-10 leading-relaxed">
+            Trova talenti nel <strong className="text-[var(--ink)] font-bold">marketplace</strong>, chatti in
+            <strong className="text-[var(--ink)] font-bold"> tempo reale</strong> e chiudi il booking con
+            <strong className="text-[var(--ink)] font-bold"> pagamenti sicuri</strong> — tutto in un'unica piattaforma.
+          </p>
+ 
+          <div data-reveal data-delay="3" className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/register" className="te-cta w-full sm:w-auto bg-[var(--orange)] text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-[#e85100] transition shadow-[0_18px_40px_-12px_rgba(255,90,0,.6)]">
+              Crea il tuo profilo gratis
+            </Link>
+            <a href="#marketplace" className="w-full sm:w-auto te-glass text-[var(--ink)] px-8 py-4 rounded-full font-bold text-lg hover:scale-[1.02] transition">
+              Esplora gli artisti →
+            </a>
+          </div>
+ 
+          {/* mini trust row */}
+          <div data-reveal className="mt-12 flex items-center justify-center gap-6 text-xs font-semibold text-[var(--muted)]">
+            <span>✓ Nessuna carta richiesta</span>
+            <span className="hidden sm:inline">✓ Pagamenti protetti</span>
+            <span>✓ Pronto in 2 minuti</span>
+          </div>
+        </div>
+ 
+        {/* DASHBOARD PREVIEW 3D (mockup CRM) */}
+        <div data-reveal data-delay="2" className="max-w-5xl mx-auto mt-20 px-2" style={{ perspective: "1600px" }}>
+          <div
+            className="te-glass rounded-[2rem] p-3 sm:p-4"
+            style={{ transform: "rotateX(12deg)", transformOrigin: "center bottom", boxShadow: "0 60px 120px -40px rgba(40,20,0,.4)" }}
+          >
+            <div className="rounded-[1.5rem] bg-white overflow-hidden border border-black/5">
+              {/* fake top bar */}
+              <div className="flex items-center gap-1.5 px-4 py-3 border-b border-black/5">
+                <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+                <span className="ml-3 text-xs font-semibold text-[var(--muted)]">app.tuttoevento.it — Dashboard</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 p-4 sm:p-6 text-left">
+                {[
+                  { k: "Incassi mese", v: "€ 18.420", d: "+24%", c: "text-green-600" },
+                  { k: "Booking attivi", v: "37", d: "+5 oggi", c: "text-green-600" },
+                  { k: "Nuovi messaggi", v: "12", d: "in tempo reale", c: "text-[var(--orange)]" },
+                ].map((s) => (
+                  <div key={s.k} className="rounded-2xl bg-[var(--paper)] border border-black/5 p-4">
+                    <p className="text-[11px] uppercase tracking-wide font-bold text-[var(--muted)]">{s.k}</p>
+                    <p className="te-display text-2xl sm:text-3xl font-extrabold mt-1">{s.v}</p>
+                    <p className={`text-xs font-bold mt-1 ${s.c}`}>{s.d}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+ 
+      {/* ===================== MARQUEE LOGOS ===================== */}
+      <section className="py-8 overflow-hidden border-y border-black/5 bg-white">
+        <div className="flex whitespace-nowrap" style={{ animation: "te-marquee 28s linear infinite" }}>
+          {[...Array(2)].map((_, dup) => (
+            <div key={dup} className="flex items-center gap-12 px-6 text-[var(--muted)] font-bold te-display text-lg">
+              <span>DJ &amp; Producer</span><span className="text-[var(--orange)]">●</span>
+              <span>Band Live</span><span className="text-[var(--orange)]">●</span>
+              <span>Promoter</span><span className="text-[var(--orange)]">●</span>
+              <span>Club &amp; Venue</span><span className="text-[var(--orange)]">●</span>
+              <span>Agenzie</span><span className="text-[var(--orange)]">●</span>
+              <span>Festival</span><span className="text-[var(--orange)]">●</span>
+            </div>
+          ))}
+        </div>
+      </section>
+ 
+      {/* ===================== FEATURES (3 core) ===================== */}
+      <section id="features" className="py-28 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div data-reveal className="max-w-2xl mb-14">
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--orange)] mb-3">Tutto in un posto</p>
+            <h2 className="te-display text-4xl md:text-5xl font-extrabold leading-tight">
+              Tre strumenti, <span className="text-[var(--orange)]">un solo flusso</span> di lavoro.
+            </h2>
+          </div>
+ 
+          <div className="grid md:grid-cols-3 gap-5">
+            {/* CHAT */}
+            <TiltCard className="rounded-[2rem]" >
+              <div data-reveal className="h-full bg-white rounded-[2rem] border border-black/5 p-8 shadow-sm">
+                <div className="w-14 h-14 rounded-2xl bg-orange-50 grid place-items-center mb-6">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                </div>
+                <h3 className="te-display text-2xl font-extrabold mb-2">Chat in tempo reale</h3>
+                <p className="text-[var(--muted)] leading-relaxed">Tratti, negozi e confermi senza uscire dalla piattaforma. Notifiche istantanee, cronologia e proposte di booking direttamente in chat.</p>
+                <div className="mt-6 flex flex-col gap-2">
+                  <div className="self-start bg-[var(--paper)] border border-black/5 rounded-2xl rounded-bl-md px-4 py-2 text-sm font-medium">Disponibile il 14 giugno?</div>
+                  <div className="self-end bg-[var(--orange)] text-white rounded-2xl rounded-br-md px-4 py-2 text-sm font-semibold">Sì! Ti mando la proposta ✦</div>
+                </div>
+              </div>
+            </TiltCard>
+ 
+            {/* PAGAMENTI */}
+            <TiltCard className="rounded-[2rem]" glow="rgba(40,200,100,.22)">
+              <div data-reveal data-delay="1" className="h-full bg-[var(--ink)] text-white rounded-[2rem] p-8 shadow-xl">
+                <div className="w-14 h-14 rounded-2xl bg-white/10 grid place-items-center mb-6">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg>
+                </div>
+                <h3 className="te-display text-2xl font-extrabold mb-2">Pagamenti sicuri</h3>
+                <p className="text-white/70 leading-relaxed">Cachet protetti con sistema di garanzia: i fondi vengono rilasciati a evento confermato. Fatturazione e ricevute automatiche.</p>
+                <div className="mt-6 rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/60">Cachet protetto</span>
+                    <span className="font-bold te-display">€ 1.200</span>
+                  </div>
+                  <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div className="h-full w-2/3 rounded-full" style={{ background: "linear-gradient(90deg,var(--orange),#ffb98a)" }} />
+                  </div>
+                  <p className="mt-2 text-xs text-green-400 font-bold">🔒 In garanzia · rilascio post-evento</p>
+                </div>
+              </div>
+            </TiltCard>
+ 
+            {/* MARKETPLACE */}
+            <TiltCard className="rounded-[2rem]">
+              <div data-reveal data-delay="2" className="h-full bg-white rounded-[2rem] border border-black/5 p-8 shadow-sm">
+                <div className="w-14 h-14 rounded-2xl bg-orange-50 grid place-items-center mb-6">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 22V12h6v10"/></svg>
+                </div>
+                <h3 className="te-display text-2xl font-extrabold mb-2">Marketplace artisti</h3>
+                <p className="text-[var(--muted)] leading-relaxed">Sfoglia profili verificati, ascolta demo, confronta cachet e disponibilità. Filtra per genere, città e budget in pochi secondi.</p>
+                <div className="mt-6 grid grid-cols-3 gap-2">
+                  {["DJ", "Live", "Band"].map((t, i) => (
+                    <div key={t} className="rounded-xl border border-black/5 bg-[var(--paper)] p-2 text-center">
+                      <div className="mx-auto w-9 h-9 rounded-full mb-1" style={{ background: `linear-gradient(135deg, var(--orange), #ffb98a)` , opacity: 1 - i*0.18 }} />
+                      <span className="text-[11px] font-bold text-[var(--muted)]">{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TiltCard>
+          </div>
+        </div>
+      </section>
+ 
+      {/* ===================== MARKETPLACE SHOWCASE ===================== */}
+      <section id="marketplace" className="py-28 px-6 bg-white border-y border-black/5">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-14 items-center">
+          <div data-reveal>
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--orange)] mb-3">Marketplace</p>
+            <h2 className="te-display text-4xl md:text-5xl font-extrabold leading-tight mb-5">
+              Il talento giusto, <br /> a portata di clic.
+            </h2>
+            <p className="text-lg text-[var(--muted)] leading-relaxed mb-8">
+              Per gli <strong className="text-[var(--ink)]">organizer</strong>: trova e prenoti artisti verificati in tempo record.
+              Per gli <strong className="text-[var(--ink)]">artisti e promoter</strong>: una vetrina professionale che lavora per te 24/7.
+            </p>
+            <ul className="space-y-3">
+              {["Profili verificati con demo audio/video", "Cachet e disponibilità trasparenti", "Recensioni reali post-evento", "Richiesta di booking in 1 clic"].map((t) => (
+                <li key={t} className="flex items-center gap-3 font-semibold">
+                  <span className="grid place-items-center w-6 h-6 rounded-full bg-[var(--orange)] text-white text-xs">✓</span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+            <Link href="/register" className="te-cta inline-block mt-9 bg-[var(--ink)] text-white px-7 py-3.5 rounded-full font-bold hover:scale-[1.03] transition">
+              Pubblica il tuo profilo
+            </Link>
+          </div>
+ 
+          {/* griglia card artisti */}
+          <div data-reveal data-delay="1" className="grid grid-cols-2 gap-4">
+            {[
+              { n: "Marco DJ", g: "House / Techno", p: "€ 450", t: 2 },
+              { n: "The Lumens", g: "Indie Live", p: "€ 900", t: 8 },
+              { n: "Sara Vox", g: "Soul / R&B", p: "€ 600", t: 0 },
+              { n: "Nova Crew", g: "Hip-Hop", p: "€ 750", t: 18 },
+            ].map((a, i) => (
+              <TiltCard key={a.n} className="rounded-3xl">
+                <div className={`bg-[var(--paper)] border border-black/5 rounded-3xl p-5 ${i % 2 ? "mt-6" : ""}`}>
+                  <div className="w-full aspect-square rounded-2xl mb-4 relative overflow-hidden" style={{ background: `linear-gradient(135deg, var(--orange), #ffb98a)` }}>
+                    <span className="absolute top-2 right-2 text-[10px] font-bold bg-white/90 text-[var(--ink)] px-2 py-0.5 rounded-full">✓ Verificato</span>
+                  </div>
+                  <h4 className="te-display font-extrabold leading-tight">{a.n}</h4>
+                  <p className="text-xs text-[var(--muted)] font-semibold mb-2">{a.g}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-[var(--orange)]">{a.p}</span>
+                    <span className="text-[11px] text-[var(--muted)] font-semibold">{a.t === 0 ? "nuovo" : `${a.t} eventi`}</span>
+                  </div>
+                </div>
+              </TiltCard>
+            ))}
+          </div>
+        </div>
+      </section>
+ 
+      {/* ===================== COME FUNZIONA ===================== */}
+      <section id="come-funziona" className="py-28 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div data-reveal className="text-center mb-16">
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--orange)] mb-3">Come funziona</p>
+            <h2 className="te-display text-4xl md:text-5xl font-extrabold">Dal contatto al palco in 3 step.</h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { n: "01", t: "Scopri", d: "Esplora il marketplace e filtra per genere, città e budget." },
+              { n: "02", t: "Contatta", d: "Chatti in tempo reale e ricevi una proposta di booking chiara." },
+              { n: "03", t: "Paga sicuro", d: "Confermi con pagamento protetto. I fondi si sbloccano a evento fatto." },
+            ].map((s, i) => (
+              <div key={s.n} data-reveal data-delay={i} className="relative bg-white rounded-3xl border border-black/5 p-8">
+                <span className="te-display text-6xl font-extrabold text-orange-100 absolute top-4 right-5 select-none">{s.n}</span>
+                <h3 className="te-display text-2xl font-extrabold mb-2 relative">{s.t}</h3>
+                <p className="text-[var(--muted)] leading-relaxed relative">{s.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+ 
+      {/* ===================== CTA FINALE ===================== */}
+      <section className="px-6 pb-28">
+        <div data-reveal className="max-w-5xl mx-auto relative rounded-[2.5rem] overflow-hidden text-center px-8 py-20"
+          style={{ background: "linear-gradient(135deg, var(--ink), #1a140f)" }}>
+          <div aria-hidden className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full blur-[110px]"
+            style={{ background: "radial-gradient(circle, rgba(255,90,0,.5), transparent 70%)", animation: "te-float 8s ease-in-out infinite" }} />
+          <h2 className="te-display text-4xl md:text-6xl font-extrabold text-white leading-tight mb-5 relative">
+            Pronto a far <span className="te-shimmer">suonare</span> i tuoi eventi?
+          </h2>
+          <p className="text-white/70 text-lg max-w-xl mx-auto mb-9 relative">
+            Unisciti agli artisti, promoter e organizer che gestiscono tutto su TuttoEvento.
+          </p>
+          <div className="relative flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/register" className="te-cta bg-[var(--orange)] text-white px-9 py-4 rounded-full font-bold text-lg hover:bg-[#e85100] transition shadow-[0_18px_40px_-12px_rgba(255,90,0,.7)]">
+              Inizia gratis ora
+            </Link>
+            <Link href="/login" className="bg-white/10 text-white border border-white/15 px-9 py-4 rounded-full font-bold text-lg hover:bg-white/15 transition backdrop-blur">
               Accedi
             </Link>
           </div>
         </div>
       </section>
-
-      {/* FEATURE CARDS */}
-      <section id="features" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Card 1 */}
-            <div className="group bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition duration-300">
-              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl mb-6">🚀</div>
-              <h3 className="text-2xl font-black mb-3">Booking Smart</h3>
-              <p className="text-gray-500">Crea eventi, gestisci artisti e invia richieste in pochi click. Tutto automatico.</p>
+ 
+      {/* ===================== FOOTER ===================== */}
+      <footer className="border-t border-black/5 bg-white">
+        <div className="max-w-6xl mx-auto px-6 py-14 grid md:grid-cols-4 gap-10">
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="grid place-items-center w-8 h-8 rounded-xl bg-[var(--orange)] text-white font-black te-display">T</span>
+              <span className="te-display font-extrabold text-lg">TuttoEvento</span>
             </div>
-
-            {/* Card 2 */}
-            <div className="group bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition duration-300">
-              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl mb-6">💬</div>
-              <h3 className="text-2xl font-black mb-3">Chat Integrata</h3>
-              <p className="text-gray-500">Comunica direttamente con organizer e artisti senza uscire dalla piattaforma.</p>
-            </div>
-
-            {/* Card 3 */}
-            <div className="group bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition duration-300">
-              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl mb-6">📊</div>
-              <h3 className="text-2xl font-black mb-3">Analytics</h3>
-              <p className="text-gray-500">Monitora incassi, margini e performance in tempo reale.</p>
-            </div>
+            <p className="text-[var(--muted)] max-w-sm leading-relaxed">L'ecosistema all-in-one per il booking di artisti: marketplace, chat in tempo reale e pagamenti sicuri.</p>
+          </div>
+          <div>
+            <p className="te-display font-bold mb-3 text-sm">Piattaforma</p>
+            <ul className="space-y-2 text-sm text-[var(--muted)] font-semibold">
+              <li><a href="#features" className="hover:text-[var(--orange)]">Funzioni</a></li>
+              <li><a href="#marketplace" className="hover:text-[var(--orange)]">Marketplace</a></li>
+              <li><a href="#come-funziona" className="hover:text-[var(--orange)]">Come funziona</a></li>
+            </ul>
+          </div>
+          <div>
+            <p className="te-display font-bold mb-3 text-sm">Account</p>
+            <ul className="space-y-2 text-sm text-[var(--muted)] font-semibold">
+              <li><Link href="/login" className="hover:text-[var(--orange)]">Accedi</Link></li>
+              <li><Link href="/register" className="hover:text-[var(--orange)]">Registrati</Link></li>
+            </ul>
           </div>
         </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="border-t border-gray-100 py-12 text-center text-gray-400 text-sm">
-        <p>© 2026 TuttoEvento. Tutti i diritti riservati.</p>
+        <div className="border-t border-black/5 py-6 text-center text-xs text-[var(--muted)]">
+          © 2026 TuttoEvento. Tutti i diritti riservati.
+        </div>
       </footer>
     </main>
   );
 }
+ 
