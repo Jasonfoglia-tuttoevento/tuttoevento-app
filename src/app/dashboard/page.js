@@ -1,53 +1,307 @@
-// src/app/dashboard/page.js (CORRETTO)
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import OrganizerArea from "@/components/dashboard/OrganizerArea";
 import ArtistArea from "@/components/dashboard/ArtistArea";
 import PromoterArea from "@/components/dashboard/PromoterArea";
+import ArtistBookings from "@/components/dashboard/ArtistBookings";
+import OrganizerBookings from "@/components/dashboard/OrganizerBookings";
 
 export default function DashboardPage() {
   const router = useRouter();
+
   const [user, setUser] = useState(null);
-  const [data, setData] = useState({ events: [], artists: [], bookings: [] });
   const [loading, setLoading] = useState(true);
 
-  // Organizer state
-  const [title, setTitle] = useState(""); const [date, setDate] = useState("");
-  const [artist, setArtist] = useState(""); const [promoter, setPromoter] = useState("");
+  const [events, setEvents] = useState([]);
+  const [artists, setArtists] = useState([]);
+  const [bookings, setBookings] = useState([]);
 
-  // Artist state
-  const [cachet, setCachet] = useState(""); const [bio, setBio] = useState("");
-  const [availability, setAvailability] = useState(""); const [photo, setPhoto] = useState("");
-  const [instagram, setInstagram] = useState(""); const [spotify, setSpotify] = useState("");
-  const [youtube, setYoutube] = useState(""); const [soundcloud, setSoundcloud] = useState("");
-  const [genres, setGenres] = useState(""); const [city, setCity] = useState("");
-  const [languages, setLanguages] = useState(""); const [rider, setRider] = useState("");
-  const [availableDates, setAvailableDates] = useState([]); const [artistMessage, setArtistMessage] = useState("");
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState("");
+  const [artist, setArtist] = useState("");
+  const [promoter, setPromoter] = useState("");
+
+  const [cachet, setCachet] = useState("");
+  const [bio, setBio] = useState("");
+  const [availability, setAvailability] = useState("");
+  const [photo, setPhoto] = useState("");
+
+  const [instagram, setInstagram] = useState("");
+  const [spotify, setSpotify] = useState("");
+  const [youtube, setYoutube] = useState("");
+  const [soundcloud, setSoundcloud] = useState("");
+
+  const [genres, setGenres] = useState("");
+  const [city, setCity] = useState("");
+  const [languages, setLanguages] = useState("");
+  const [rider, setRider] = useState("");
+
+  const [availableDates, setAvailableDates] = useState([]);
+  const [bookedDates, setBookedDates] = useState([]);
+  const [bookedSlots, setBookedSlots] = useState([]);
+
+  const [artistMessage, setArtistMessage] = useState("");
 
   useEffect(() => {
-    const init = async () => {
-      const token = localStorage.getItem("token");
+    async function init() {
       const userData = localStorage.getItem("user");
-      if (!token || !userData) { router.push("/login"); return; }
-      setUser(JSON.parse(userData));
-      setData({ events: [], artists: [], bookings: [] }); // TODO: fetch API
+
+      if (!userData) {
+        router.push("/login");
+        return;
+      }
+
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+
+      await loadEvents(parsedUser.id);
+      await loadArtists();
+
+      if (parsedUser.role === "artist") {
+        await loadArtistProfile(parsedUser.id);
+        await loadArtistBookings(parsedUser.id);
+      }
+
+      if (parsedUser.role === "organizer") {
+        await loadOrganizerBookings(parsedUser.id);
+      }
+
       setLoading(false);
-    };
+    }
+
     init();
   }, [router]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-12 w-12 border-b-2 border-[#ff5a00] rounded-full"/></div>;
-  if (!user) return null;
+  async function loadEvents(userId) {
+    try {
+      const res = await fetch("/api/events?userId=" + userId);
+      const data = await res.json();
+      setEvents(Array.isArray(data) ? data : []);
+    } catch {
+      setEvents([]);
+    }
+  }
 
-  const saveArtistProfile = (e) => { e.preventDefault(); setArtistMessage("Salvato."); };
+  async function loadArtists() {
+    try {
+      const res = await fetch("/api/artists");
+      const data = await res.json();
+      setArtists(Array.isArray(data) ? data : []);
+    } catch {
+      setArtists([]);
+    }
+  }
+
+  async function loadArtistProfile(userId) {
+    try {
+      const res = await fetch("/api/artist-profile?userId=" + userId);
+      const data = await res.json();
+
+      if (!data) return;
+
+      setCachet(data.cachet || "");
+      setBio(data.bio || "");
+      setAvailability(data.availability || "");
+      setPhoto(data.photo || "");
+
+      setInstagram(data.instagram || "");
+      setSpotify(data.spotify || "");
+      setYoutube(data.youtube || "");
+      setSoundcloud(data.soundcloud || "");
+
+      setGenres(data.genres || "");
+      setCity(data.city || "");
+      setLanguages(data.languages || "");
+      setRider(data.rider || "");
+
+      try {
+        setAvailableDates(JSON.parse(data.availableDates || "[]"));
+      } catch {
+        setAvailableDates([]);
+      }
+
+      try {
+        setBookedDates(JSON.parse(data.bookedDates || "[]"));
+      } catch {
+        setBookedDates([]);
+      }
+
+      try {
+        setBookedSlots(JSON.parse(data.bookedSlots || "[]"));
+      } catch {
+        setBookedSlots([]);
+      }
+    } catch {
+      return;
+    }
+  }
+
+  async function loadArtistBookings(artistId) {
+    try {
+      const res = await fetch("/api/bookings?artistId=" + artistId);
+      const data = await res.json();
+      setBookings(Array.isArray(data) ? data : []);
+    } catch {
+      setBookings([]);
+    }
+  }
+
+  async function loadOrganizerBookings(organizerId) {
+    try {
+      const res = await fetch("/api/bookings?organizerId=" + organizerId);
+      const data = await res.json();
+      setBookings(Array.isArray(data) ? data : []);
+    } catch {
+      setBookings([]);
+    }
+  }
+
+  async function updateBookingStatus(id, status) {
+    const res = await fetch("/api/bookings", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, status }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      alert(data.error || "Errore aggiornamento richiesta");
+      return;
+    }
+
+    await loadArtistBookings(user.id);
+    await loadArtistProfile(user.id);
+  }
+
+  async function saveArtistProfile(e) {
+    e.preventDefault();
+
+    setArtistMessage("Salvataggio in corso...");
+
+    const res = await fetch("/api/artist-profile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        cachet,
+        bio,
+        availability,
+        photo,
+        instagram,
+        spotify,
+        youtube,
+        soundcloud,
+        genres,
+        city,
+        languages,
+        rider,
+        availableDates,
+        bookedDates,
+        bookedSlots,
+      }),
+    });
+
+    if (!res.ok) {
+      setArtistMessage("Errore salvataggio profilo");
+      return;
+    }
+
+    setArtistMessage("Profilo artista salvato correttamente");
+
+    await loadArtists();
+    await loadArtistProfile(user.id);
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#f5f5f6] flex items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-black/10 border-b-[#ff5a00]" />
+      </main>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <DashboardShell user={user}>
-      {user.role === "organizer" && <OrganizerArea currentUser={user} {...data} title={title} setTitle={setTitle} date={date} setDate={setDate} artist={artist} setArtist={setArtist} promoter={promoter} setPromoter={setPromoter} />}
-      {user.role === "artist" && <ArtistArea cachet={cachet} setCachet={setCachet} bio={bio} setBio={setBio} availability={availability} setAvailability={setAvailability} photo={photo} setPhoto={setPhoto} instagram={instagram} setInstagram={setInstagram} spotify={spotify} setSpotify={setSpotify} youtube={youtube} setYoutube={setYoutube} soundcloud={soundcloud} setSoundcloud={setSoundcloud} genres={genres} setGenres={setGenres} city={city} setCity={setCity} languages={languages} setLanguages={setLanguages} rider={rider} setRider={setRider} availableDates={availableDates} setAvailableDates={setAvailableDates} bookings={data.bookings} saveArtistProfile={saveArtistProfile} artistMessage={artistMessage} />}
-      {user.role === "promoter" && <PromoterArea user={user} {...data} />}
+      {user.role === "organizer" && (
+        <>
+          <OrganizerArea
+            currentUser={user}
+            events={events}
+            artists={artists}
+            title={title}
+            setTitle={setTitle}
+            date={date}
+            setDate={setDate}
+            artist={artist}
+            setArtist={setArtist}
+            promoter={promoter}
+            setPromoter={setPromoter}
+          />
+
+          <OrganizerBookings bookings={bookings} />
+        </>
+      )}
+
+      {user.role === "artist" && (
+        <>
+          <ArtistArea
+            cachet={cachet}
+            setCachet={setCachet}
+            bio={bio}
+            setBio={setBio}
+            availability={availability}
+            setAvailability={setAvailability}
+            photo={photo}
+            setPhoto={setPhoto}
+            instagram={instagram}
+            setInstagram={setInstagram}
+            spotify={spotify}
+            setSpotify={setSpotify}
+            youtube={youtube}
+            setYoutube={setYoutube}
+            soundcloud={soundcloud}
+            setSoundcloud={setSoundcloud}
+            genres={genres}
+            setGenres={setGenres}
+            city={city}
+            setCity={setCity}
+            languages={languages}
+            setLanguages={setLanguages}
+            rider={rider}
+            setRider={setRider}
+            availableDates={availableDates}
+            setAvailableDates={setAvailableDates}
+            bookedDates={bookedDates}
+            bookedSlots={bookedSlots}
+            saveArtistProfile={saveArtistProfile}
+            artistMessage={artistMessage}
+          />
+
+          <ArtistBookings
+            bookings={bookings}
+            updateBookingStatus={updateBookingStatus}
+          />
+        </>
+      )}
+
+      {user.role === "promoter" && (
+        <PromoterArea
+          user={user}
+          events={events}
+          artists={artists}
+          bookings={bookings}
+        />
+      )}
     </DashboardShell>
   );
 }
