@@ -29,6 +29,13 @@ export default function DashboardPage() {
   const [promoter, setPromoter] = useState("");
 
   const [cachet, setCachet] = useState("");
+  const [stageName, setStageName] = useState("");
+  const [artistType, setArtistType] = useState("");
+  const [membersCount, setMembersCount] = useState("");
+  const [musicGenres, setMusicGenres] = useState([]);
+  const [eventTypes, setEventTypes] = useState([]);
+  const [pricing, setPricing] = useState({});
+
   const [bio, setBio] = useState("");
   const [availability, setAvailability] = useState("");
   const [photo, setPhoto] = useState("");
@@ -37,10 +44,9 @@ export default function DashboardPage() {
   const [spotify, setSpotify] = useState("");
   const [youtube, setYoutube] = useState("");
   const [soundcloud, setSoundcloud] = useState("");
+  const [tiktok, setTiktok] = useState("");
 
-  const [genres, setGenres] = useState("");
   const [city, setCity] = useState("");
-  const [languages, setLanguages] = useState("");
   const [rider, setRider] = useState("");
 
   const [availableDates, setAvailableDates] = useState([]);
@@ -144,6 +150,24 @@ export default function DashboardPage() {
     }
   }
 
+  function parseArray(value) {
+    try {
+      if (Array.isArray(value)) return value;
+      return JSON.parse(value || "[]");
+    } catch {
+      return [];
+    }
+  }
+
+  function parseObject(value) {
+    try {
+      if (value && typeof value === "object") return value;
+      return JSON.parse(value || "{}");
+    } catch {
+      return {};
+    }
+  }
+
   async function loadArtistProfile(userId) {
     try {
       const res = await fetch("/api/artist-profile?userId=" + userId);
@@ -151,7 +175,14 @@ export default function DashboardPage() {
 
       if (!data) return;
 
-      setCachet(data.cachet || "");
+      setCachet(data.baseCachet || "");
+      setStageName(data.stageName || "");
+      setArtistType(data.artistType || "");
+      setMembersCount(data.membersCount || "");
+      setMusicGenres(parseArray(data.musicGenres));
+      setEventTypes(parseArray(data.eventTypes));
+      setPricing(parseObject(data.pricing));
+
       setBio(data.bio || "");
       setAvailability(data.availability || "");
       setPhoto(data.photo || "");
@@ -160,29 +191,14 @@ export default function DashboardPage() {
       setSpotify(data.spotify || "");
       setYoutube(data.youtube || "");
       setSoundcloud(data.soundcloud || "");
+      setTiktok(data.tiktok || "");
 
-      setGenres(data.genres || "");
       setCity(data.city || "");
-      setLanguages(data.languages || "");
       setRider(data.rider || "");
 
-      try {
-        setAvailableDates(JSON.parse(data.availableDates || "[]"));
-      } catch {
-        setAvailableDates([]);
-      }
-
-      try {
-        setBookedDates(JSON.parse(data.bookedDates || "[]"));
-      } catch {
-        setBookedDates([]);
-      }
-
-      try {
-        setBookedSlots(JSON.parse(data.bookedSlots || "[]"));
-      } catch {
-        setBookedSlots([]);
-      }
+      setAvailableDates(parseArray(data.availableDates));
+      setBookedDates(parseArray(data.bookedDates));
+      setBookedSlots(parseArray(data.bookedSlots));
     } catch {
       return;
     }
@@ -239,18 +255,28 @@ export default function DashboardPage() {
       },
       body: JSON.stringify({
         userId: user.id,
-        cachet,
+
+        baseCachet: cachet,
+        stageName,
+        artistType,
+        membersCount,
+        musicGenres,
+        eventTypes,
+        pricing,
+
         bio,
         availability,
         photo,
+
         instagram,
         spotify,
         youtube,
         soundcloud,
-        genres,
+        tiktok,
+
         city,
-        languages,
         rider,
+
         availableDates,
         bookedDates,
         bookedSlots,
@@ -281,11 +307,7 @@ export default function DashboardPage() {
   return (
     <DashboardShell user={user}>
       {user.role === "admin" && (
-        <AdminArea
-          users={users}
-          events={events}
-          bookings={bookings}
-        />
+        <AdminArea users={users} events={events} bookings={bookings} />
       )}
 
       {user.role === "referent" && (
@@ -322,6 +344,18 @@ export default function DashboardPage() {
           <ArtistArea
             cachet={cachet}
             setCachet={setCachet}
+            stageName={stageName}
+            setStageName={setStageName}
+            artistType={artistType}
+            setArtistType={setArtistType}
+            membersCount={membersCount}
+            setMembersCount={setMembersCount}
+            musicGenres={musicGenres}
+            setMusicGenres={setMusicGenres}
+            eventTypes={eventTypes}
+            setEventTypes={setEventTypes}
+            pricing={pricing}
+            setPricing={setPricing}
             bio={bio}
             setBio={setBio}
             availability={availability}
@@ -336,18 +370,17 @@ export default function DashboardPage() {
             setYoutube={setYoutube}
             soundcloud={soundcloud}
             setSoundcloud={setSoundcloud}
-            genres={genres}
-            setGenres={setGenres}
+            tiktok={tiktok}
+            setTiktok={setTiktok}
             city={city}
             setCity={setCity}
-            languages={languages}
-            setLanguages={setLanguages}
             rider={rider}
             setRider={setRider}
             availableDates={availableDates}
             setAvailableDates={setAvailableDates}
             bookedDates={bookedDates}
             bookedSlots={bookedSlots}
+            bookings={bookings}
             saveArtistProfile={saveArtistProfile}
             artistMessage={artistMessage}
           />

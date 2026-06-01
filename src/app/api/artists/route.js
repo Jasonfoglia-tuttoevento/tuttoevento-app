@@ -1,11 +1,40 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
+function toNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function calculatePublicPrice(baseCachet, publicPrice) {
+  const manualPublicPrice = toNumber(publicPrice);
+
+  if (manualPublicPrice > 0) {
+    return manualPublicPrice;
+  }
+
+  const base = toNumber(baseCachet);
+
+  if (base <= 0) {
+    return 0;
+  }
+
+  return Math.round(base * 1.6);
+}
+
 export async function GET() {
   try {
     const { data: users, error: usersError } = await supabaseAdmin
       .from("users")
-      .select("id, name, email, role")
+      .select(
+        `
+        id,
+        name,
+        email,
+        role,
+        artist_referent_id
+      `
+      )
       .eq("role", "artist")
       .order("name", { ascending: true });
 
@@ -18,7 +47,7 @@ export async function GET() {
       );
     }
 
-    const artistIds = users.map((user) => user.id);
+    const artistIds = (users || []).map((user) => user.id);
 
     if (artistIds.length === 0) {
       return NextResponse.json([]);
@@ -29,7 +58,8 @@ export async function GET() {
       .select(
         `
         user_id,
-        cachet,
+        base_cachet,
+        public_price,
         bio,
         availability,
         photo,
@@ -89,13 +119,13 @@ export async function GET() {
 
     const profilesByUserId = new Map();
 
-    profiles.forEach((profile) => {
+    (profiles || []).forEach((profile) => {
       profilesByUserId.set(Number(profile.user_id), profile);
     });
 
     const bookingsByArtistId = new Map();
 
-    acceptedBookings.forEach((booking) => {
+    (acceptedBookings || []).forEach((booking) => {
       const artistId = Number(booking.artist_id);
 
       if (!bookingsByArtistId.has(artistId)) {
@@ -105,9 +135,15 @@ export async function GET() {
       bookingsByArtistId.get(artistId).push(booking);
     });
 
-    const artists = users.map((user) => {
+    const artists = (users || []).map((user) => {
       const profile = profilesByUserId.get(Number(user.id));
       const artistBookings = bookingsByArtistId.get(Number(user.id)) || [];
+
+      const baseCachet = toNumber(profile?.base_cachet);
+      const publicPrice = calculatePublicPrice(
+        profile?.base_cachet,
+        profile?.public_price
+      );
 
       const dynamicBookedDates = artistBookings
         .map((booking) => booking.event_date)
@@ -129,7 +165,17 @@ export async function GET() {
         name: user.name,
         email: user.email,
 
-        cachet: profile?.cachet || "Non inserito",
+        artistReferentId: user.artist_referent_id || null,
+
+        baseCachet,
+        publicPrice,
+        displayPrice: publicPrice,
+
+        cachet:
+          publicPrice > 0
+            ? `Da € ${publicPrice}`
+            : "Prezzo non inserito",
+
         bio: profile?.bio || "Bio non inserita",
         availability: profile?.availability || "Disponibilità non inserita",
 
