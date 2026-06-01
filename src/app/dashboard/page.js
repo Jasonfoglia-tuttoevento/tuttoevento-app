@@ -7,6 +7,8 @@ import DashboardShell from "@/components/dashboard/DashboardShell";
 import OrganizerArea from "@/components/dashboard/OrganizerArea";
 import ArtistArea from "@/components/dashboard/ArtistArea";
 import PromoterArea from "@/components/dashboard/PromoterArea";
+import AdminArea from "@/components/dashboard/AdminArea";
+import ReferentArea from "@/components/dashboard/ReferentArea";
 import ArtistBookings from "@/components/dashboard/ArtistBookings";
 import OrganizerBookings from "@/components/dashboard/OrganizerBookings";
 
@@ -16,6 +18,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [users, setUsers] = useState([]);
   const [events, setEvents] = useState([]);
   const [artists, setArtists] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -58,6 +61,12 @@ export default function DashboardPage() {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
 
+      if (parsedUser.role === "admin" || parsedUser.role === "referent") {
+        await loadGlobalData();
+        setLoading(false);
+        return;
+      }
+
       await loadEvents(parsedUser.id);
       await loadArtists();
 
@@ -75,6 +84,45 @@ export default function DashboardPage() {
 
     init();
   }, [router]);
+
+  async function loadGlobalData() {
+    await Promise.all([
+      loadUsers(),
+      loadAllEvents(),
+      loadArtists(),
+      loadAllBookings(),
+    ]);
+  }
+
+  async function loadUsers() {
+    try {
+      const res = await fetch("/api/users");
+      const data = await res.json();
+      setUsers(Array.isArray(data) ? data : []);
+    } catch {
+      setUsers([]);
+    }
+  }
+
+  async function loadAllEvents() {
+    try {
+      const res = await fetch("/api/events");
+      const data = await res.json();
+      setEvents(Array.isArray(data) ? data : []);
+    } catch {
+      setEvents([]);
+    }
+  }
+
+  async function loadAllBookings() {
+    try {
+      const res = await fetch("/api/bookings");
+      const data = await res.json();
+      setBookings(Array.isArray(data) ? data : []);
+    } catch {
+      setBookings([]);
+    }
+  }
 
   async function loadEvents(userId) {
     try {
@@ -232,6 +280,23 @@ export default function DashboardPage() {
 
   return (
     <DashboardShell user={user}>
+      {user.role === "admin" && (
+        <AdminArea
+          users={users}
+          events={events}
+          bookings={bookings}
+        />
+      )}
+
+      {user.role === "referent" && (
+        <ReferentArea
+          user={user}
+          users={users}
+          events={events}
+          bookings={bookings}
+        />
+      )}
+
       {user.role === "organizer" && (
         <>
           <OrganizerArea
