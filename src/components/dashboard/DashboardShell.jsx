@@ -34,7 +34,7 @@ export default function DashboardShell({ user, children }) {
             <button
               onClick={handleLogout}
               disabled={loggingOut}
-              className="text-sm font-bold text-[#6b6b73] hover:text-[#ff5a00] transition disabled:opacity-50 flex items-center gap-1.5"
+              className="text-sm font-bold text-[#6b6b73] hover:text-[#ff5a00] transition disabled:opacity-50"
             >
               {loggingOut ? "Uscita..." : "← Esci"}
             </button>
