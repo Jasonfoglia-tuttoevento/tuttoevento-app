@@ -1,3 +1,4 @@
+import GdprBanner from "@/components/dashboard/gdprbanner";
 import PWAInstaller from "@/components/PWAInstaller";
 
 export const metadata = {
@@ -16,15 +17,19 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="it" className={`...`}>
+    <html lang="it">
       <head>
         <meta name="theme-color" content="#ff5a00" />
         <link rel="apple-touch-icon" href="/icons/icon-180x180.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
         <meta name="apple-mobile-web-app-title" content="TuttoEvento" />
       </head>
-      <body className="...">
+
+      <body>
         {children}
         <GdprBanner />
         <PWAInstaller />
