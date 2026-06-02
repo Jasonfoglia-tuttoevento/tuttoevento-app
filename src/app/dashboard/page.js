@@ -56,19 +56,20 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function init() {
-      // Legge l'utente dalla sessione server, non da localStorage
       const res = await fetch("/api/me");
-
-      if (!res.ok) {
-        router.push("/login");
-        return;
-      }
-
+      if (!res.ok) { router.push("/login"); return; }
       const parsedUser = await res.json();
       setUser(parsedUser);
 
       if (parsedUser.role === "admin" || parsedUser.role === "referent") {
         await loadGlobalData();
+        setLoading(false);
+        return;
+      }
+
+      // Il promoter ha bisogno di users, events e bookings
+      if (parsedUser.role === "promoter") {
+        await Promise.all([loadUsers(), loadAllEvents(), loadAllBookings(), loadArtists()]);
         setLoading(false);
         return;
       }
@@ -87,7 +88,6 @@ export default function DashboardPage() {
 
       setLoading(false);
     }
-
     init();
   }, [router]);
 
@@ -223,7 +223,13 @@ export default function DashboardPage() {
         </>
       )}
       {user.role === "promoter" && (
-        <PromoterArea user={user} events={events} artists={artists} bookings={bookings} />
+        <PromoterArea
+          currentUser={user}
+          events={events}
+          artists={artists}
+          bookings={bookings}
+          users={users}
+        />
       )}
     </DashboardShell>
   );
