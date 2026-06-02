@@ -179,10 +179,10 @@ export default function Home() {
           </Link>
 
           <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-[var(--muted)]">
-            <a href="#features" className="hover:text-[var(--orange)] transition">Funzioni</a>
-            <a href="#marketplace" className="hover:text-[var(--orange)] transition">Marketplace</a>
-            <a href="#dashboard" className="hover:text-[var(--orange)] transition">Dashboard</a>
-            <a href="#come-funziona" className="hover:text-[var(--orange)] transition">Come funziona</a>
+            <a href="#features" className="hover:text-[var(--orange)] transition">La piattaforma</a>
+            <a href="#marketplace" className="hover:text-[var(--orange)] transition">Artisti</a>
+            <a href="#dashboard" className="hover:text-[var(--orange)] transition">La tua area</a>
+            <a href="/chi-siamo" className="hover:text-[var(--orange)] transition">Chi siamo</a>
           </div>
 
           <div className="flex items-center gap-2">
@@ -256,11 +256,17 @@ export default function Home() {
             className="relative rounded-2xl sm:rounded-[2rem] overflow-hidden"
             style={{ boxShadow: "0 40px 90px -40px rgba(40,20,0,.45)" }}
           >
-            <img
-              src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1600&q=80"
-              alt="Concerto live"
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              poster="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1600&q=80"
               className="w-full h-[260px] sm:h-[420px] object-cover"
-            />
+            >
+              {/* Sostituisci con la tua clip in /public (es. /hero.mp4). Tieni il poster come fallback. */}
+              <source src="/hero.mp4" type="video/mp4" />
+            </video>
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(10,10,11,0) 40%, rgba(10,10,11,.55) 100%)" }} />
             <div className="te-glass absolute bottom-3 left-3 sm:bottom-6 sm:left-6 rounded-xl sm:rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3.5 text-left">
               <p className="text-[9px] sm:text-[11px] uppercase tracking-wide font-bold text-[var(--muted)]">Incassi mese</p>
@@ -558,9 +564,10 @@ export default function Home() {
           <div>
             <p className="te-display font-bold mb-3 text-sm">Piattaforma</p>
             <ul className="space-y-2 text-sm text-[var(--muted)] font-semibold">
-              <li><a href="#features" className="hover:text-[var(--orange)]">Funzioni</a></li>
-              <li><a href="#marketplace" className="hover:text-[var(--orange)]">Marketplace</a></li>
-              <li><a href="#dashboard" className="hover:text-[var(--orange)]">Dashboard</a></li>
+              <li><a href="#features" className="hover:text-[var(--orange)]">La piattaforma</a></li>
+              <li><a href="#marketplace" className="hover:text-[var(--orange)]">Artisti</a></li>
+              <li><a href="#dashboard" className="hover:text-[var(--orange)]">La tua area</a></li>
+              <li><a href="/chi-siamo" className="hover:text-[var(--orange)]">Chi siamo</a></li>
               <li><a href="#come-funziona" className="hover:text-[var(--orange)]">Come funziona</a></li>
             </ul>
           </div>
