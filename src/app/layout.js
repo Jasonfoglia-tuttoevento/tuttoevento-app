@@ -1,4 +1,4 @@
-import GdprBanner from "@/components/dashboard/gdprbanner";
+import GdprBanner from "@/components/dashboard/GdprBanner";
 import PWAInstaller from "@/components/PWAInstaller";
 
 export const metadata = {
