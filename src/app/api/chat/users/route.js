@@ -1,46 +1,27 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, unauthorized } from "@/lib/auth";
 
-export async function GET(request) {
+export async function GET() {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+
   try {
-    const { searchParams } = new URL(request.url);
-    const currentUserId = searchParams.get("currentUserId");
-
-    let query = supabaseAdmin
+    // Esclude l'utente corrente dalla lista (preso dalla sessione, non dal body)
+    const { data: users, error } = await supabaseAdmin
       .from("users")
       .select("id, name, email, role")
+      .neq("id", Number(user.id))
       .order("role", { ascending: true })
       .order("name", { ascending: true });
 
-    if (currentUserId) {
-      query = query.neq("id", Number(currentUserId));
-    }
-
-    const { data: users, error } = await query;
-
-    if (error) {
-      console.error("Errore Supabase GET chat users:", error);
-
-      return NextResponse.json(
-        { error: "Errore caricamento utenti chat" },
-        { status: 500 }
-      );
-    }
+    if (error) return NextResponse.json({ error: "Errore caricamento utenti chat" }, { status: 500 });
 
     return NextResponse.json(
-      users.map((user) => ({
-        id: user.id,
-        name: user.name || "",
-        email: user.email || "",
-        role: user.role || "",
-      }))
+      (users || []).map((u) => ({ id: u.id, name: u.name || "", email: u.email || "", role: u.role || "" }))
     );
-  } catch (error) {
-    console.error("Errore API chat users:", error);
-
-    return NextResponse.json(
-      { error: "Errore server utenti chat" },
-      { status: 500 }
-    );
+  } catch (e) {
+    console.error("Errore API chat users:", e);
+    return NextResponse.json({ error: "Errore server utenti chat" }, { status: 500 });
   }
 }

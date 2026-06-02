@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, unauthorized, forbidden } from "@/lib/auth";
 
 export async function GET() {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+  if (user.role !== "admin") return forbidden();
+
   try {
     const { data, error } = await supabaseAdmin
       .from("company_contacts")
@@ -9,34 +14,35 @@ export async function GET() {
       .order("created_at", { ascending: false });
     if (error) return NextResponse.json({ error: "Errore lettura contatti" }, { status: 500 });
     return NextResponse.json(data || []);
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Errore server" }, { status: 500 });
   }
 }
 
 export async function POST(request) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+  if (user.role !== "admin") return forbidden();
+
   try {
     const body = await request.json();
     if (!body.name) return NextResponse.json({ error: "Nome obbligatorio" }, { status: 400 });
     const { data, error } = await supabaseAdmin
       .from("company_contacts")
-      .insert({
-        name: body.name,
-        role: body.role || "",
-        email: body.email || "",
-        phone: body.phone || "",
-        notes: body.notes || "",
-      })
-      .select("*")
-      .single();
+      .insert({ name: body.name, role: body.role || "", email: body.email || "", phone: body.phone || "", notes: body.notes || "" })
+      .select("*").single();
     if (error) return NextResponse.json({ error: "Errore salvataggio contatto" }, { status: 500 });
     return NextResponse.json(data);
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Errore server" }, { status: 500 });
   }
 }
 
 export async function DELETE(request) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+  if (user.role !== "admin") return forbidden();
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -44,7 +50,7 @@ export async function DELETE(request) {
     const { error } = await supabaseAdmin.from("company_contacts").delete().eq("id", id);
     if (error) return NextResponse.json({ error: "Errore eliminazione" }, { status: 500 });
     return NextResponse.json({ ok: true });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Errore server" }, { status: 500 });
   }
 }
