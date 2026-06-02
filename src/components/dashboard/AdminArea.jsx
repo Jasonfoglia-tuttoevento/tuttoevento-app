@@ -123,6 +123,8 @@ export default function AdminArea({ users = [], events = [], bookings = [] }) {
 
   const tabs = [
     { id: "overview", label: "Panoramica" },
+    { id: "artists", label: "Artisti" },
+    { id: "requests", label: "Richieste contatto" },
     { id: "finance", label: "Finanza" },
     { id: "growth", label: "Crescita" },
     { id: "contacts", label: "Contatti" },
@@ -361,6 +363,16 @@ export default function AdminArea({ users = [], events = [], bookings = [] }) {
         </section>
       )}
 
+      {/* ARTISTI — approvazione e prezzi */}
+      {tab === "artists" && (
+        <AdminArtistApproval users={users} />
+      )}
+
+      {/* RICHIESTE CONTATTO */}
+      {tab === "requests" && (
+        <AdminContactRequests />
+      )}
+
       {/* BOOKINGS */}
       {tab === "bookings" && (
         <section className="bg-white border border-black/5 rounded-3xl sm:rounded-[28px] p-5 md:p-7 shadow-sm overflow-hidden">
@@ -387,5 +399,210 @@ export default function AdminArea({ users = [], events = [], bookings = [] }) {
         </section>
       )}
     </div>
+  );
+}
+
+/* ── Approvazione artisti ── */
+const EVENT_TYPES = ["Serata in club", "Festival", "Evento privato", "Concerto", "Opening", "Altro"];
+
+function AdminArtistApproval({ users }) {
+  const artists = users.filter(u => u.role === "artist");
+  const [selected, setSelected] = useState(null);
+  const [pricing, setPricing] = useState([]);
+  const [basePubPrice, setBasePubPrice] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  async function loadPricing(artistId) {
+    const res = await fetch(`/api/artist-pricing?artistId=${artistId}`);
+    const data = await res.json();
+    // Pre-popola tutti i tipi evento
+    const map = {};
+    (Array.isArray(data) ? data : []).forEach(p => { map[p.event_type] = p.public_price; });
+    setPricing(EVENT_TYPES.map(t => ({ eventType: t, publicPrice: map[t] || "" })));
+  }
+
+  function selectArtist(artist) {
+    setSelected(artist);
+    setMsg("");
+    setBasePubPrice("");
+    loadPricing(artist.id);
+  }
+
+  function updatePrice(idx, val) {
+    setPricing(prev => prev.map((p, i) => i === idx ? { ...p, publicPrice: val } : p));
+  }
+
+  async function save(approve) {
+    if (!selected) return;
+    setSaving(true); setMsg("");
+    try {
+      const res = await fetch("/api/artist-pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          artistId: selected.id,
+          pricing: pricing.filter(p => p.publicPrice),
+          approve,
+          basePubPrice: basePubPrice || (pricing.find(p => p.publicPrice)?.publicPrice) || null,
+        }),
+      });
+      if (res.ok) {
+        setMsg(approve ? "Artista approvato e pubblicato nel marketplace ✓" : "Artista rimosso dal marketplace ✓");
+      } else setMsg("Errore salvataggio");
+    } catch { setMsg("Errore tecnico"); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="grid xl:grid-cols-[320px_1fr] gap-6">
+      {/* Lista artisti */}
+      <section className="bg-white border border-black/5 rounded-3xl p-5 shadow-sm">
+        <h3 className="te-display text-lg font-extrabold mb-4">Artisti registrati</h3>
+        {artists.length === 0 ? <p className="text-sm text-black/45">Nessun artista.</p> : (
+          <div className="space-y-2">
+            {artists.map(a => (
+              <button key={a.id} onClick={() => selectArtist(a)}
+                className={`w-full text-left rounded-2xl p-3 border transition text-sm ${selected?.id === a.id ? "bg-[var(--ink)] text-white border-[var(--ink)]" : "bg-[var(--paper)] border-black/5 hover:border-[var(--orange)]/40"}`}>
+                <p className="font-bold">{a.name}</p>
+                <p className={`text-xs mt-0.5 ${selected?.id === a.id ? "text-white/60" : "text-[var(--muted)]"}`}>{a.email}</p>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Form prezzi e approvazione */}
+      <section className="bg-white border border-black/5 rounded-3xl p-5 shadow-sm">
+        {!selected ? (
+          <div className="h-full flex items-center justify-center">
+            <p className="text-sm text-black/45">Seleziona un artista per impostare i prezzi.</p>
+          </div>
+        ) : (
+          <>
+            <h3 className="te-display text-lg font-extrabold mb-1">{selected.name}</h3>
+            <p className="text-xs text-[var(--muted)] mb-5">Imposta il prezzo pubblico per tipo evento. Il cachet netto dell'artista non è visibile ai locali.</p>
+
+            <div className="space-y-3 mb-5">
+              {pricing.map((p, i) => (
+                <div key={p.eventType} className="flex items-center gap-3">
+                  <span className="text-sm font-bold w-40 shrink-0">{p.eventType}</span>
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--muted)] font-bold">€</span>
+                    <input type="number" min="0" value={p.publicPrice} onChange={e => updatePrice(i, e.target.value)}
+                      placeholder="Prezzo pubblico"
+                      className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl pl-8 pr-4 py-2.5 text-sm focus:border-[var(--orange)] focus:outline-none transition" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-bold mb-1.5">Prezzo base (per filtro range marketplace) €</label>
+              <input type="number" min="0" value={basePubPrice} onChange={e => setBasePubPrice(e.target.value)}
+                placeholder="es. 150 — appare nel range €100–200"
+                className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-2.5 text-sm focus:border-[var(--orange)] focus:outline-none transition" />
+              <p className="text-[10px] text-[var(--muted)] mt-1">Determina in quale fascia budget appare l'artista nel marketplace.</p>
+            </div>
+
+            {msg && <p className="text-xs font-bold text-green-600 mb-3">{msg}</p>}
+
+            <div className="flex gap-3 flex-wrap">
+              <button disabled={saving} onClick={() => save(true)}
+                className="bg-[var(--orange)] text-white rounded-2xl px-5 py-3 font-bold text-sm hover:bg-[#e85100] transition disabled:opacity-50">
+                {saving ? "Salvo..." : "Salva e pubblica nel marketplace"}
+              </button>
+              <button disabled={saving} onClick={() => save(false)}
+                className="bg-[var(--paper)] border border-black/10 text-[var(--ink)] rounded-2xl px-5 py-3 font-bold text-sm hover:border-red-300 hover:text-red-500 transition disabled:opacity-50">
+                Rimuovi dal marketplace
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ── Richieste contatto ── */
+function AdminContactRequests() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/contact-request")
+      .then(r => r.json())
+      .then(d => { setRequests(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  async function updateStatus(id, status) {
+    setUpdating(id);
+    await fetch("/api/contact-request", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    setUpdating(null);
+  }
+
+  const statusColors = {
+    pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    reviewed: "bg-blue-50 text-blue-700 border-blue-200",
+    connected: "bg-green-50 text-green-700 border-green-200",
+    rejected: "bg-red-50 text-red-500 border-red-200",
+  };
+
+  const statusLabels = { pending: "In attesa", reviewed: "In revisione", connected: "Connessi", rejected: "Rifiutata" };
+
+  return (
+    <section className="bg-white border border-black/5 rounded-3xl p-5 shadow-sm">
+      <h3 className="te-display text-lg font-extrabold mb-4">Richieste di contatto</h3>
+      {loading ? <p className="text-sm text-black/45">Caricamento...</p> :
+       requests.length === 0 ? <p className="text-sm text-black/45">Nessuna richiesta.</p> : (
+        <div className="space-y-3">
+          {requests.map(r => (
+            <div key={r.id} className="border border-black/5 rounded-2xl p-4 bg-[var(--paper)]">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <p className="font-bold text-sm">{r.organizer_name} <span className="text-[var(--muted)] font-normal">cerca</span> {r.artist_name}</p>
+                  <div className="flex flex-wrap gap-2 mt-1 text-xs text-[var(--muted)]">
+                    {r.event_date && <span>📅 {r.event_date}</span>}
+                    {r.event_type && <span>🎪 {r.event_type}</span>}
+                    {r.budget && <span>💶 Budget: €{r.budget}</span>}
+                  </div>
+                  {r.notes && <p className="text-xs text-[var(--muted)] mt-1 italic">"{r.notes}"</p>}
+                </div>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${statusColors[r.status] || statusColors.pending}`}>
+                  {statusLabels[r.status] || r.status}
+                </span>
+              </div>
+              <div className="flex gap-2 mt-3 flex-wrap">
+                {r.status === "pending" && (
+                  <button disabled={updating === r.id} onClick={() => updateStatus(r.id, "reviewed")}
+                    className="text-xs font-bold bg-[var(--ink)] text-white px-3 py-1.5 rounded-full disabled:opacity-50">
+                    Prendi in carico
+                  </button>
+                )}
+                {(r.status === "pending" || r.status === "reviewed") && (
+                  <>
+                    <button disabled={updating === r.id} onClick={() => updateStatus(r.id, "connected")}
+                      className="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-full disabled:opacity-50">
+                      Connetti le parti
+                    </button>
+                    <button disabled={updating === r.id} onClick={() => updateStatus(r.id, "rejected")}
+                      className="text-xs font-bold bg-[var(--paper)] border border-red-200 text-red-500 px-3 py-1.5 rounded-full disabled:opacity-50">
+                      Rifiuta
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

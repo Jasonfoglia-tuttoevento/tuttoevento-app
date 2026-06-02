@@ -1,109 +1,51 @@
 "use client";
 
-export default function ArtistCard({
-  artist,
-  currentUser,
-  onSelectArtist,
-  onViewProfile,
-}) {
-  function openArtistChat() {
-    if (!artist?.id || !currentUser?.id) {
-      alert("Impossibile aprire la chat con questo artista.");
-      return;
-    }
-
-    window.dispatchEvent(
-      new CustomEvent("tuttoevento:open-chat", {
-        detail: {
-          participantUserId: Number(artist.id),
-          bookingId: null,
-          eventId: null,
-          title: `${currentUser.name} · ${artist.name}`,
-        },
-      })
-    );
-  }
-
+export default function ArtistCard({ artist, currentUser, onRequestContact, onViewProfile }) {
   return (
-    <article className="bg-white border border-black/5 rounded-[28px] p-5 shadow-sm hover:shadow-md transition">
-      <div className="w-full h-56 rounded-3xl bg-[#f5f5f6] border border-black/5 overflow-hidden mb-5">
+    <article className="bg-white border border-black/5 rounded-3xl p-4 shadow-sm hover:shadow-md transition flex flex-col">
+      {/* Foto */}
+      <div className="w-full h-44 rounded-2xl bg-[#f5f5f6] border border-black/5 overflow-hidden mb-4 shrink-0">
         {artist.photo ? (
-          <img
-            src={artist.photo}
-            alt={artist.name || "Artista TuttoEvento"}
-            className="w-full h-full object-cover"
-          />
+          <img src={artist.photo} alt={artist.name || "Artista"} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-black/35 text-sm font-bold">
-            Nessuna foto
-          </div>
+          <div className="w-full h-full flex items-center justify-center text-black/30 text-sm font-bold">Nessuna foto</div>
         )}
       </div>
 
-      <div>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[3px] text-[#ff5a00] font-black mb-2">
-              Artista
-            </p>
-
-            <h3 className="text-2xl font-black tracking-[-0.04em]">
-              {artist.name}
-            </h3>
-          </div>
-
-          <span className="shrink-0 bg-green-100 text-green-700 px-3 py-2 rounded-full text-xs font-black">
-            Disponibile
-          </span>
+      {/* Info */}
+      <div className="flex-1 flex flex-col">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <h3 className="text-lg font-extrabold tracking-tight leading-tight">{artist.name}</h3>
+          <span className="shrink-0 bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-[10px] font-bold">Disponibile</span>
         </div>
 
-        <p className="text-black/50 text-sm mt-3">
-          {artist.city || "Città non indicata"}
-        </p>
+        <p className="text-[var(--muted)] text-xs font-semibold mb-1">{artist.city || "—"}</p>
+        <p className="text-xs font-bold text-[var(--orange)] mb-2">{artist.genres || "—"}</p>
+        <p className="text-xs text-black/50 leading-relaxed line-clamp-2 mb-4">{artist.bio || "Bio non inserita"}</p>
 
-        <p className="text-black/70 font-bold mt-4">
-          {artist.genres || "Generi non indicati"}
-        </p>
-
-        <p className="text-black/50 text-sm leading-relaxed mt-3 line-clamp-3">
-          {artist.bio || "Bio non inserita"}
-        </p>
-
-        <div className="mt-5 rounded-2xl bg-[#f7f7f8] border border-black/5 p-4">
-          <p className="text-xs text-black/40 font-bold uppercase tracking-[2px]">
-            Cachet indicativo
-          </p>
-
-          <p className="font-black mt-1">
-            {artist.cachet || "Non inserito"}
-          </p>
+        {/* Prezzo nascosto — solo hint */}
+        <div className="bg-[var(--paper)] border border-black/5 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Prezzo</p>
+          <p className="text-xs font-bold text-[var(--ink)]">Su richiesta</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-5">
+        {/* Azioni */}
+        <div className="flex flex-col gap-2 mt-auto">
           <button
             type="button"
-            onClick={() => onSelectArtist(artist)}
-            className="bg-[#ff5a00] text-white rounded-2xl py-3 px-4 font-black text-sm"
+            onClick={() => onRequestContact(artist)}
+            className="w-full bg-[var(--orange)] text-white rounded-2xl py-3 font-bold text-sm hover:bg-[#e85100] transition shadow-[0_8px_20px_-8px_rgba(255,90,0,.5)]"
           >
-            Richiedi booking
+            Richiedi contatto
           </button>
-
           <button
             type="button"
-            onClick={openArtistChat}
-            className="bg-[#111] text-white rounded-2xl py-3 px-4 font-black text-sm"
+            onClick={() => onViewProfile(artist)}
+            className="w-full bg-[var(--paper)] border border-black/10 text-[var(--ink)] rounded-2xl py-3 font-bold text-sm hover:border-[var(--orange)]/40 transition"
           >
-            Apri chat
+            Vedi media kit
           </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => onViewProfile(artist)}
-          className="w-full mt-3 bg-white border border-black/10 text-black rounded-2xl py-3 px-4 font-black text-sm hover:bg-black hover:text-white transition"
-        >
-          Vedi profilo completo
-        </button>
       </div>
     </article>
   );

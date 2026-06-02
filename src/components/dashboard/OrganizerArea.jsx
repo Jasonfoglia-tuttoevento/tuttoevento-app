@@ -7,22 +7,27 @@ import ArtistMarketplace from "./ArtistMarketplace";
 import OrganizerAnalytics from "./OrganizerAnalytics";
 import OrganizerStatement from "./OrganizerStatement";
 
+const TABS = [
+  { id: "booking", label: "Nuovo booking" },
+  { id: "events", label: "I miei eventi" },
+  { id: "marketplace", label: "Marketplace" },
+  { id: "mediakit", label: "Media Kit locale" },
+  { id: "analytics", label: "Analitiche" },
+];
+
 export default function OrganizerArea({
   currentUser,
   events,
   artists,
   bookings = [],
-  title,
-  setTitle,
-  date,
-  setDate,
-  artist,
-  setArtist,
-  promoter,
-  setPromoter,
+  title, setTitle,
+  date, setDate,
+  artist, setArtist,
+  promoter, setPromoter,
 }) {
   const defaultMode = currentUser?.businessMode === "managed" ? "managed" : "self_service";
   const formRef = useRef(null);
+  const [activeTab, setActiveTab] = useState("booking");
 
   const [selectedArtistId, setSelectedArtistId] = useState("");
   const [bookingMessage, setBookingMessage] = useState("");
@@ -30,94 +35,74 @@ export default function OrganizerArea({
   const [endTime, setEndTime] = useState("");
   const [eventMode, setEventMode] = useState(defaultMode);
 
+  // Media kit locale
+  const [venueName, setVenueName] = useState(currentUser?.name || "");
+  const [venueCity, setVenueCity] = useState("");
+  const [venueType, setVenueType] = useState("");
+  const [venueCapacity, setVenueCapacity] = useState("");
+  const [venueDescription, setVenueDescription] = useState("");
+  const [venueInstagram, setVenueInstagram] = useState("");
+  const [eventBudget, setEventBudget] = useState("");
+  const [budgetSaving, setBudgetSaving] = useState(false);
+  const [budgetMsg, setBudgetMsg] = useState("");
+
   function handleSelectArtist(selectedArtist) {
     setSelectedArtistId(String(selectedArtist.id));
     setArtist(selectedArtist.name || "");
-    setBookingMessage((currentMessage) => {
-      if (currentMessage) return currentMessage;
-      return `Ciao ${selectedArtist.name}, vorrei verificare la tua disponibilità per un evento.`;
-    });
+    setBookingMessage(m => m || `Ciao ${selectedArtist.name}, vorrei verificare la tua disponibilità.`);
+    setActiveTab("booking");
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function createEventWithBooking(e) {
     e.preventDefault();
-    const selectedArtist = artists.find((a) => String(a.id) === String(selectedArtistId));
-    if (!title || !date || !startTime || !endTime || !selectedArtist) {
-      alert("Inserisci nome evento, data, orario e artista.");
-      return;
+    const sel = artists.find(a => String(a.id) === String(selectedArtistId));
+    if (!title || !date || !startTime || !endTime || !sel) {
+      alert("Inserisci nome evento, data, orario e artista."); return;
     }
-
-    const eventRes = await fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title, date, startTime, endTime,
-        artist: selectedArtist.name,
-        artistId: selectedArtist.id,
-        artistName: selectedArtist.name,
-        artistCachet: selectedArtist.cachet || "",
-        cachet: selectedArtist.cachet || "",
-        promoter,
-        organizer: currentUser.name,
-        userId: currentUser.id,
-        status: "draft",
-        eventMode,
-      }),
+    const evRes = await fetch("/api/events", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, date, startTime, endTime, artist: sel.name, artistId: sel.id,
+        artistName: sel.name, artistCachet: sel.cachet || "", cachet: sel.cachet || "",
+        promoter, organizer: currentUser.name, userId: currentUser.id, status: "draft", eventMode }),
     });
-
-    if (!eventRes.ok) {
-      alert("Errore creazione evento");
-      return;
-    }
-
-    const eventData = await eventRes.json();
-
-    const bookingRes = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        organizerId: currentUser.id,
-        organizerName: currentUser.name,
-        artistId: selectedArtist.id,
-        artistName: selectedArtist.name,
-        artistCachet: selectedArtist.cachet || "",
-        cachet: selectedArtist.cachet || "",
-        eventId: eventData.id,
-        eventTitle: title,
-        eventDate: date,
-        startTime, endTime,
-        message: bookingMessage || `Richiesta booking per ${title} del ${date} dalle ${startTime} alle ${endTime}`,
-      }),
+    if (!evRes.ok) { alert("Errore creazione evento"); return; }
+    const evData = await evRes.json();
+    const bkRes = await fetch("/api/bookings", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ organizerId: currentUser.id, organizerName: currentUser.name,
+        artistId: sel.id, artistName: sel.name, artistCachet: sel.cachet || "",
+        cachet: sel.cachet || "", eventId: evData.id, eventTitle: title, eventDate: date,
+        startTime, endTime, message: bookingMessage || `Richiesta booking per ${title}` }),
     });
-
-    const bookingData = await bookingRes.json();
-
-    if (!bookingRes.ok) {
-      alert(bookingData.error || "Evento creato, ma errore invio richiesta artista.");
-      return;
-    }
-
-    window.dispatchEvent(
-      new CustomEvent("tuttoevento:open-chat", {
-        detail: {
-          participantUserId: Number(selectedArtist.id),
-          bookingId: bookingData.id,
-          eventId: eventData.id,
-          title: `Booking · ${selectedArtist.name}`,
-        },
-      })
-    );
-
+    const bkData = await bkRes.json();
+    if (!bkRes.ok) { alert(bkData.error || "Evento creato, errore richiesta artista"); return; }
+    window.dispatchEvent(new CustomEvent("tuttoevento:open-chat", {
+      detail: { participantUserId: Number(sel.id), bookingId: bkData.id, eventId: evData.id, title: `Booking · ${sel.name}` },
+    }));
     setTitle(""); setDate(""); setArtist(""); setPromoter("");
     setSelectedArtistId(""); setBookingMessage(""); setStartTime(""); setEndTime("");
     setEventMode(defaultMode);
+    alert("Evento creato, richiesta inviata e chat aperta.");
+  }
 
-    alert("Evento creato, richiesta inviata e chat aperta con l'artista.");
+  async function saveBudget(e) {
+    e.preventDefault();
+    setBudgetSaving(true);
+    setBudgetMsg("");
+    try {
+      const res = await fetch("/api/users/update-budget", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventBudget: eventBudget ? Number(eventBudget) : null }),
+      });
+      if (res.ok) setBudgetMsg("Budget salvato ✓");
+      else setBudgetMsg("Errore salvataggio");
+    } catch { setBudgetMsg("Errore tecnico"); }
+    finally { setBudgetSaving(false); }
   }
 
   return (
-    <div className="te-area w-full max-w-full overflow-hidden space-y-6 sm:space-y-8">
+    <div className="te-area w-full max-w-full overflow-hidden space-y-4">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700&display=swap');
         .te-area { --orange:#ff5a00; --ink:#0a0a0b; --paper:#fbfaf8; --muted:#6b6b73; font-family:'Manrope',system-ui,sans-serif; color:var(--ink); }
@@ -126,117 +111,146 @@ export default function OrganizerArea({
         .te-area input:focus, .te-area textarea:focus, .te-area select:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,90,0,.12); outline:none; }
       `}</style>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[500px_1fr] gap-6 sm:gap-8 w-full max-w-full">
-        <section
-          id="organizer-booking"
-          ref={formRef}
-          className="bg-white border border-black/5 rounded-3xl sm:rounded-[28px] p-5 md:p-7 shadow-sm scroll-mt-8 overflow-hidden"
-        >
-          <div className="mb-6 sm:mb-7">
-            <p className="uppercase tracking-[0.2em] text-[var(--orange)] text-[11px] font-extrabold mb-2">Nuovo booking</p>
-            <h2 className="te-display text-2xl sm:text-3xl font-extrabold leading-tight">Crea Evento</h2>
-            <p className="text-[var(--muted)] mt-2">Crea l'evento, scegli artista e modalità di gestione.</p>
-          </div>
+      {/* Tab nav */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)}
+            className={`shrink-0 text-xs sm:text-sm font-bold px-4 py-2 rounded-full transition ${activeTab === t.id ? "bg-[var(--ink)] text-white" : "bg-white border border-black/10 text-[var(--muted)] hover:border-[var(--orange)]/40"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-          <form onSubmit={createEventWithBooking} className="space-y-4">
+      {/* BOOKING */}
+      {activeTab === "booking" && (
+        <section ref={formRef} className="bg-white border border-black/5 rounded-3xl p-5 sm:p-7 shadow-sm">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--orange)] mb-1">Nuovo booking</p>
+          <h2 className="te-display text-xl sm:text-2xl font-extrabold mb-4">Crea Evento</h2>
+          <form onSubmit={createEventWithBooking} className="space-y-3">
             <Input placeholder="Nome evento" value={title} onChange={setTitle} />
-            <Input type="date" value={date} onChange={setDate} />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Input type="date" value={date} onChange={setDate} />
               <Input type="time" value={startTime} onChange={setStartTime} />
               <Input type="time" value={endTime} onChange={setEndTime} />
             </div>
-
-            <div className="bg-[var(--paper)] border border-black/10 rounded-2xl p-4 overflow-hidden">
-              <p className="text-sm font-bold mb-3">Modalità evento</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEventMode("self_service")}
-                  className={
-                    eventMode === "self_service"
-                      ? "bg-[var(--ink)] text-white rounded-2xl p-4 text-left transition"
-                      : "bg-white border border-black/10 rounded-2xl p-4 text-left hover:border-[var(--orange)]/40 transition"
-                  }
-                >
-                  <p className="font-bold">Gestione Autonoma</p>
-                  <p className="text-xs opacity-70 mt-1">Il locale gestisce direttamente evento e artista.</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setEventMode("managed")}
-                  className={
-                    eventMode === "managed"
-                      ? "bg-[var(--orange)] text-white rounded-2xl p-4 text-left transition"
-                      : "bg-white border border-black/10 rounded-2xl p-4 text-left hover:border-[var(--orange)]/40 transition"
-                  }
-                >
-                  <p className="font-bold">Gestione TuttoEvento</p>
-                  <p className="text-xs opacity-70 mt-1">Evento seguito da un referente TuttoEvento.</p>
-                </button>
-              </div>
-
-              {eventMode === "managed" && (
-                <div className="mt-4 bg-[var(--orange)]/10 border border-[var(--orange)]/20 rounded-2xl p-4">
-                  <p className="font-bold text-[var(--orange)]">Evento Managed</p>
-                  <p className="text-sm text-black/60 mt-1">
-                    Questo evento entrerà nella pipeline interna TuttoEvento per gestione completa, referente e supporto.
-                  </p>
-                </div>
-              )}
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setEventMode("self_service")}
+                className={`rounded-2xl p-3 text-left text-sm transition ${eventMode === "self_service" ? "bg-[var(--ink)] text-white" : "bg-[var(--paper)] border border-black/10 hover:border-[var(--orange)]/40"}`}>
+                <p className="font-bold">Autonoma</p>
+                <p className="text-xs opacity-60 mt-0.5">Gestisci tu l'evento.</p>
+              </button>
+              <button type="button" onClick={() => setEventMode("managed")}
+                className={`rounded-2xl p-3 text-left text-sm transition ${eventMode === "managed" ? "bg-[var(--orange)] text-white" : "bg-[var(--paper)] border border-black/10 hover:border-[var(--orange)]/40"}`}>
+                <p className="font-bold">TuttoEvento</p>
+                <p className="text-xs opacity-60 mt-0.5">Seguita da noi.</p>
+              </button>
             </div>
-
-            <select
-              value={selectedArtistId}
-              onChange={(e) => {
-                setSelectedArtistId(e.target.value);
-                const selected = artists.find((a) => String(a.id) === String(e.target.value));
-                setArtist(selected?.name || "");
-              }}
-              className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl p-4 transition"
-            >
+            <select value={selectedArtistId} onChange={e => { setSelectedArtistId(e.target.value); const s = artists.find(a => String(a.id) === String(e.target.value)); setArtist(s?.name || ""); }}
+              className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition">
               <option value="">Seleziona artista</option>
-              {artists.map((artistItem) => (
-                <option key={artistItem.id} value={artistItem.id}>
-                  {artistItem.name} · {artistItem.cachet || "Cachet non inserito"}
-                </option>
-              ))}
+              {artists.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
-
-            {artist && (
-              <div className="bg-[var(--ink)] text-white rounded-2xl p-4 overflow-hidden">
-                <p className="text-xs uppercase tracking-[0.15em] text-white/45 font-bold">Artista selezionato</p>
-                <p className="font-bold mt-1 break-words">{artist}</p>
-              </div>
-            )}
-
-            <Input placeholder="Promoter" value={promoter} onChange={setPromoter} />
-
-            <textarea
-              placeholder="Messaggio per l'artista"
-              value={bookingMessage}
-              onChange={(e) => setBookingMessage(e.target.value)}
-              className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl p-4 min-h-[120px] transition"
-            />
-
-            <button className="w-full bg-[var(--orange)] text-white rounded-2xl py-4 font-bold hover:bg-[#e85100] transition shadow-[0_14px_30px_-12px_rgba(255,90,0,.6)]">
+            {artist && <div className="bg-[var(--ink)] text-white rounded-2xl px-4 py-3 text-sm"><span className="opacity-50 text-xs">Artista: </span><span className="font-bold">{artist}</span></div>}
+            <Input placeholder="Promoter (opzionale)" value={promoter} onChange={setPromoter} />
+            <textarea placeholder="Messaggio per l'artista" value={bookingMessage} onChange={e => setBookingMessage(e.target.value)}
+              className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm min-h-[90px] transition resize-none" />
+            <button className="w-full bg-[var(--orange)] text-white rounded-2xl py-3.5 font-bold text-sm hover:bg-[#e85100] transition shadow-[0_10px_24px_-10px_rgba(255,90,0,.6)]">
               Crea evento e invia richiesta
             </button>
           </form>
         </section>
+      )}
 
-        <section id="organizer-events" className="scroll-mt-8 w-full max-w-full overflow-hidden">
-          <EventsTable events={events} />
-        </section>
-      </div>
+      {/* EVENTI */}
+      {activeTab === "events" && <EventsTable events={events} />}
 
-      <OrganizerAnalytics events={events} bookings={bookings} />
-      <OrganizerStatement events={events} bookings={bookings} />
-
-      <section id="artist-marketplace" className="scroll-mt-8 w-full max-w-full overflow-hidden">
+      {/* MARKETPLACE */}
+      {activeTab === "marketplace" && (
         <ArtistMarketplace artists={artists} currentUser={currentUser} onSelectArtist={handleSelectArtist} />
-      </section>
+      )}
+
+      {/* MEDIA KIT LOCALE */}
+      {activeTab === "mediakit" && (
+        <div className="space-y-4">
+          {/* Budget evento */}
+          <section className="bg-white border border-black/5 rounded-3xl p-5 sm:p-7 shadow-sm">
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--orange)] mb-1">Budget</p>
+            <h2 className="te-display text-lg sm:text-xl font-extrabold mb-1">Budget per evento</h2>
+            <p className="text-xs text-[var(--muted)] mb-4">Imposta il tuo budget indicativo per serata. È riservato e visibile solo al nostro team per proporti gli artisti giusti.</p>
+            <form onSubmit={saveBudget} className="flex gap-3 items-end flex-wrap">
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-xs font-bold mb-1.5">Budget massimo per evento (€)</label>
+                <input type="number" min="0" placeholder="es. 500" value={eventBudget} onChange={e => setEventBudget(e.target.value)}
+                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
+              </div>
+              <button disabled={budgetSaving} className="bg-[var(--orange)] text-white rounded-2xl px-6 py-3 font-bold text-sm hover:bg-[#e85100] transition disabled:opacity-50">
+                {budgetSaving ? "Salvo..." : "Salva budget"}
+              </button>
+              {budgetMsg && <p className="w-full text-xs font-bold text-green-600">{budgetMsg}</p>}
+            </form>
+          </section>
+
+          {/* Media kit */}
+          <section className="bg-white border border-black/5 rounded-3xl p-5 sm:p-7 shadow-sm">
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--orange)] mb-1">Media Kit</p>
+            <h2 className="te-display text-lg sm:text-xl font-extrabold mb-1">Profilo del locale</h2>
+            <p className="text-xs text-[var(--muted)] mb-4">Queste informazioni sono visibili agli artisti nel marketplace. Completa il profilo per aumentare le richieste.</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold mb-1.5">Nome locale</label>
+                <input value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="es. Club Aurora"
+                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1.5">Città</label>
+                <input value={venueCity} onChange={e => setVenueCity(e.target.value)} placeholder="es. Napoli"
+                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1.5">Tipologia</label>
+                <select value={venueType} onChange={e => setVenueType(e.target.value)}
+                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition">
+                  <option value="">Seleziona...</option>
+                  <option>Club / Discoteca</option>
+                  <option>Bar / Pub</option>
+                  <option>Ristorante</option>
+                  <option>Venue eventi</option>
+                  <option>Festival / Arena</option>
+                  <option>Privato</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1.5">Capienza (persone)</label>
+                <input type="number" min="0" value={venueCapacity} onChange={e => setVenueCapacity(e.target.value)} placeholder="es. 300"
+                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold mb-1.5">Descrizione</label>
+                <textarea value={venueDescription} onChange={e => setVenueDescription(e.target.value)} rows={3} resize="none"
+                  placeholder="Descrivi il locale, il tipo di pubblico, l'atmosfera..."
+                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition resize-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1.5">Instagram</label>
+                <input value={venueInstagram} onChange={e => setVenueInstagram(e.target.value)} placeholder="@nomeprofilo"
+                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
+              </div>
+            </div>
+            <button className="mt-4 bg-[var(--ink)] text-white rounded-2xl px-6 py-3 font-bold text-sm hover:scale-[1.01] transition">
+              Salva profilo locale
+            </button>
+            <p className="text-[10px] text-[var(--muted)] mt-2">La funzione di salvataggio del profilo locale sarà attiva nella prossima versione.</p>
+          </section>
+        </div>
+      )}
+
+      {/* ANALITICHE */}
+      {activeTab === "analytics" && (
+        <div className="space-y-4">
+          <OrganizerAnalytics events={events} bookings={bookings} />
+          <OrganizerStatement events={events} bookings={bookings} />
+        </div>
+      )}
     </div>
   );
 }
