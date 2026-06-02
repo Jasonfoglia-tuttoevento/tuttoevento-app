@@ -1,16 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryRole = searchParams.get("role");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("organizer");
+  const [role, setRole] = useState(
+    queryRole === "artist" || queryRole === "promoter" || queryRole === "organizer"
+      ? queryRole
+      : "organizer"
+  );
   const [businessMode, setBusinessMode] = useState("both");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -178,5 +184,20 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center font-sans" style={{ minHeight: "100vh", background: "#fbfaf8" }}>
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#ff5a00] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#6b6b73] text-sm">Caricamento in corso...</p>
+        </div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }
