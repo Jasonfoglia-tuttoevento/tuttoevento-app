@@ -2,101 +2,171 @@
 
 import Link from "next/link";
 
+const TEAM = [
+  { name: "Jason Foglia", role: "Founder & CEO", desc: "Visionario dietro TuttoEvento. Appassionato di musica dal vivo e tecnologia.", emoji: "🚀" },
+  { name: "Team TuttoEvento", role: "Operations", desc: "Gestiamo ogni trattativa, verifichiamo gli artisti e supportiamo locali e promoter.", emoji: "🎯" },
+];
+
+const VALUES = [
+  { icon: "🎵", title: "Musica prima di tutto", desc: "Siamo appassionati di eventi dal vivo. Costruiamo strumenti che amiamo usare noi stessi." },
+  { icon: "🤝", title: "Relazioni reali", desc: "Non siamo solo una piattaforma. Gestiamo ogni trattativa con cura e attenzione." },
+  { icon: "🔒", title: "Trasparenza", desc: "Nessuna commissione nascosta. Il modello è chiaro: noi gestiamo, tu ti esibisci." },
+  { icon: "🇮🇹", title: "Made in Italy", desc: "Costruito da italiani per il mercato italiano. Supporto in italiano, sempre." },
+];
+
 export default function ChiSiamoPage() {
-  const valori = [
-    { t: "Trasparenza", d: "Cachet, commissioni e pagamenti sempre chiari, senza sorprese." },
-    { t: "Velocità", d: "Dal primo contatto al palco in pochi clic, tutto nella stessa piattaforma." },
-    { t: "Fiducia", d: "Profili verificati, recensioni reali e pagamenti protetti per ogni booking." },
-  ];
-  const stats = [
-    { n: "3", l: "categorie: artisti, locali, promoter" },
-    { n: "1", l: "ecosistema unico end-to-end" },
-    { n: "100%", l: "online, gestibile da mobile" },
-  ];
+  const s = {
+    root: { minHeight: "100vh", background: "#0a0a0b", fontFamily: "'Manrope',system-ui,sans-serif", color: "#fff" },
+    header: { position: "sticky", top: 0, zIndex: 50, background: "rgba(10,10,11,.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,.06)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" },
+    logo: { fontFamily: "'Sora',sans-serif", fontWeight: 900, fontSize: "1.1rem", letterSpacing: "-.04em", color: "#fff", textDecoration: "none" },
+    nav: { display: "flex", gap: 20, alignItems: "center" },
+    navLink: { fontSize: ".875rem", fontWeight: 700, color: "rgba(255,255,255,.6)", textDecoration: "none" },
+    navBtn: { background: "#ff5a00", color: "#fff", padding: "8px 18px", borderRadius: 100, fontWeight: 700, fontSize: ".875rem", textDecoration: "none" },
+    hero: { maxWidth: 1100, margin: "0 auto", padding: "100px 24px 60px", textAlign: "center" },
+    heroLabel: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".2em", color: "#ff5a00", marginBottom: 16, display: "block" },
+    heroTitle: { fontFamily: "'Sora',sans-serif", fontSize: "clamp(2.5rem,6vw,4.5rem)", fontWeight: 900, letterSpacing: "-.04em", lineHeight: 1.05, marginBottom: 20 },
+    heroSub: { color: "rgba(255,255,255,.55)", fontSize: "1.15rem", lineHeight: 1.7, maxWidth: 580, margin: "0 auto 40px" },
+    section: { maxWidth: 1100, margin: "0 auto", padding: "60px 24px" },
+    sectionLabel: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".2em", color: "#ff5a00", marginBottom: 12, display: "block" },
+    sectionTitle: { fontFamily: "'Sora',sans-serif", fontSize: "clamp(1.8rem,4vw,2.8rem)", fontWeight: 900, letterSpacing: "-.04em", marginBottom: 16, lineHeight: 1.1 },
+    sectionSub: { color: "rgba(255,255,255,.5)", fontSize: "1rem", lineHeight: 1.7, maxWidth: 560, marginBottom: 48 },
+    grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 20 },
+    card: { background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 24, padding: "28px" },
+    valIcon: { fontSize: "1.8rem", marginBottom: 12 },
+    valTitle: { fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: "1rem", marginBottom: 8 },
+    valDesc: { color: "rgba(255,255,255,.5)", fontSize: ".875rem", lineHeight: 1.6 },
+    teamCard: { background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 24, padding: "28px", display: "flex", gap: 20, alignItems: "flex-start" },
+    teamEmoji: { fontSize: "2.5rem", width: 60, height: 60, background: "rgba(255,90,0,.15)", border: "1px solid rgba(255,90,0,.25)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+    teamName: { fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: "1rem", marginBottom: 2 },
+    teamRole: { fontSize: ".78rem", fontWeight: 700, color: "#ff5a00", marginBottom: 8 },
+    teamDesc: { color: "rgba(255,255,255,.5)", fontSize: ".875rem", lineHeight: 1.6 },
+    cta: { background: "linear-gradient(135deg,rgba(255,90,0,.15),rgba(255,90,0,.05))", border: "1px solid rgba(255,90,0,.2)", borderRadius: 32, padding: "64px 40px", textAlign: "center", margin: "0 24px 80px" },
+    ctaTitle: { fontFamily: "'Sora',sans-serif", fontSize: "clamp(1.8rem,4vw,3rem)", fontWeight: 900, letterSpacing: "-.04em", marginBottom: 16, lineHeight: 1.1 },
+    ctaSub: { color: "rgba(255,255,255,.5)", fontSize: "1rem", marginBottom: 32, maxWidth: 480, margin: "0 auto 32px" },
+    ctaRow: { display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" },
+    ctaPrimary: { background: "#ff5a00", color: "#fff", padding: "13px 28px", borderRadius: 100, fontWeight: 800, fontSize: ".95rem", textDecoration: "none" },
+    ctaGhost: { background: "rgba(255,255,255,.07)", color: "#fff", border: "1px solid rgba(255,255,255,.15)", padding: "13px 28px", borderRadius: 100, fontWeight: 700, fontSize: ".95rem", textDecoration: "none" },
+    footer: { borderTop: "1px solid rgba(255,255,255,.06)", padding: "24px", textAlign: "center" },
+    footerText: { color: "rgba(255,255,255,.3)", fontSize: ".8rem" },
+    sep: { borderTop: "1px solid rgba(255,255,255,.06)", margin: "0 24px" },
+  };
 
   return (
-    <main className="te-about-root">
+    <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700&display=swap');
-        .te-about-root { --orange:#ff5a00; --ink:#0a0a0b; --paper:#fbfaf8; --muted:#6b6b73; font-family:'Manrope',system-ui,sans-serif; color:var(--ink); background:var(--paper); min-height:100vh; overflow-x:hidden; }
-        .te-about-display { font-family:'Sora',sans-serif; letter-spacing:-0.03em; }
-        .te-about-root ::selection { background:var(--orange); color:#fff; }
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800;900&family=Manrope:wght@400;600;700;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @keyframes chiFloat { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-20px)} }
       `}</style>
+      <div style={s.root}>
+        {/* HEADER */}
+        <header style={s.header}>
+          <Link href="/" style={s.logo}>TUTTO<span style={{ color: "#ff5a00" }}>EVENTO</span></Link>
+          <div style={s.nav}>
+            <Link href="/#faq" style={s.navLink}>FAQ</Link>
+            <Link href="/login" style={s.navLink}>Accedi</Link>
+            <Link href="/register" style={s.navBtn}>Inizia gratis</Link>
+          </div>
+        </header>
 
-      <header className="px-5 sm:px-8 py-5 flex items-center justify-between border-b border-black/5 bg-white">
-        <Link href="/" className="te-about-display font-extrabold text-base sm:text-lg tracking-tight">
-          TUTTO<span style={{ color: "var(--orange)" }}>EVENTO</span>
-        </Link>
-        <Link href="/register" className="bg-[var(--ink)] text-white text-sm font-bold px-5 py-2.5 rounded-full hover:scale-[1.04] transition">
-          Inizia gratis
-        </Link>
-      </header>
+        {/* HERO */}
+        <div style={{ position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -150, left: "50%", transform: "translateX(-50%)", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle,rgba(255,90,0,.3),transparent 70%)", filter: "blur(80px)", animation: "chiFloat 8s ease-in-out infinite", pointerEvents: "none" }} />
+          <div style={s.hero}>
+            <span style={s.heroLabel}>Chi siamo</span>
+            <h1 style={s.heroTitle}>Siamo TuttoEvento.<br/><span style={{ color: "#ff5a00" }}>La musica dal vivo</span><br/>è il nostro mestiere.</h1>
+            <p style={s.heroSub}>Nati dalla passione per la musica e dalla frustrazione di un mercato caotico. Costruiamo strumenti che semplificano la vita di artisti, locali e promoter italiani.</p>
+            <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+              <Link href="/register" style={{ background: "#ff5a00", color: "#fff", padding: "13px 28px", borderRadius: 100, fontWeight: 800, fontSize: ".95rem", textDecoration: "none" }}>
+                Inizia gratis →
+              </Link>
+              <a href="mailto:info@tuttoevento.it" style={{ background: "rgba(255,255,255,.07)", color: "#fff", border: "1px solid rgba(255,255,255,.15)", padding: "13px 28px", borderRadius: 100, fontWeight: 700, fontSize: ".95rem", textDecoration: "none" }}>
+                Contattaci
+              </a>
+            </div>
+          </div>
+        </div>
 
-      {/* HERO */}
-      <section className="relative px-5 sm:px-6 pt-16 sm:pt-24 pb-12 text-center overflow-hidden">
-        <div aria-hidden style={{ position:"absolute", top:"-160px", left:"50%", transform:"translateX(-50%)", width:"560px", height:"560px", maxWidth:"95vw", borderRadius:"999px", filter:"blur(120px)", background:"radial-gradient(circle, rgba(255,90,0,.2), transparent 70%)", zIndex:0 }} />
-        <div className="relative z-10 max-w-3xl mx-auto">
-          <p className="uppercase tracking-[0.2em] text-[var(--orange)] text-[11px] font-extrabold mb-4">Chi siamo</p>
-          <h1 className="te-about-display text-4xl sm:text-6xl font-extrabold leading-[1.02] mb-6">
-            Colleghiamo chi crea <span style={{ color:"var(--orange)" }}>musica</span> con chi crea <span style={{ color:"var(--orange)" }}>eventi</span>.
-          </h1>
-          <p className="text-lg text-[var(--muted)] leading-relaxed">
-            TuttoEvento nasce per semplificare il booking dal vivo: un solo posto dove artisti, locali e promoter si trovano, trattano e lavorano insieme.
+        <div style={s.sep} />
+
+        {/* MISSION */}
+        <div style={s.section}>
+          <span style={s.sectionLabel}>La nostra missione</span>
+          <h2 style={s.sectionTitle}>Connettere l'industria<br/>musicale italiana.</h2>
+          <p style={{ ...s.sectionSub, marginBottom: 0 }}>
+            Ogni anno migliaia di eventi saltano perché artisti e locali non si trovano, o perché le trattative sono caotiche e dispersive. TuttoEvento nasce per risolvere questo problema: un'unica piattaforma dove tutto avviene in modo ordinato, professionale e trasparente.
           </p>
         </div>
-      </section>
 
-      {/* MISSIONE */}
-      <section className="px-5 sm:px-6 py-12">
-        <div className="max-w-4xl mx-auto bg-white border border-black/5 rounded-3xl p-7 sm:p-10">
-          <h2 className="te-about-display text-2xl sm:text-3xl font-extrabold mb-4">La nostra missione</h2>
-          <p className="text-[var(--muted)] text-lg leading-relaxed">
-            Organizzare un evento dal vivo è ancora troppo complicato: trattative via messaggi sparsi, pagamenti incerti, nessuno strumento unico. Vogliamo cambiarlo, dando ad artisti, locali e promoter un ecosistema unico con marketplace, chat in tempo reale, pagamenti sicuri e un CRM completo per gestire tutto.
-          </p>
-        </div>
-      </section>
+        <div style={s.sep} />
 
-      {/* VALORI */}
-      <section className="px-5 sm:px-6 py-12">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="te-about-display text-2xl sm:text-3xl font-extrabold mb-8 text-center">I nostri valori</h2>
-          <div className="grid sm:grid-cols-3 gap-5">
-            {valori.map((v) => (
-              <div key={v.t} className="bg-white border border-black/5 rounded-3xl p-7">
-                <h3 className="te-about-display text-xl font-extrabold mb-2">{v.t}</h3>
-                <p className="text-[var(--muted)] leading-relaxed">{v.d}</p>
+        {/* VALORI */}
+        <div style={s.section}>
+          <span style={s.sectionLabel}>I nostri valori</span>
+          <h2 style={s.sectionTitle}>Cosa ci guida.</h2>
+          <div style={s.grid2}>
+            {VALUES.map(v => (
+              <div key={v.title} style={s.card}>
+                <div style={s.valIcon}>{v.icon}</div>
+                <p style={s.valTitle}>{v.title}</p>
+                <p style={s.valDesc}>{v.desc}</p>
               </div>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* NUMERI */}
-      <section className="px-5 sm:px-6 py-12">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {stats.map((s) => (
-            <div key={s.l} className="bg-[var(--ink)] text-white rounded-3xl p-8 text-center">
-              <p className="te-about-display text-4xl font-extrabold" style={{ color:"var(--orange)" }}>{s.n}</p>
-              <p className="text-white/70 mt-2">{s.l}</p>
+        <div style={s.sep} />
+
+        {/* TEAM */}
+        <div style={s.section}>
+          <span style={s.sectionLabel}>Il team</span>
+          <h2 style={s.sectionTitle}>Le persone dietro TuttoEvento.</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {TEAM.map(t => (
+              <div key={t.name} style={s.teamCard}>
+                <div style={s.teamEmoji}>{t.emoji}</div>
+                <div>
+                  <p style={s.teamName}>{t.name}</p>
+                  <p style={s.teamRole}>{t.role}</p>
+                  <p style={s.teamDesc}>{t.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={s.sep} />
+
+        {/* NUMERI */}
+        <div style={s.section}>
+          <span style={s.sectionLabel}>TuttoEvento in numeri</span>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 2, background: "rgba(255,255,255,.06)", borderRadius: 24, overflow: "hidden" }}>
+            {[["100%","Gratuito per iniziare"],["3","Categorie coperte"],["48h","Risposta garantita"],["🇮🇹","Made in Italy"]].map(([val, label]) => (
+              <div key={label} style={{ background: "#0a0a0b", padding: "36px 24px", textAlign: "center" }}>
+                <p style={{ fontFamily: "'Sora',sans-serif", fontSize: "2.5rem", fontWeight: 900, color: "#ff5a00", letterSpacing: "-.04em", lineHeight: 1 }}>{val}</p>
+                <p style={{ fontSize: ".8rem", fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 8 }}>{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 80px" }}>
+          <div style={s.cta}>
+            <h2 style={s.ctaTitle}>Unisciti a TuttoEvento.<br/><span style={{ color: "#ff5a00" }}>Gratis, sempre.</span></h2>
+            <p style={s.ctaSub}>Registrati in 2 minuti. Nessuna carta richiesta.</p>
+            <div style={s.ctaRow}>
+              <Link href="/register?role=artist" style={s.ctaPrimary}>🎤 Sono un artista</Link>
+              <Link href="/register?role=organizer" style={s.ctaGhost}>🏛️ Sono un locale</Link>
             </div>
-          ))}
+          </div>
         </div>
-      </section>
 
-      {/* CTA */}
-      <section className="px-5 sm:px-6 py-16">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="te-about-display text-3xl sm:text-4xl font-extrabold mb-5">Entra nell'ecosistema</h2>
-          <p className="text-[var(--muted)] text-lg mb-8">Crea il tuo profilo gratis e inizia a lavorare oggi stesso.</p>
-          <Link href="/register" className="inline-block bg-[var(--orange)] text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-[#e85100] transition shadow-[0_18px_40px_-12px_rgba(255,90,0,.6)]">
-            Inizia gratis
-          </Link>
-        </div>
-      </section>
-
-      <footer className="border-t border-black/5 bg-white py-8 text-center text-sm text-[var(--muted)]">
-        © 2026 TuttoEvento. Tutti i diritti riservati.
-      </footer>
-    </main>
+        {/* FOOTER */}
+        <footer style={s.footer}>
+          <p style={s.footerText}>© 2026 TuttoEvento · <a href="mailto:info@tuttoevento.it" style={{ color: "#ff5a00", textDecoration: "none" }}>info@tuttoevento.it</a> · <Link href="/privacy" style={{ color: "rgba(255,255,255,.3)", textDecoration: "none" }}>Privacy</Link></p>
+        </footer>
+      </div>
+    </>
   );
 }
