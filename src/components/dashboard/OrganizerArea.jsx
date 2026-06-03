@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Input from "./Input";
 import EventsTable from "./EventsTable";
 import ArtistMarketplace from "./ArtistMarketplace";
@@ -42,6 +42,8 @@ export default function OrganizerArea({
   const [venueCapacity, setVenueCapacity] = useState("");
   const [venueDescription, setVenueDescription] = useState("");
   const [venueInstagram, setVenueInstagram] = useState("");
+  const [venueSaving, setVenueSaving] = useState(false);
+  const [venueMsg, setVenueMsg] = useState("");
   const [eventBudget, setEventBudget] = useState("");
   const [budgetSaving, setBudgetSaving] = useState(false);
   const [budgetMsg, setBudgetMsg] = useState("");
@@ -52,6 +54,25 @@ export default function OrganizerArea({
     setBookingMessage(m => m || `Ciao ${selectedArtist.name}, vorrei verificare la tua disponibilità.`);
     setActiveTab("booking");
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function saveVenueProfile(e) {
+    e.preventDefault();
+    setVenueSaving(true); setVenueMsg("");
+    try {
+      const res = await fetch("/api/venue-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          venueName, city: venueCity, venueType,
+          capacity: venueCapacity ? Number(venueCapacity) : null,
+          description: venueDescription, instagram: venueInstagram,
+        }),
+      });
+      if (res.ok) setVenueMsg("Profilo locale salvato ✓");
+      else setVenueMsg("Errore salvataggio");
+    } catch { setVenueMsg("Errore tecnico"); }
+    finally { setVenueSaving(false); }
   }
 
   async function createEventWithBooking(e) {
@@ -85,6 +106,19 @@ export default function OrganizerArea({
     setEventMode(defaultMode);
     alert("Evento creato, richiesta inviata e chat aperta.");
   }
+
+  // Carica profilo venue esistente all'avvio
+  useEffect(() => {
+    fetch("/api/venue-profile").then(r => r.json()).then(d => {
+      if (!d || d.error) return;
+      if (d.venue_name) setVenueName(d.venue_name);
+      if (d.city) setVenueCity(d.city);
+      if (d.venue_type) setVenueType(d.venue_type);
+      if (d.capacity) setVenueCapacity(String(d.capacity));
+      if (d.description) setVenueDescription(d.description);
+      if (d.instagram) setVenueInstagram(d.instagram);
+    }).catch(() => {});
+  }, []);
 
   async function saveBudget(e) {
     e.preventDefault();
@@ -192,6 +226,7 @@ export default function OrganizerArea({
 
           {/* Media kit */}
           <section className="bg-white border border-black/5 rounded-3xl p-5 sm:p-7 shadow-sm">
+            <form onSubmit={saveVenueProfile}>
             <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--orange)] mb-1">Media Kit</p>
             <h2 className="te-display text-lg sm:text-xl font-extrabold mb-1">Profilo del locale</h2>
             <p className="text-xs text-[var(--muted)] mb-4">Queste informazioni sono visibili agli artisti nel marketplace. Completa il profilo per aumentare le richieste.</p>
@@ -236,10 +271,10 @@ export default function OrganizerArea({
                   className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
               </div>
             </div>
-            <button className="mt-4 bg-[var(--ink)] text-white rounded-2xl px-6 py-3 font-bold text-sm hover:scale-[1.01] transition">
-              Salva profilo locale
+            <button type="submit" disabled={venueSaving} className="mt-4 bg-[var(--ink)] text-white rounded-2xl px-6 py-3 font-bold text-sm hover:scale-[1.01] transition disabled:opacity-50">
+              {venueSaving ? "Salvo..." : "Salva profilo locale"}
             </button>
-            <p className="text-[10px] text-[var(--muted)] mt-2">La funzione di salvataggio del profilo locale sarà attiva nella prossima versione.</p>
+            {venueMsg && <p style={{ marginTop:8, fontSize:12, fontWeight:700, color:"#16a34a" }}>{venueMsg}</p>}
           </section>
         </div>
       )}

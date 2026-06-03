@@ -1,24 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 
-const SYSTEM_PROMPT = `Sei l'assistente virtuale di TuttoEvento, la piattaforma italiana per artisti, locali e promoter.
-
-TuttoEvento è:
-- Un marketplace dove artisti vengono trovati dai locali per eventi dal vivo
-- Una piattaforma con chat realtime, sistema di booking, CRM e analitiche
-- Completamente gratuita per iniziare (nessuna carta richiesta)
-- Modello agenzia: TuttoEvento gestisce le trattative e applica un markup riservato
-- Basata in Italia, GDPR compliant
-
-Categorie utenti:
-- ARTISTI: si registrano, inseriscono profilo con cachet netto. Il team approva e pubblica nel marketplace con prezzo pubblico. Ricevono richieste di booking.
-- LOCALI: sfogliano il marketplace, filtrano per genere/città/budget, richiedono contatto. Il team gestisce la trattativa.
-- PROMOTER: gestiscono portfolio di artisti e locali, monitorano booking e commissioni.
-
-Rispondi SEMPRE in italiano, in modo cordiale e conciso. Massimo 3-4 frasi per risposta.
-Se ti chiedono di registrarsi, fornisci il link: /register
-Se ti chiedono info tecniche che non conosci, di' "Per assistenza specifica, scrivi a info@tuttoevento.it"
-NON inventare prezzi o dettagli non forniti. NON rispondere a domande non inerenti a TuttoEvento.`;
+// Il system prompt è gestito lato server
 
 const QUICK_REPLIES = [
   "Come mi registro?",
@@ -51,18 +34,21 @@ export default function HomeChatbot() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat-public", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
         }),
       });
       const data = await res.json();
-      const reply = data.content?.[0]?.text || "Mi dispiace, non ho capito. Riprova!";
+      if (res.status === 429) {
+        const reply = data.error || "Troppi messaggi. Riprova tra un po'!";
+        setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+        setLoading(false);
+        return;
+      }
+      const reply = data.reply || "Mi dispiace, non ho capito. Riprova!";
       setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     } catch {
       setMessages(prev => [...prev, { role: "assistant", content: "Ops, c'è stato un errore. Riprova tra poco o scrivi a info@tuttoevento.it 😊" }]);
