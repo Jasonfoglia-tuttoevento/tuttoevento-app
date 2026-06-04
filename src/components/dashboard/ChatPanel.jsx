@@ -3,288 +3,496 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
+/* ─── Helpers ─────────────────────────────────────────────── */
+function formatTime(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
+}
+function initials(name) {
+  if (!name) return "?";
+  return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
+}
+
+/* ─── Avatar ──────────────────────────────────────────────── */
+function Avatar({ name, size = 36, orange = false }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: orange ? "#ff5a00" : "#0a0a0b",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: "'Sora',sans-serif", fontWeight: 800,
+      fontSize: size * 0.36, color: "white", letterSpacing: "-.02em",
+    }}>
+      {initials(name)}
+    </div>
+  );
+}
+
+/* ─── ConvItem ────────────────────────────────────────────── */
+function ConvItem({ conv, isActive, onClick }) {
+  const unread = Number(conv.unreadCount || 0);
+  return (
+    <button onClick={onClick} style={{
+      width: "100%", textAlign: "left", border: "none", cursor: "pointer",
+      borderRadius: 20, padding: "12px 14px", marginBottom: 4,
+      background: isActive ? "#ff5a00" : unread > 0 ? "rgba(255,90,0,.08)" : "rgba(255,255,255,.04)",
+      borderLeft: !isActive && unread > 0 ? "3px solid #ff5a00" : "3px solid transparent",
+      transition: "background .15s",
+      fontFamily: "'Manrope',system-ui,sans-serif",
+    }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8 }}>
+        <p style={{ fontWeight:700, fontSize:13, color: isActive ? "white" : "#fff", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>
+          {conv.title || "Conversazione"}
+        </p>
+        {unread > 0 && !isActive && (
+          <span style={{ background:"#ff5a00", color:"white", borderRadius:100, padding:"2px 7px", fontSize:10, fontWeight:800, flexShrink:0 }}>
+            {unread > 99 ? "99+" : unread}
+          </span>
+        )}
+      </div>
+      <p style={{ fontSize:11, color: isActive ? "rgba(255,255,255,.65)" : "rgba(255,255,255,.35)", margin:"4px 0 0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+        {conv.lastMessage || "Nessun messaggio ancora"}
+      </p>
+    </button>
+  );
+}
+
+/* ─── Bubble ──────────────────────────────────────────────── */
+function Bubble({ msg, isMine }) {
+  return (
+    <div style={{ display:"flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom:8, gap:8, alignItems:"flex-end" }}>
+      {!isMine && <Avatar name={msg.senderName || "?"} size={28} />}
+      <div style={{ maxWidth:"72%", minWidth:60 }}>
+        {!isMine && (
+          <p style={{ fontSize:10, fontWeight:700, color:"#ff5a00", marginBottom:3, marginLeft:4, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+            {msg.senderName || "Utente"}
+          </p>
+        )}
+        <div style={{
+          background: isMine ? "#ff5a00" : "rgba(255,255,255,.08)",
+          border: isMine ? "none" : "1px solid rgba(255,255,255,.1)",
+          borderRadius: isMine ? "20px 20px 6px 20px" : "20px 20px 20px 6px",
+          padding: "10px 14px",
+        }}>
+          <p style={{ fontSize:13, lineHeight:1.6, color:"white", margin:0, whiteSpace:"pre-wrap", wordBreak:"break-word", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+            {msg.body}
+          </p>
+        </div>
+        <p style={{ fontSize:10, color:"rgba(255,255,255,.25)", marginTop:3, textAlign: isMine ? "right" : "left", marginLeft:4, marginRight:4, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+          {formatTime(msg.createdAt)}
+        </p>
+      </div>
+      {isMine && <Avatar name="Tu" size={28} orange />}
+    </div>
+  );
+}
+
+/* ─── ChatPanel principale ────────────────────────────────── */
 export default function ChatPanel({ user }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [users, setUsers] = useState([]);
+  const [isOpen, setIsOpen]           = useState(false);
+  const [view, setView]               = useState("list"); // "list" | "chat" (mobile)
+  const [users, setUsers]             = useState([]);
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [message, setMessage] = useState("");
+  const [messages, setMessages]       = useState([]);
+  const [message, setMessage]         = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [isSending, setIsSending] = useState(false);
+  const [isSending, setIsSending]     = useState(false);
+  const [showNewChat, setShowNewChat] = useState(false);
   const bottomRef = useRef(null);
-  const channelRef = useRef(null);
+  const inputRef  = useRef(null);
 
   const totalUnread = conversations.reduce((t, c) => t + Number(c.unreadCount || 0), 0);
 
-  // ── Caricamento dati ──
+  /* ── API helpers ── */
   const loadUsers = useCallback(async () => {
     const res = await fetch("/api/chat/users");
-    const data = await res.json();
-    setUsers(Array.isArray(data) ? data : []);
+    const d = await res.json();
+    setUsers(Array.isArray(d) ? d : []);
   }, []);
 
   const loadConversations = useCallback(async () => {
     const res = await fetch("/api/chat/conversations");
-    const data = await res.json();
-    if (!Array.isArray(data)) return;
-    setConversations(data);
-    setSelectedConversationId(prev => prev || (data.length > 0 ? data[0].id : null));
+    const d = await res.json();
+    if (!Array.isArray(d)) return;
+    setConversations(d);
+    setSelectedConversationId(prev => prev || (d.length > 0 ? d[0].id : null));
   }, []);
 
-  const loadMessages = useCallback(async (conversationId) => {
-    if (!conversationId) return;
-    const res = await fetch(`/api/chat/messages?conversationId=${conversationId}`);
-    const data = await res.json();
-    setMessages(Array.isArray(data) ? data : []);
+  const loadMessages = useCallback(async (convId) => {
+    if (!convId) return;
+    const res = await fetch(`/api/chat/messages?conversationId=${convId}`);
+    const d = await res.json();
+    setMessages(Array.isArray(d) ? d : []);
   }, []);
 
-  const markAsRead = useCallback(async (conversationId) => {
-    if (!conversationId) return;
+  const markAsRead = useCallback(async (convId) => {
+    if (!convId) return;
     await fetch("/api/chat/conversations", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conversationId }),
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId: convId }),
     });
     loadConversations();
   }, [loadConversations]);
 
-  // ── Supabase Realtime ──
+  /* ── Realtime ── */
   useEffect(() => {
     if (!user?.id) return;
     const supabase = createSupabaseBrowserClient();
-
-    // Sottoscrive ai nuovi messaggi in tempo reale
     const channel = supabase
       .channel("chat-realtime")
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "chat_messages",
-      }, (payload) => {
-        const newMsg = payload.new;
-        // Se il messaggio è nella conversazione aperta, aggiorna i messaggi
-        if (Number(newMsg.conversation_id) === Number(selectedConversationId)) {
-          setMessages(prev => {
-            // Evita duplicati
-            if (prev.some(m => m.id === newMsg.id)) return prev;
-            return [...prev, {
-              id: newMsg.id,
-              conversationId: newMsg.conversation_id,
-              senderId: newMsg.sender_id,
-              body: newMsg.body,
-              createdAt: newMsg.created_at,
-              senderName: "",
-              senderRole: "",
-            }];
-          });
-          // Marca come letto se la chat è aperta
-          if (isOpen) markAsRead(newMsg.conversation_id);
+      .on("postgres_changes", { event:"INSERT", schema:"public", table:"chat_messages" }, (payload) => {
+        const m = payload.new;
+        if (Number(m.conversation_id) === Number(selectedConversationId)) {
+          setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, {
+            id: m.id, conversationId: m.conversation_id, senderId: m.sender_id,
+            body: m.body, createdAt: m.created_at, senderName: "", senderRole: "",
+          }]);
+          if (isOpen) markAsRead(m.conversation_id);
         }
-        // Aggiorna sempre il contatore non letti
         loadConversations();
       })
       .subscribe();
-
-    channelRef.current = channel;
     return () => { supabase.removeChannel(channel); };
   }, [user?.id, selectedConversationId, isOpen, loadConversations, markAsRead]);
 
-  // ── Init ──
+  /* ── Init ── */
   useEffect(() => {
     if (!user?.id) return;
-    loadUsers();
-    loadConversations();
+    loadUsers(); loadConversations();
   }, [user?.id, loadUsers, loadConversations]);
 
-  // ── Cambia conversazione ──
+  /* ── Cambio conversazione ── */
   useEffect(() => {
     if (!selectedConversationId) return;
     loadMessages(selectedConversationId);
     if (isOpen) markAsRead(selectedConversationId);
   }, [selectedConversationId, isOpen, loadMessages, markAsRead]);
 
-  // ── Evento apertura chat da altri componenti ──
+  /* ── Scroll automatico ── */
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior:"smooth" });
+  }, [messages]);
+
+  /* ── Focus input quando si apre la chat ── */
+  useEffect(() => {
+    if (isOpen && view === "chat") setTimeout(() => inputRef.current?.focus(), 150);
+  }, [isOpen, view]);
+
+  /* ── Apertura da eventi esterni ── */
   useEffect(() => {
     if (!user?.id) return;
-    function handleOpenChat(event) {
-      const detail = event.detail;
-      if (!detail?.participantUserId) return;
-      createOrOpenConversation({
-        participantUserId: detail.participantUserId,
-        bookingId: detail.bookingId || null,
-        eventId: detail.eventId || null,
-        title: detail.title || "Conversazione",
-      });
+    function handleOpenChat(e) {
+      const d = e.detail;
+      if (!d?.participantUserId) return;
+      createOrOpenConversation({ participantUserId: d.participantUserId, bookingId: d.bookingId || null, eventId: d.eventId || null, title: d.title || "Conversazione" });
     }
-    function handleOpenChatButton() {
+    function handleOpenButton() {
       setIsOpen(true);
+      setView("list");
       if (selectedConversationId) markAsRead(selectedConversationId);
     }
     window.addEventListener("tuttoevento:open-chat", handleOpenChat);
-    window.addEventListener("tuttoevento:open-chat-button", handleOpenChatButton);
+    window.addEventListener("tuttoevento:open-chat-button", handleOpenButton);
     return () => {
       window.removeEventListener("tuttoevento:open-chat", handleOpenChat);
-      window.removeEventListener("tuttoevento:open-chat-button", handleOpenChatButton);
+      window.removeEventListener("tuttoevento:open-chat-button", handleOpenButton);
     };
   }, [user?.id, selectedConversationId, markAsRead]);
 
-  // ── Scroll automatico ──
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  async function createOrOpenConversation({ participantUserId, bookingId = null, eventId = null, title = "Nuova conversazione" }) {
+  /* ── Azioni ── */
+  async function createOrOpenConversation({ participantUserId, bookingId=null, eventId=null, title="Nuova conversazione" }) {
     const res = await fetch("/api/chat/conversations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ participantUserId: Number(participantUserId), bookingId, eventId, title }),
     });
-    const data = await res.json();
-    if (!res.ok || !data.id) { alert("Errore apertura conversazione"); return; }
+    const d = await res.json();
+    if (!res.ok || !d.id) { alert("Errore apertura conversazione"); return; }
     setIsOpen(true);
-    setSelectedConversationId(data.id);
+    setSelectedConversationId(d.id);
     setSelectedUserId("");
+    setShowNewChat(false);
+    setView("chat");
     await loadConversations();
-    await loadMessages(data.id);
-    await markAsRead(data.id);
+    await loadMessages(d.id);
+    await markAsRead(d.id);
   }
 
-  async function handleSelectConversation(conversationId) {
-    setSelectedConversationId(conversationId);
-    await loadMessages(conversationId);
-    await markAsRead(conversationId);
+  async function handleSelectConversation(convId) {
+    setSelectedConversationId(convId);
+    setView("chat");
+    await loadMessages(convId);
+    await markAsRead(convId);
   }
 
   async function sendMessage(e) {
     e.preventDefault();
     if (!selectedConversationId || !message.trim() || isSending) return;
     setIsSending(true);
-    const text = message.trim();
-    setMessage("");
+    const text = message.trim(); setMessage("");
     const res = await fetch("/api/chat/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ conversationId: selectedConversationId, message: text }),
     });
-    if (!res.ok) {
-      setMessage(text);
-      alert("Errore invio messaggio");
-    }
-    // Il Realtime aggiornerà i messaggi automaticamente
+    if (!res.ok) { setMessage(text); alert("Errore invio messaggio"); }
     setIsSending(false);
   }
 
-  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
+  const selectedConv = conversations.find(c => c.id === selectedConversationId);
+
+  if (!user?.id) return null;
 
   return (
     <>
-      <button type="button"
-        onClick={() => { setIsOpen(true); if (selectedConversationId) markAsRead(selectedConversationId); }}
-        className="hidden lg:block fixed bottom-6 right-6 z-40 bg-[#111] text-white rounded-full px-5 py-4 font-black shadow-lg hover:scale-[1.02] transition">
-        <span className="relative inline-flex items-center gap-2">
-          Chat
-          {totalUnread > 0 && (
-            <span className="absolute -top-7 -right-7 min-w-7 h-7 px-2 rounded-full bg-[#ff5a00] text-white text-xs flex items-center justify-center font-black border-2 border-white">
-              {totalUnread > 99 ? "99+" : totalUnread}
-            </span>
-          )}
-        </span>
+      <style>{`
+        .cp-btn-open {
+          display: none;
+          position: fixed; bottom: 24px; right: 24px; z-index: 40;
+          background: #0a0a0b; color: white;
+          border: none; border-radius: 100px; padding: 14px 24px;
+          font-family: 'Manrope',system-ui,sans-serif; font-weight: 800; font-size: .9rem;
+          cursor: pointer; box-shadow: 0 8px 32px rgba(0,0,0,.4);
+          transition: transform .2s, box-shadow .2s;
+          align-items: center; gap: 8px;
+        }
+        @media(min-width:1024px) { .cp-btn-open { display:flex; } }
+        .cp-btn-open:hover { transform: scale(1.03); box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+        .cp-badge { background:#ff5a00; color:white; border-radius:100px; padding:2px 8px; font-size:11px; font-weight:900; }
+
+        /* Overlay */
+        .cp-overlay {
+          position: fixed; inset: 0; z-index: 50;
+          background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
+          display: flex; justify-content: flex-end;
+          animation: cp-fade-in .2s ease;
+        }
+        @keyframes cp-fade-in { from{opacity:0} to{opacity:1} }
+
+        /* Pannello */
+        .cp-panel {
+          width: 100%; max-width: 960px; height: 100%;
+          background: #0a0a0b;
+          display: grid; grid-template-columns: 300px 1fr;
+          animation: cp-slide-in .25s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes cp-slide-in { from{transform:translateX(60px);opacity:0} to{transform:translateX(0);opacity:1} }
+        @media(max-width:767px) {
+          .cp-panel { grid-template-columns: 1fr; max-width: 100%; }
+          .cp-sidebar { display: none; }
+          .cp-sidebar.mobile-visible { display: flex !important; }
+          .cp-main { display: none; }
+          .cp-main.mobile-visible { display: flex !important; }
+        }
+
+        /* Sidebar */
+        .cp-sidebar {
+          background: #111114;
+          border-right: 1px solid rgba(255,255,255,.07);
+          display: flex; flex-direction: column;
+          height: 100%; overflow: hidden;
+        }
+
+        /* Main */
+        .cp-main {
+          display: flex; flex-direction: column;
+          height: 100%; overflow: hidden;
+          background: #0a0a0b;
+        }
+
+        /* Scrollbar sottile */
+        .cp-scroll::-webkit-scrollbar { width: 4px; }
+        .cp-scroll::-webkit-scrollbar-track { background: transparent; }
+        .cp-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+
+        /* Input */
+        .cp-input {
+          flex: 1; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+          border-radius: 14px; padding: 12px 16px; color: white; font-size: 14px;
+          font-family: 'Manrope',system-ui,sans-serif; outline: none; resize: none;
+          transition: border-color .2s;
+        }
+        .cp-input::placeholder { color: rgba(255,255,255,.3); }
+        .cp-input:focus { border-color: rgba(255,90,0,.5); }
+
+        /* Send btn */
+        .cp-send {
+          background: #ff5a00; color: white; border: none; border-radius: 14px;
+          padding: 12px 20px; font-weight: 800; font-size: .875rem; cursor: pointer;
+          font-family: 'Manrope',system-ui,sans-serif; transition: all .2s; flex-shrink: 0;
+        }
+        .cp-send:disabled { opacity: .4; cursor: not-allowed; }
+        .cp-send:not(:disabled):hover { background: #e85100; transform: scale(1.02); }
+
+        /* New chat form */
+        .cp-new-chat {
+          background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+          border-radius: 20px; padding: 16px; margin: 12px 12px 0;
+        }
+        .cp-select {
+          width: 100%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+          border-radius: 12px; padding: 10px 12px; color: white; font-size: 13px;
+          font-family: 'Manrope',system-ui,sans-serif; outline: none; margin-bottom: 10px;
+        }
+        .cp-select option { background: #1a1a1e; color: white; }
+        .cp-btn-start {
+          width: 100%; background: #ff5a00; color: white; border: none; border-radius: 12px;
+          padding: 11px; font-weight: 800; font-size: 13px; cursor: pointer;
+          font-family: 'Manrope',system-ui,sans-serif; transition: all .2s;
+        }
+        .cp-btn-start:disabled { opacity: .4; cursor: not-allowed; }
+        .cp-btn-start:not(:disabled):hover { background: #e85100; }
+
+        /* Header back btn mobile */
+        .cp-back {
+          background: rgba(255,255,255,.08); border: none; border-radius: 10px;
+          padding: 7px 12px; color: white; font-weight: 700; font-size: 12px;
+          cursor: pointer; font-family: 'Manrope',system-ui,sans-serif; display: none;
+        }
+        @media(max-width:767px) { .cp-back { display: block; } }
+
+        /* Typing indicator */
+        @keyframes cp-blink { 0%,80%,100%{opacity:.3} 40%{opacity:1} }
+        .cp-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.5); margin:0 2px; animation:cp-blink 1.4s infinite; }
+        .cp-dot:nth-child(2) { animation-delay:.2s; }
+        .cp-dot:nth-child(3) { animation-delay:.4s; }
+      `}</style>
+
+      {/* ── Bottone apri ── */}
+      <button className="cp-btn-open" onClick={() => { setIsOpen(true); setView("list"); }}>
+        <span>💬</span>
+        <span>Chat</span>
+        {totalUnread > 0 && <span className="cp-badge">{totalUnread > 99 ? "99+" : totalUnread}</span>}
       </button>
 
+      {/* ── Overlay + Pannello ── */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex justify-end">
-          <div className="w-full h-full bg-[#f5f5f6] shadow-2xl border-l border-black/10 grid grid-cols-1 md:grid-cols-[320px_1fr] md:max-w-[980px]">
-            {/* Sidebar conversazioni */}
-            <aside className="bg-white border-r border-black/5 p-4 md:p-5 flex flex-col min-h-0">
-              <div className="flex items-start justify-between gap-4 mb-5">
-                <div className="min-w-0">
-                  <p className="uppercase tracking-[3px] text-[#ff5a00] text-xs font-black mb-2">TuttoEvento</p>
-                  <h2 className="text-2xl font-black tracking-[-0.04em]">Chat</h2>
-                  <p className="text-sm text-black/45 mt-1">Conversazioni operative</p>
+        <div className="cp-overlay" onClick={e => { if (e.target === e.currentTarget) setIsOpen(false); }}>
+          <div className="cp-panel">
+
+            {/* ══ SIDEBAR ══ */}
+            <aside className={`cp-sidebar${view === "list" ? " mobile-visible" : ""}`}>
+
+              {/* Header sidebar */}
+              <div style={{ padding:"20px 16px 14px", borderBottom:"1px solid rgba(255,255,255,.07)", flexShrink:0 }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+                  <div>
+                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:"#ff5a00", margin:0, fontFamily:"'Manrope',system-ui,sans-serif" }}>TuttoEvento</p>
+                    <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"1.3rem", letterSpacing:"-.04em", color:"white", margin:"4px 0 0" }}>Chat</h2>
+                  </div>
+                  <button onClick={() => setIsOpen(false)} style={{ width:36, height:36, borderRadius:12, background:"rgba(255,255,255,.08)", border:"none", color:"white", fontSize:"1.2rem", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900 }}>×</button>
                 </div>
-                <button type="button" onClick={() => setIsOpen(false)} className="w-10 h-10 rounded-2xl bg-[#f5f5f6] font-black shrink-0">×</button>
+                <button onClick={() => setShowNewChat(p => !p)}
+                  style={{ width:"100%", background: showNewChat ? "#ff5a00" : "rgba(255,255,255,.07)", border:`1px solid ${showNewChat ? "#ff5a00" : "rgba(255,255,255,.12)"}`, borderRadius:14, padding:"10px 14px", color:"white", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif", textAlign:"left", transition:"all .2s" }}>
+                  {showNewChat ? "✕ Annulla" : "+ Nuova conversazione"}
+                </button>
               </div>
 
               {/* Nuova chat */}
-              <div className="rounded-3xl bg-[#f7f7f8] border border-black/5 p-4 mb-5">
-                <p className="text-xs uppercase tracking-[2px] text-black/40 font-black mb-3">Nuova chat</p>
-                <select value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}
-                  className="w-full bg-white border border-black/10 rounded-2xl px-4 py-3 text-sm outline-none">
-                  <option value="">Seleziona utente</option>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.name} · {u.role}</option>)}
-                </select>
-                <button type="button" disabled={!selectedUserId}
-                  onClick={() => { const u = users.find(u => String(u.id) === String(selectedUserId)); createOrOpenConversation({ participantUserId: Number(selectedUserId), title: u ? `${user.name} · ${u.name}` : "Nuova conversazione" }); }}
-                  className="w-full mt-3 bg-[#111] text-white rounded-2xl py-3 font-black text-sm disabled:opacity-40">
-                  Avvia conversazione
-                </button>
-              </div>
+              {showNewChat && (
+                <div className="cp-new-chat">
+                  <p style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".12em", color:"rgba(255,255,255,.4)", marginBottom:10, fontFamily:"'Manrope',system-ui,sans-serif" }}>Seleziona utente</p>
+                  <select className="cp-select" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}>
+                    <option value="">Scegli un utente...</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.name} · {u.role}</option>)}
+                  </select>
+                  <button className="cp-btn-start" disabled={!selectedUserId}
+                    onClick={() => {
+                      const u = users.find(u => String(u.id) === String(selectedUserId));
+                      createOrOpenConversation({ participantUserId: Number(selectedUserId), title: u ? `${user.name} & ${u.name}` : "Nuova chat" });
+                    }}>
+                    Avvia conversazione →
+                  </button>
+                </div>
+              )}
 
               {/* Lista conversazioni */}
-              <div className="flex-1 overflow-y-auto space-y-2 pb-24 md:pb-0">
+              <div className="cp-scroll" style={{ flex:1, overflowY:"auto", padding:"10px 12px 80px" }}>
                 {conversations.length === 0 ? (
-                  <p className="text-sm text-black/45">Nessuna conversazione ancora.</p>
-                ) : conversations.map(c => {
-                  const isActive = c.id === selectedConversationId;
-                  const unread = Number(c.unreadCount || 0);
-                  return (
-                    <button key={c.id} type="button" onClick={() => handleSelectConversation(c.id)}
-                      className={`relative w-full text-left rounded-3xl p-4 border transition ${isActive ? "bg-[#111] text-white border-[#111]" : unread > 0 ? "bg-[#fff7ed] text-black border-[#ff5a00]/30" : "bg-[#f7f7f8] text-black border-black/5 hover:bg-black/[0.04]"}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="font-black text-sm">{c.title || "Conversazione"}</p>
-                        {unread > 0 && <span className="min-w-6 h-6 px-2 rounded-full bg-[#ff5a00] text-white text-[11px] flex items-center justify-center font-black">{unread > 99 ? "99+" : unread}</span>}
-                      </div>
-                      <p className={`text-xs mt-2 line-clamp-2 ${isActive ? "text-white/60" : "text-black/45"}`}>{c.lastMessage || "Nessun messaggio ancora"}</p>
-                      {c.bookingId && <p className={`text-[11px] mt-3 font-black uppercase tracking-[2px] ${isActive ? "text-white/35" : "text-[#ff5a00]"}`}>Booking collegato</p>}
-                    </button>
-                  );
-                })}
+                  <div style={{ textAlign:"center", padding:"40px 16px" }}>
+                    <p style={{ fontSize:24, marginBottom:8 }}>💬</p>
+                    <p style={{ fontSize:13, color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif" }}>Nessuna conversazione ancora.<br/>Inizia una nuova chat.</p>
+                  </div>
+                ) : conversations.map(c => (
+                  <ConvItem key={c.id} conv={c} isActive={c.id === selectedConversationId && view === "chat"} onClick={() => handleSelectConversation(c.id)} />
+                ))}
               </div>
             </aside>
 
-            {/* Area messaggi */}
-            <section className="hidden md:flex flex-col min-h-0">
-              <div className="bg-white border-b border-black/5 p-5">
-                <p className="text-xs uppercase tracking-[2px] text-black/40 font-black">Conversazione</p>
-                <h3 className="text-xl font-black tracking-[-0.03em] mt-1">{selectedConversation?.title || "Seleziona una conversazione"}</h3>
-                {selectedConversation?.bookingId && <p className="text-sm text-[#ff5a00] font-black mt-2">Chat collegata al booking #{selectedConversation.bookingId}</p>}
-                {/* Indicatore Realtime */}
-                <p className="text-[10px] text-green-600 font-bold mt-1">● Live</p>
-              </div>
+            {/* ══ AREA MESSAGGI ══ */}
+            <section className={`cp-main${view === "chat" ? " mobile-visible" : ""}`}>
 
-              <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                {!selectedConversationId ? (
-                  <div className="h-full flex items-center justify-center"><p className="text-black/45 font-bold">Avvia o seleziona una chat.</p></div>
-                ) : messages.length === 0 ? (
-                  <div className="h-full flex items-center justify-center"><p className="text-black/45 font-bold">Nessun messaggio. Scrivi il primo.</p></div>
-                ) : messages.map(item => {
-                  const isMine = String(item.senderId) === String(user.id);
-                  return (
-                    <div key={item.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[75%] rounded-[24px] px-4 py-3 ${isMine ? "bg-[#111] text-white" : "bg-white border border-black/5 text-black"}`}>
-                        {!isMine && <p className="text-xs font-black text-[#ff5a00] mb-1">{item.senderName || "Utente"}</p>}
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.body}</p>
-                        <p className={`text-[11px] mt-2 ${isMine ? "text-white/45" : "text-black/35"}`}>
-                          {new Date(item.createdAt).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" })}
-                        </p>
-                      </div>
+              {/* Header chat */}
+              <div style={{ padding:"16px 20px", borderBottom:"1px solid rgba(255,255,255,.07)", flexShrink:0, display:"flex", alignItems:"center", gap:12 }}>
+                <button className="cp-back" onClick={() => setView("list")}>← Lista</button>
+                {selectedConv ? (
+                  <>
+                    <Avatar name={selectedConv.title} size={38} orange />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1rem", color:"white", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", letterSpacing:"-.03em" }}>{selectedConv.title}</h3>
+                      <p style={{ fontSize:11, color:"rgba(255,255,255,.4)", margin:"2px 0 0", fontFamily:"'Manrope',system-ui,sans-serif", display:"flex", alignItems:"center", gap:4 }}>
+                        <span style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e", display:"inline-block" }} />
+                        Live · Realtime
+                        {selectedConv.bookingId && <span style={{ marginLeft:8, color:"#ff5a00", fontWeight:700 }}>· Booking #{selectedConv.bookingId}</span>}
+                      </p>
                     </div>
-                  );
-                })}
-                <div ref={bottomRef} />
+                  </>
+                ) : (
+                  <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", fontSize:13 }}>Seleziona una conversazione</p>
+                )}
+                <button onClick={() => setIsOpen(false)} style={{ width:34, height:34, borderRadius:10, background:"rgba(255,255,255,.07)", border:"none", color:"white", fontSize:"1.1rem", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, flexShrink:0 }}>×</button>
               </div>
 
-              <form onSubmit={sendMessage} className="bg-white border-t border-black/5 p-4 flex gap-3">
-                <input value={message} onChange={e => setMessage(e.target.value)}
-                  placeholder={selectedConversationId ? "Scrivi un messaggio..." : "Seleziona una conversazione"}
+              {/* Messaggi */}
+              <div className="cp-scroll" style={{ flex:1, overflowY:"auto", padding:"20px 16px" }}>
+                {!selectedConversationId ? (
+                  <div style={{ height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12 }}>
+                    <span style={{ fontSize:48 }}>💬</span>
+                    <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", fontSize:14, textAlign:"center" }}>Seleziona una conversazione<br/>o avviarne una nuova</p>
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div style={{ height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12 }}>
+                    <span style={{ fontSize:48 }}>✉️</span>
+                    <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", fontSize:14, textAlign:"center" }}>Nessun messaggio ancora.<br/>Scrivi il primo!</p>
+                  </div>
+                ) : (
+                  <>
+                    {messages.map(m => (
+                      <Bubble key={m.id} msg={m} isMine={String(m.senderId) === String(user.id)} />
+                    ))}
+                    {isSending && (
+                      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8, gap:8, alignItems:"flex-end" }}>
+                        <div style={{ background:"rgba(255,90,0,.3)", borderRadius:"20px 20px 6px 20px", padding:"10px 16px" }}>
+                          <span className="cp-dot" /><span className="cp-dot" /><span className="cp-dot" />
+                        </div>
+                      </div>
+                    )}
+                    <div ref={bottomRef} />
+                  </>
+                )}
+              </div>
+
+              {/* Input */}
+              <form onSubmit={sendMessage} style={{ padding:"12px 16px", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", gap:10, alignItems:"flex-end", flexShrink:0, background:"#0a0a0b" }}>
+                <textarea
+                  ref={inputRef}
+                  className="cp-input"
+                  rows={1}
+                  value={message}
+                  onChange={e => {
+                    setMessage(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                  }}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(e); } }}
+                  placeholder={selectedConversationId ? "Scrivi un messaggio... (Enter per inviare)" : "Seleziona una conversazione"}
                   disabled={!selectedConversationId}
-                  className="flex-1 bg-[#f7f7f8] border border-black/10 rounded-2xl px-4 py-3 outline-none disabled:opacity-50" />
-                <button disabled={!selectedConversationId || !message.trim() || isSending}
-                  className="bg-[#ff5a00] text-white rounded-2xl px-5 font-black disabled:opacity-40">
+                  style={{ flex:1, background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:14, padding:"12px 16px", color:"white", fontSize:14, fontFamily:"'Manrope',system-ui,sans-serif", outline:"none", resize:"none", minHeight:44, maxHeight:120, transition:"border-color .2s" }}
+                />
+                <button className="cp-send" type="submit" disabled={!selectedConversationId || !message.trim() || isSending}>
                   {isSending ? "..." : "Invia"}
                 </button>
               </form>
+
             </section>
           </div>
         </div>
