@@ -23,18 +23,19 @@ export default function HomeNav() {
   return (
     <>
       <style>{`
-        .hn-root { position:fixed; top:0; left:0; right:0; z-index:100; transition:all .3s; }
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800;900&family=Manrope:wght@400;600;700;800&display=swap');
+        .hn-root { position:fixed; top:0; left:0; right:0; z-index:100; transition:all .3s; font-family:'Manrope',sans-serif; }
         .hn-root.scrolled { background:rgba(10,10,11,.85); backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,.06); }
         .hn-inner { max-width:1200px; margin:0 auto; padding:0 20px; height:64px; display:flex; align-items:center; justify-content:space-between; }
         .hn-logo { font-family:'Sora',sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-.03em; text-decoration:none; color:#fff; }
         .hn-logo span { color:#ff5a00; }
         .hn-links { display:flex; align-items:center; gap:28px; }
-        .hn-links a { color:rgba(255,255,255,.7); font-size:.875rem; font-weight:600; text-decoration:none; transition:color .2s; }
+        .hn-links a { font-family:'Manrope',sans-serif; color:rgba(255,255,255,.7); font-size:.875rem; font-weight:600; text-decoration:none; transition:color .2s; }
         .hn-links a:hover { color:#fff; }
         .hn-cta { display:flex; gap:10px; align-items:center; }
-        .hn-btn-ghost { color:rgba(255,255,255,.8); font-size:.875rem; font-weight:700; text-decoration:none; padding:8px 16px; border-radius:100px; border:1px solid rgba(255,255,255,.15); transition:all .2s; }
+        .hn-btn-ghost { font-family:'Manrope',sans-serif; color:rgba(255,255,255,.8); font-size:.875rem; font-weight:700; text-decoration:none; padding:8px 16px; border-radius:100px; border:1px solid rgba(255,255,255,.15); transition:all .2s; }
         .hn-btn-ghost:hover { border-color:rgba(255,255,255,.4); color:#fff; }
-        .hn-btn-primary { background:#ff5a00; color:#fff; font-size:.875rem; font-weight:700; text-decoration:none; padding:9px 20px; border-radius:100px; transition:all .2s; }
+        .hn-btn-primary { font-family:'Manrope',sans-serif; background:#ff5a00; color:#fff; font-size:.875rem; font-weight:700; text-decoration:none; padding:9px 20px; border-radius:100px; transition:all .2s; }
         .hn-btn-primary:hover { background:#e85100; transform:scale(1.02); }
         .hn-hamburger { display:none; background:none; border:none; cursor:pointer; padding:8px; }
         .hn-hamburger span { display:block; width:22px; height:2px; background:#fff; margin:4px 0; border-radius:2px; transition:all .3s; }
