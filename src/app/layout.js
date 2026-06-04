@@ -14,6 +14,28 @@ export const metadata = {
   icons: {
     apple: "/icons/icon-180x180.png",
   },
+  openGraph: {
+    title: "TuttoEvento — Il marketplace per artisti, locali e promoter",
+    description: "Trova artisti per il tuo locale o fatti trovare dai locali giusti. Chat realtime, booking semplice, CRM completo. Gratis per iniziare.",
+    url: "https://tuttoevento.it",
+    siteName: "TuttoEvento",
+    locale: "it_IT",
+    type: "website",
+    images: [
+      {
+        url: "https://tuttoevento.it/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "TuttoEvento — Marketplace eventi dal vivo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TuttoEvento — Marketplace eventi dal vivo",
+    description: "La piattaforma italiana per artisti, locali e promoter.",
+    images: ["https://tuttoevento.it/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({ children }) {

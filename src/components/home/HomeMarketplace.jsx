@@ -2,10 +2,10 @@
 import Link from "next/link";
 
 const MOCK_ARTISTS = [
-  { name: "Marco DJ", genre: "House · Tech House", city: "Milano", photo: "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?auto=format&fit=crop&w=400&q=70", tag: "Disponibile" },
-  { name: "The Lumens", genre: "Indie Rock · Alternative", city: "Roma", photo: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=400&q=70", tag: "Disponibile" },
-  { name: "Sara Vox", genre: "Jazz · Soul · R&B", city: "Napoli", photo: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=400&q=70", tag: "In tour" },
-  { name: "Nova Crew", genre: "Hip Hop · Rap", city: "Torino", photo: "https://images.unsplash.com/photo-1493676304819-0d7a8d026dcf?auto=format&fit=crop&w=400&q=70", tag: "Disponibile" },
+  { name: "Marco DJ", genre: "House · Tech House", city: "Milano", photo: "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?auto=format&fit=crop&w=400&q=70", tag: "Esempio" },
+  { name: "The Lumens", genre: "Indie Rock · Alternative", city: "Roma", photo: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=400&q=70", tag: "Esempio" },
+  { name: "Sara Vox", genre: "Jazz · Soul · R&B", city: "Napoli", photo: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=400&q=70", tag: "Esempio" },
+  { name: "Nova Crew", genre: "Hip Hop · Rap", city: "Torino", photo: "https://images.unsplash.com/photo-1493676304819-0d7a8d026dcf?auto=format&fit=crop&w=400&q=70", tag: "Esempio" },
 ];
 
 export default function HomeMarketplace() {
@@ -21,12 +21,12 @@ export default function HomeMarketplace() {
         .hmp-see-all { color:rgba(255,255,255,.6); font-size:.9rem; font-weight:700; text-decoration:none; border:1px solid rgba(255,255,255,.12); padding:10px 20px; border-radius:100px; transition:all .2s; white-space:nowrap; }
         .hmp-see-all:hover { color:#fff; border-color:rgba(255,255,255,.3); }
         .hmp-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
-        .hmp-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:24px; overflow:hidden; transition:all .3s; }
+        .hmp-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:24px; overflow:hidden; transition:all .3s; position:relative; }
         .hmp-card:hover { transform:translateY(-6px); border-color:rgba(255,90,0,.3); box-shadow:0 20px 60px rgba(0,0,0,.5); }
         .hmp-img { aspect-ratio:1; overflow:hidden; position:relative; }
         .hmp-img img { width:100%; height:100%; object-fit:cover; transition:transform .4s; }
         .hmp-card:hover .hmp-img img { transform:scale(1.05); }
-        .hmp-badge { position:absolute; top:12px; right:12px; background:rgba(10,10,11,.8); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.1); border-radius:100px; padding:4px 10px; font-size:.7rem; font-weight:700; color:#fff; }
+        .hmp-badge { position:absolute; top:12px; right:12px; background:rgba(10,10,11,.8); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.15); border-radius:100px; padding:4px 10px; font-size:.7rem; font-weight:700; color:rgba(255,255,255,.6); }
         .hmp-info { padding:16px; }
         .hmp-name { font-family:'Sora',sans-serif; font-size:1rem; font-weight:800; color:#fff; margin-bottom:4px; }
         .hmp-genre { font-size:.78rem; font-weight:600; color:#ff5a00; margin-bottom:4px; }
@@ -36,7 +36,12 @@ export default function HomeMarketplace() {
         .hmp-price-val { font-size:.78rem; font-weight:800; color:rgba(255,255,255,.7); }
         .hmp-btn { width:100%; background:#ff5a00; color:#fff; border:none; border-radius:12px; padding:10px; font-size:.82rem; font-weight:800; cursor:pointer; font-family:'Manrope',sans-serif; transition:all .2s; }
         .hmp-btn:hover { background:#e85100; }
-        .hmp-bottom { text-align:center; margin-top:48px; }
+        /* Disclaimer banner */
+        .hmp-disclaimer { margin-top:32px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px 22px; display:flex; align-items:flex-start; gap:12px; }
+        .hmp-disclaimer-icon { font-size:1.2rem; flex-shrink:0; margin-top:1px; }
+        .hmp-disclaimer-text { font-family:'Manrope',sans-serif; font-size:.85rem; color:rgba(255,255,255,.5); line-height:1.6; }
+        .hmp-disclaimer-text strong { color:rgba(255,255,255,.8); }
+        .hmp-bottom { text-align:center; margin-top:24px; }
         .hmp-cta { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); color:#fff; text-decoration:none; padding:14px 28px; border-radius:100px; font-weight:700; font-size:.95rem; transition:all .2s; }
         .hmp-cta:hover { background:rgba(255,255,255,.1); }
         @media(max-width:900px) { .hmp-grid{grid-template-columns:repeat(2,1fr)} }
@@ -50,8 +55,9 @@ export default function HomeMarketplace() {
               <h2 className="hmp-title">Il roster.<br/>Solo il meglio.</h2>
               <p className="hmp-sub">Artisti verificati dal team TuttoEvento. Prezzi su richiesta, qualità garantita.</p>
             </div>
-            <Link href="/register" className="hmp-see-all">Vedi tutto il roster →</Link>
+            <Link href="/register" className="hmp-see-all">Registrati per vedere il roster →</Link>
           </div>
+
           <div className="hmp-grid">
             {MOCK_ARTISTS.map((a, i) => (
               <div key={i} className="hmp-card">
@@ -68,15 +74,25 @@ export default function HomeMarketplace() {
                     <span className="hmp-price-val">Su richiesta</span>
                   </div>
                   <button className="hmp-btn" onClick={() => window.location.href = "/register"}>
-                    Richiedi contatto →
+                    Registrati per contattare →
                   </button>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Disclaimer chiaro */}
+          <div className="hmp-disclaimer">
+            <span className="hmp-disclaimer-icon">ℹ️</span>
+            <p className="hmp-disclaimer-text">
+              <strong>Questi sono profili di esempio.</strong> TuttoEvento è appena lanciata e sta costruendo il roster di artisti verificati.{" "}
+              Registrati per entrare tra i primi artisti pubblicati nel marketplace, o come locale per ricevere aggiornamenti quando il roster sarà attivo.
+            </p>
+          </div>
+
           <div className="hmp-bottom">
             <Link href="/register" className="hmp-cta">
-              🎤 Registrati per vedere tutti gli artisti
+              🎤 Registrati per accedere al roster reale
             </Link>
           </div>
         </div>

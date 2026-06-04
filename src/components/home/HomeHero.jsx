@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 const HEADLINES = [
@@ -11,6 +11,7 @@ const HEADLINES = [
 export default function HomeHero() {
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
+  const [videoError, setVideoError] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -25,8 +26,9 @@ export default function HomeHero() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Manrope:wght@400;500;600;700&display=swap');
         .hh-root { position:relative; min-height:100vh; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#0a0a0b; }
-        .hh-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.25; }
-        .hh-overlay { position:absolute; inset:0; background:linear-gradient(180deg,rgba(10,10,11,.3) 0%,rgba(10,10,11,.6) 60%,#0a0a0b 100%); }
+        .hh-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.3; }
+        .hh-poster { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.3; }
+        .hh-overlay { position:absolute; inset:0; background:linear-gradient(180deg,rgba(10,10,11,.4) 0%,rgba(10,10,11,.5) 60%,#0a0a0b 100%); }
         .hh-glow { position:absolute; top:-200px; left:50%; transform:translateX(-50%); width:800px; height:800px; border-radius:50%; background:radial-gradient(circle,rgba(255,90,0,.35),transparent 70%); filter:blur(80px); pointer-events:none; }
         .hh-content { position:relative; z-index:2; text-align:center; padding:120px 20px 80px; max-width:900px; width:100%; }
         .hh-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,90,0,.12); border:1px solid rgba(255,90,0,.3); border-radius:100px; padding:6px 16px; margin-bottom:28px; }
@@ -39,9 +41,9 @@ export default function HomeHero() {
         .hh-sub { font-family:'Manrope',sans-serif; font-size:clamp(1rem,2.5vw,1.25rem); color:rgba(255,255,255,.55); margin:24px auto 40px; max-width:600px; line-height:1.7; }
         .hh-ctas { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:48px; }
         .hh-cta-primary { background:#ff5a00; color:#fff; font-family:'Manrope',sans-serif; font-weight:800; font-size:1rem; padding:15px 32px; border-radius:100px; text-decoration:none; transition:all .25s; box-shadow:0 16px 40px rgba(255,90,0,.4); }
-        .hh-cta-primary:hover { background:#e85100; transform:translateY(-2px) scale(1.02); box-shadow:0 20px 50px rgba(255,90,0,.5); }
+        .hh-cta-primary:hover { background:#e85100; transform:translateY(-2px) scale(1.02); }
         .hh-cta-ghost { background:rgba(255,255,255,.06); color:#fff; font-family:'Manrope',sans-serif; font-weight:700; font-size:1rem; padding:15px 32px; border-radius:100px; text-decoration:none; border:1px solid rgba(255,255,255,.15); transition:all .25s; }
-        .hh-cta-ghost:hover { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.3); }
+        .hh-cta-ghost:hover { background:rgba(255,255,255,.12); }
         .hh-stats { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; }
         .hh-stat p:first-child { font-family:'Sora',sans-serif; font-size:1.8rem; font-weight:900; color:#fff; }
         .hh-stat p:last-child { font-size:.8rem; color:rgba(255,255,255,.4); font-weight:600; margin-top:2px; }
@@ -53,10 +55,23 @@ export default function HomeHero() {
       `}</style>
 
       <section className="hh-root">
-        <video className="hh-video" autoPlay loop muted playsInline
-          poster="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1600&q=60">
-          <source src="/hero.mp4" type="video/mp4" />
-        </video>
+        {!videoError ? (
+          <video
+            className="hh-video"
+            autoPlay loop muted playsInline
+            poster="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1600&q=60"
+            onError={() => setVideoError(true)}
+          >
+            <source src="/hero.mp4" type="video/mp4" />
+          </video>
+        ) : (
+          <img
+            className="hh-poster"
+            src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1600&q=60"
+            alt=""
+            aria-hidden="true"
+          />
+        )}
         <div className="hh-overlay" />
         <div className="hh-glow" />
 
@@ -64,17 +79,25 @@ export default function HomeHero() {
           <div className="hh-badge">
             <span /><p>Marketplace eventi dal vivo · Italia</p>
           </div>
-
-          <h1 className={`hh-headline${visible ? "" : " hidden"}`}
-            dangerouslySetInnerHTML={{ __html: HEADLINES[idx].replace(/\n/g, "<br/>").replace("reali", "<em>reali</em>").replace("veri", "<em>veri</em>").replace("qui", "<em>qui</em>").replace("suonare", "<em>suonare</em>") }} />
-
-          <p className="hh-sub">La piattaforma che connette artisti, locali e promoter.<br/>Chat, booking, CRM e molto altro — tutto in un posto solo.</p>
-
+          <h1
+            className={`hh-headline${visible ? "" : " hidden"}`}
+            dangerouslySetInnerHTML={{
+              __html: HEADLINES[idx]
+                .replace(/\n/g, "<br/>")
+                .replace("reali", "<em>reali</em>")
+                .replace("veri", "<em>veri</em>")
+                .replace("qui", "<em>qui</em>")
+                .replace("suonare", "<em>suonare</em>")
+            }}
+          />
+          <p className="hh-sub">
+            La piattaforma che connette artisti, locali e promoter.<br/>
+            Chat, booking, CRM e molto altro — tutto in un posto solo.
+          </p>
           <div className="hh-ctas">
             <Link href="/register?role=artist" className="hh-cta-primary">Sono un artista →</Link>
             <Link href="/register?role=organizer" className="hh-cta-ghost">Sono un locale</Link>
           </div>
-
           <div className="hh-stats">
             <div className="hh-stat"><p>100%</p><p>Gratuito per iniziare</p></div>
             <div className="hh-stat-sep" />
