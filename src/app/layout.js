@@ -1,5 +1,6 @@
 import GdprBanner from "@/components/dashboard/GdprBanner";
 import PWAInstaller from "@/components/PWAInstaller";
+import MetaPixel from "@/components/MetaPixel";
 
 export const metadata = {
   title: "TuttoEvento - Piattaforma Gestione Eventi",
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
         {children}
         <GdprBanner />
         <PWAInstaller />
+        <MetaPixel />
       </body>
     </html>
   );
