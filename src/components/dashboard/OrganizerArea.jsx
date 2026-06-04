@@ -275,6 +275,7 @@ export default function OrganizerArea({
               {venueSaving ? "Salvo..." : "Salva profilo locale"}
             </button>
             {venueMsg && <p style={{ marginTop:8, fontSize:12, fontWeight:700, color:"#16a34a" }}>{venueMsg}</p>}
+            </form>
           </section>
         </div>
       )}
