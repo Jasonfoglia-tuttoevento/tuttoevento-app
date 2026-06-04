@@ -29,18 +29,26 @@ export default function RootLayout({ children }) {
   return (
     <html lang="it" style={{ margin: 0, padding: 0, overflowX: "hidden" }}>
       <head>
-        {/* Font globali — Sora per titoli, Manrope per testi */}
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/icons/icon-192x192.png" />
+
+        {/* Font globali */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
+
+        {/* PWA / mobile */}
         <meta name="theme-color" content="#ff5a00" />
         <link rel="apple-touch-icon" href="/icons/icon-180x180.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="TuttoEvento" />
+
+        {/* CSS globale */}
         <style>{`
           *, *::before, *::after { box-sizing: border-box; }
           html, body {
@@ -60,7 +68,8 @@ export default function RootLayout({ children }) {
             font-family: 'Sora', sans-serif;
             letter-spacing: -0.03em;
           }
-          /* Animazioni scroll globali */
+
+          /* Animazioni globali */
           @keyframes te-fade-up {
             from { opacity: 0; transform: translateY(28px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -73,6 +82,10 @@ export default function RootLayout({ children }) {
             0%,100% { text-shadow: 0 0 0px rgba(255,90,0,0); }
             50%     { text-shadow: 0 0 24px rgba(255,90,0,0.5); }
           }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+
           .te-animate-up {
             opacity: 0;
             animation: te-fade-up 0.7s cubic-bezier(.4,0,.2,1) forwards;
@@ -84,13 +97,13 @@ export default function RootLayout({ children }) {
           .te-logo-animate {
             animation: te-logo-glow 3s ease-in-out infinite;
           }
-          /* Delay utility */
           .te-d1 { animation-delay: .1s; }
           .te-d2 { animation-delay: .2s; }
           .te-d3 { animation-delay: .3s; }
           .te-d4 { animation-delay: .4s; }
           .te-d5 { animation-delay: .5s; }
           .te-d6 { animation-delay: .6s; }
+
           /* Reveal on scroll */
           .te-reveal {
             opacity: 0;
@@ -102,7 +115,8 @@ export default function RootLayout({ children }) {
             transform: translateY(0);
           }
         `}</style>
-        {/* Script per il reveal on scroll */}
+
+        {/* IntersectionObserver per .te-reveal */}
         <script dangerouslySetInnerHTML={{ __html: `
           if (typeof window !== 'undefined') {
             document.addEventListener('DOMContentLoaded', function() {
@@ -118,6 +132,7 @@ export default function RootLayout({ children }) {
           }
         `}} />
       </head>
+
       <body>
         {children}
         <GdprBanner />
