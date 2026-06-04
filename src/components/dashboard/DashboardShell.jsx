@@ -13,38 +13,46 @@ export default function DashboardShell({ user, children }) {
 
   async function handleLogout() {
     setLoggingOut(true);
-    try {
-      await fetch("/api/logout", { method: "POST" });
-    } catch {}
+    try { await fetch("/api/logout", { method: "POST" }); } catch {}
     router.push("/login");
   }
 
   return (
-    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#f5f5f6] text-[#111]">
-      <div className="flex min-h-screen w-full max-w-full overflow-x-hidden">
+    <main style={{ minHeight:"100vh", width:"100%", maxWidth:"100%", overflowX:"hidden", background:"#f5f5f6", color:"#111" }}>
+      <div style={{ display:"flex", minHeight:"100vh", width:"100%", maxWidth:"100%", overflowX:"hidden" }}>
+
         <DashboardSidebar user={user} />
 
-        <section className="flex-1 min-w-0 w-full max-w-full overflow-x-hidden">
-          {/* Header con logout */}
-          <div className="sticky top-0 z-20 bg-white border-b border-black/5 px-4 md:px-6 py-3 flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="font-bold text-sm truncate">{user?.name || "Utente"}</p>
-              <p className="text-xs text-[#6b6b73] capitalize">{user?.role || ""}</p>
+        <section style={{ flex:1, minWidth:0, width:"100%", maxWidth:"100%", overflowX:"hidden" }}>
+
+          {/* Header */}
+          <div style={{ position:"sticky", top:0, zIndex:20, background:"white", borderBottom:"1px solid rgba(0,0,0,.06)", padding:"10px 20px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ minWidth:0 }}>
+              <p style={{ fontFamily:"'Manrope',system-ui,sans-serif", fontWeight:700, fontSize:14, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", margin:0 }}>
+                {user?.name || "Utente"}
+              </p>
+              <p style={{ fontFamily:"'Manrope',system-ui,sans-serif", fontSize:12, color:"#6b6b73", textTransform:"capitalize", margin:0 }}>
+                {user?.role || ""}
+              </p>
             </div>
             <button
               onClick={handleLogout}
               disabled={loggingOut}
-              className="text-sm font-bold text-[#6b6b73] hover:text-[#ff5a00] transition disabled:opacity-50"
+              style={{ fontFamily:"'Manrope',system-ui,sans-serif", fontSize:13, fontWeight:700, color:"#6b6b73", background:"none", border:"none", cursor:"pointer", transition:"color .2s", opacity: loggingOut ? .5 : 1 }}
+              onMouseEnter={e => e.target.style.color = "#ff5a00"}
+              onMouseLeave={e => e.target.style.color = "#6b6b73"}
             >
               {loggingOut ? "Uscita..." : "← Esci"}
             </button>
           </div>
 
-          <div className="dashboard-mobile-safe w-full max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6 pb-28 lg:pb-6 overflow-x-hidden">
-            <div className="w-full max-w-full overflow-x-hidden">
+          {/* Contenuto */}
+          <div style={{ width:"100%", maxWidth:1400, margin:"0 auto", padding:"20px 20px 100px", overflowX:"hidden" }}>
+            <div style={{ width:"100%", maxWidth:"100%", overflowX:"hidden" }}>
               {children}
             </div>
           </div>
+
         </section>
       </div>
 

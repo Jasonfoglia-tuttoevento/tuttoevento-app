@@ -67,7 +67,6 @@ export default function DashboardPage() {
         return;
       }
 
-      // Il promoter ha bisogno di users, events e bookings
       if (parsedUser.role === "promoter") {
         await Promise.all([loadUsers(), loadAllEvents(), loadAllBookings(), loadArtists()]);
         setLoading(false);
@@ -96,28 +95,19 @@ export default function DashboardPage() {
   }
 
   async function loadUsers() {
-    try { const r = await fetch("/api/users"); const d = await r.json(); setUsers(Array.isArray(d) ? d : []); }
-    catch { setUsers([]); }
+    try { const r = await fetch("/api/users"); const d = await r.json(); setUsers(Array.isArray(d) ? d : []); } catch { setUsers([]); }
   }
-
   async function loadAllEvents() {
-    try { const r = await fetch("/api/events"); const d = await r.json(); setEvents(Array.isArray(d) ? d : []); }
-    catch { setEvents([]); }
+    try { const r = await fetch("/api/events"); const d = await r.json(); setEvents(Array.isArray(d) ? d : []); } catch { setEvents([]); }
   }
-
   async function loadAllBookings() {
-    try { const r = await fetch("/api/bookings"); const d = await r.json(); setBookings(Array.isArray(d) ? d : []); }
-    catch { setBookings([]); }
+    try { const r = await fetch("/api/bookings"); const d = await r.json(); setBookings(Array.isArray(d) ? d : []); } catch { setBookings([]); }
   }
-
   async function loadEvents(userId) {
-    try { const r = await fetch("/api/events?userId=" + userId); const d = await r.json(); setEvents(Array.isArray(d) ? d : []); }
-    catch { setEvents([]); }
+    try { const r = await fetch("/api/events?userId=" + userId); const d = await r.json(); setEvents(Array.isArray(d) ? d : []); } catch { setEvents([]); }
   }
-
   async function loadArtists() {
-    try { const r = await fetch("/api/artists"); const d = await r.json(); setArtists(Array.isArray(d) ? d : []); }
-    catch { setArtists([]); }
+    try { const r = await fetch("/api/artists"); const d = await r.json(); setArtists(Array.isArray(d) ? d : []); } catch { setArtists([]); }
   }
 
   function parseArray(v) { try { return Array.isArray(v) ? v : JSON.parse(v || "[]"); } catch { return []; } }
@@ -139,13 +129,10 @@ export default function DashboardPage() {
   }
 
   async function loadArtistBookings(artistId) {
-    try { const r = await fetch("/api/bookings?artistId=" + artistId); const d = await r.json(); setBookings(Array.isArray(d) ? d : []); }
-    catch { setBookings([]); }
+    try { const r = await fetch("/api/bookings?artistId=" + artistId); const d = await r.json(); setBookings(Array.isArray(d) ? d : []); } catch { setBookings([]); }
   }
-
   async function loadOrganizerBookings(organizerId) {
-    try { const r = await fetch("/api/bookings?organizerId=" + organizerId); const d = await r.json(); setBookings(Array.isArray(d) ? d : []); }
-    catch { setBookings([]); }
+    try { const r = await fetch("/api/bookings?organizerId=" + organizerId); const d = await r.json(); setBookings(Array.isArray(d) ? d : []); } catch { setBookings([]); }
   }
 
   async function updateBookingStatus(id, status) {
@@ -176,10 +163,21 @@ export default function DashboardPage() {
     await loadArtistProfile(user.id);
   }
 
+  // Loading screen — stili inline, zero Tailwind
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#f5f5f6] flex items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-black/10 border-b-[#ff5a00]" />
+      <main style={{ minHeight:"100vh", background:"#f5f5f6", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ textAlign:"center" }}>
+          <div style={{
+            width:44, height:44, border:"4px solid rgba(0,0,0,.1)",
+            borderBottomColor:"#ff5a00", borderRadius:"50%",
+            animation:"spin .7s linear infinite", margin:"0 auto 16px"
+          }} />
+          <p style={{ fontFamily:"'Manrope',system-ui,sans-serif", fontSize:14, color:"#6b6b73", fontWeight:600 }}>
+            Caricamento...
+          </p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </main>
     );
   }
@@ -207,6 +205,7 @@ export default function DashboardPage() {
       {user.role === "artist" && (
         <>
           <ArtistArea
+            currentUser={user}
             cachet={cachet} setCachet={setCachet} stageName={stageName} setStageName={setStageName}
             artistType={artistType} setArtistType={setArtistType} membersCount={membersCount} setMembersCount={setMembersCount}
             musicGenres={musicGenres} setMusicGenres={setMusicGenres} eventTypes={eventTypes} setEventTypes={setEventTypes}
