@@ -1,1112 +1,326 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-/* Hook per l'animazione al passaggio dello scroll */
 function useReveal() {
   useEffect(() => {
     const els = document.querySelectorAll("[data-reveal]");
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add("is-visible");
-            io.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
-    );
-    els.forEach((el) => io.observe(el));
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.style.opacity = "1"; e.target.style.transform = "translateY(0)"; io.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+    els.forEach(el => io.observe(el));
     return () => io.disconnect();
   }, []);
 }
 
-/* Card 3D Tilt */
-function TiltCard({ children, className = "", glow = "rgba(255,90,0,0.25)" }) {
-  const ref = useRef(null);
-  const [style, setStyle] = useState({});
+const FAQS = [
+  { q: "Quanto costa cercare artisti?", a: "La registrazione è gratuita. Puoi creare il profilo del tuo locale, sfogliare il marketplace e inviare richieste di contatto senza alcun costo." },
+  { q: "Posso trovare artisti anche per eventi privati o aziendali?", a: "Sì. TuttoEvento è pensato per locali, ristoranti, hotel, beach club, discoteche, wedding planner, aziende e privati che vogliono trovare artisti affidabili." },
+  { q: "Come funziona il pricing degli artisti?", a: "I prezzi sono su richiesta — non visibili nel marketplace. Indica il tuo budget nella richiesta e il team TuttoEvento gestirà la trattativa in modo riservato." },
+  { q: "Gli artisti sono verificati?", a: "Ogni artista viene approvato manualmente dal team TuttoEvento prima di apparire nel marketplace. Verifichiamo identità, qualità del profilo e coerenza delle informazioni." },
+  { q: "Posso gestire più eventi contemporaneamente?", a: "Sì. Dalla dashboard puoi monitorare richieste, pipeline trattative, eventi confermati e comunicazioni con il team TuttoEvento in un unico spazio." },
+];
 
-  function handleMove(e) {
-    const el = ref.current;
-    if (!el) return;
+const PASSI = [
+  { n:"01", icon:"🔍", title:"Sfoglia il marketplace", desc:"Filtra gli artisti per genere musicale, città e fascia di budget. Solo profili verificati dal team." },
+  { n:"02", icon:"📬", title:"Richiedi contatto riservato", desc:"Indica data, tipo evento e budget. Il team TuttoEvento gestisce la trattativa per te in totale riservatezza." },
+  { n:"03", icon:"🎉", title:"Serata confermata", desc:"Artista confermato, tutto organizzato. Gestisci il tutto dalla dashboard: chat, calendario e storico booking." },
+];
 
-    const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width;
-    const py = (e.clientY - r.top) / r.height;
-    const rx = (py - 0.5) * -9;
-    const ry = (px - 0.5) * 11;
+const reveal = { opacity: 0, transform: "translateY(28px)", transition: "opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1)" };
 
-    setStyle({
-      transform: `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px)`,
-      "--mx": `${px * 100}%`,
-      "--my": `${py * 100}%`,
-      "--glow": glow,
-    });
-  }
-
-  function reset() {
-    setStyle({
-      transform: "perspective(900px) rotateX(0) rotateY(0) translateY(0)",
-    });
-  }
-
-  return (
-    <div
-      ref={ref}
-      onMouseMove={handleMove}
-      onMouseLeave={reset}
-      style={style}
-      className={`te-tilt ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-export default function LocaliLandingClient() {
+export default function LandingLocali() {
   useReveal();
-
   const [budget, setBudget] = useState(300);
   const [openFaq, setOpenFaq] = useState(null);
 
-  const toggleFaq = (index) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
-
-  const faqs = [
-    {
-      q: "Quanto costa cercare artisti su TuttoEvento?",
-      a: "La registrazione è gratuita. Puoi creare il tuo profilo locale, pubblicare richieste e ricevere proposte dagli artisti. Il costo finale dipende dal cachet dell'artista scelto e dal servizio richiesto.",
-    },
-    {
-      q: "Posso trovare artisti anche per eventi privati o aziendali?",
-      a: "Sì. TuttoEvento è pensato per locali, ristoranti, hotel, beach club, discoteche, wedding planner, aziende e privati che vogliono trovare artisti affidabili per eventi, serate e intrattenimento.",
-    },
-    {
-      q: "Come funziona il pagamento?",
-      a: "Il pagamento viene gestito in modo protetto. Confermi la prenotazione, versi l'importo concordato e l'artista riceve il compenso dopo l'evento. In questo modo entrambe le parti sono tutelate.",
-    },
-    {
-      q: "Gli artisti sono verificati?",
-      a: "Ogni profilo può includere foto, video, descrizione, genere, disponibilità, area di lavoro e recensioni. Questo ti permette di valutare rapidamente l'artista più adatto alla tua serata.",
-    },
-    {
-      q: "Posso gestire più eventi contemporaneamente?",
-      a: "Sì. Dalla dashboard puoi monitorare richieste, artisti contattati, eventi confermati, pagamenti e comunicazioni in un unico spazio.",
-    },
+  const FORMAT = [
+    { min:100, max:300, label:"Aperitivo / piccolo evento", desc:"DJ set light, cantante solista o musicista acustico." },
+    { min:300, max:700, label:"Serata locale / cena spettacolo", desc:"DJ, duo acustico, performer o live set strutturato." },
+    { min:700, max:2000, label:"Evento premium", desc:"Band live, show completo, corporate event o grande format." },
   ];
 
   return (
-    <main className="te-locali-root">
+    <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700&display=swap');
-
-        .te-locali-root {
-          --orange: #ff5a00;
-          --orange-soft: #ff8a3d;
-          --ink: #09090b;
-          --night: #111114;
-          --paper: #fbfaf8;
-          --cream: #fff7ef;
-          --muted: #6b6b73;
-          --gold: #f6b14a;
-          font-family: 'Manrope', system-ui, sans-serif;
-          background: var(--paper);
-          color: var(--ink);
-          min-height: 100vh;
-          overflow-x: hidden;
-          position: relative;
-        }
-
-        .te-locali-root ::selection {
-          background: var(--orange);
-          color: #fff;
-        }
-
-        .te-display {
-          font-family: 'Sora', sans-serif;
-          letter-spacing: -0.035em;
-        }
-
-        .te-grain::before {
-          content: "";
-          position: fixed;
-          inset: 0;
-          z-index: 1;
-          pointer-events: none;
-          opacity: 0.035;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-        }
-
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(28px);
-          transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1);
-        }
-
-        [data-reveal].is-visible {
-          opacity: 1;
-          transform: none;
-        }
-
-        [data-reveal][data-delay="1"] {
-          transition-delay: .08s;
-        }
-
-        [data-reveal][data-delay="2"] {
-          transition-delay: .16s;
-        }
-
-        [data-reveal][data-delay="3"] {
-          transition-delay: .24s;
-        }
-
-        .te-tilt {
-          transition: transform .25s cubic-bezier(.2,.7,.2,1);
-          transform-style: preserve-3d;
-          will-change: transform;
-          position: relative;
-        }
-
-        .te-tilt::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          pointer-events: none;
-          background: radial-gradient(
-            420px circle at var(--mx,50%) var(--my,50%),
-            var(--glow,rgba(255,90,0,.18)),
-            transparent 45%
-          );
-          opacity: 0;
-          transition: opacity .3s;
-        }
-
-        .te-tilt:hover::after {
-          opacity: 1;
-        }
-
-        @keyframes te-float {
-          0%,100% { transform: translate(0,0) scale(1); }
-          50% { transform: translate(0,-24px) scale(1.03); }
-        }
-
-        @keyframes te-float2 {
-          0%,100% { transform: translate(0,0); }
-          50% { transform: translate(18px,14px); }
-        }
-
-        @keyframes te-spin {
-          to { transform: rotate(360deg); }
-        }
-
-        @keyframes te-pulse {
-          0%,100% { opacity:.5; }
-          50% { opacity:1; }
-        }
-
-        @keyframes te-marquee {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-
-        @keyframes te-shimmer-move {
-          to { background-position: -200% 0; }
-        }
-
-        .te-shimmer {
-          background: linear-gradient(
-            100deg,
-            var(--orange) 0%,
-            var(--orange-soft) 38%,
-            #ffc27d 50%,
-            var(--orange-soft) 62%,
-            var(--orange) 100%
-          );
-          background-size: 200% 100%;
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-          animation: te-shimmer-move 6s linear infinite;
-        }
-
-        .te-cta {
-          position: relative;
-          isolation: isolate;
-        }
-
-        .te-cta::before {
-          content: "";
-          position: absolute;
-          inset: -2px;
-          border-radius: 999px;
-          z-index: -1;
-          background: conic-gradient(from 0deg, var(--orange), #ffcf91, var(--orange));
-          opacity: 0;
-          transition: opacity .35s;
-          filter: blur(8px);
-        }
-
-        .te-cta:hover::before {
-          opacity: .55;
-          animation: te-spin 4s linear infinite;
-        }
-
-        .te-glass {
-          background: rgba(255,255,255,0.68);
-          backdrop-filter: blur(18px) saturate(160%);
-          -webkit-backdrop-filter: blur(18px) saturate(160%);
-          border: 1px solid rgba(255,255,255,0.72);
-          box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 30px 60px -30px rgba(20,12,0,.25);
-        }
-
-        .te-dark-glass {
-          background: rgba(16,16,18,0.82);
-          backdrop-filter: blur(18px);
-          -webkit-backdrop-filter: blur(18px);
-          border: 1px solid rgba(255,255,255,0.08);
-          box-shadow: 0 30px 80px -35px rgba(0,0,0,.8);
-        }
-
-        .slider-thumb::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: var(--orange);
-          cursor: pointer;
-          box-shadow: 0 0 15px rgba(255,90,0,0.5);
-          transition: transform 0.15s, background-color 0.15s;
-        }
-
-        .slider-thumb::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
-          background: var(--orange-soft);
-        }
-
-        .slider-thumb::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: var(--orange);
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 0 15px rgba(255,90,0,0.5);
-          transition: transform 0.15s, background-color 0.15s;
-        }
-
-        .slider-thumb::-moz-range-thumb:hover {
-          transform: scale(1.2);
-          background: var(--orange-soft);
-        }
-
-        @media (max-width: 640px) {
-          .te-locali-root {
-            -webkit-text-size-adjust: 100%;
-          }
-
-          .te-glass,
-          .te-dark-glass {
-            backdrop-filter: blur(12px) saturate(140%);
-            -webkit-backdrop-filter: blur(12px) saturate(140%);
-          }
-
-          .te-tilt {
-            transform: none !important;
-          }
-
-          .te-tilt::after {
-            display: none;
-          }
-
-          input[type="range"].slider-thumb {
-            height: 10px;
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .te-tilt,
-          [data-reveal] {
-            transition: none !important;
-            transform: none !important;
-          }
-
-          .te-shimmer,
-          .te-cta::before {
-            animation: none !important;
-          }
-        }
+        @keyframes float { 0%,100%{transform:translate(-50%,0)} 50%{transform:translate(-50%,-24px)} }
+        @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(18px,14px)} }
+        @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+        @keyframes shimmer { to{background-position:-200% 0} }
+        @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+        * { box-sizing:border-box; }
+        html,body { margin:0; padding:0; overflow-x:hidden; }
+        .ll-root { font-family:'Manrope',system-ui,sans-serif; background:#fbfaf8; color:#0a0a0b; min-height:100vh; overflow-x:hidden; }
+        .ll-shimmer { background:linear-gradient(100deg,#ff5a00 0%,#ff8a3d 38%,#ffc27d 50%,#ff8a3d 62%,#ff5a00 100%); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:shimmer 6s linear infinite; }
+        .ll-glass { background:rgba(255,255,255,.68); backdrop-filter:blur(18px) saturate(160%); border:1px solid rgba(255,255,255,.72); box-shadow:0 30px 60px -30px rgba(20,12,0,.22); }
+        .ll-dark-glass { background:rgba(16,16,18,.85); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.08); box-shadow:0 30px 80px -35px rgba(0,0,0,.8); }
+        .ll-card { background:#fbfaf8; border:1px solid rgba(0,0,0,.06); border-radius:28px; padding:28px; height:100%; transition:box-shadow .2s, transform .2s; }
+        .ll-card:hover { box-shadow:0 12px 40px rgba(0,0,0,.1); transform:translateY(-3px); }
+        .ll-cta-btn { position:relative; display:inline-block; background:#ff5a00; color:white; padding:16px 36px; border-radius:100px; font-weight:700; font-size:1rem; text-decoration:none; transition:all .2s; box-shadow:0 18px 40px -12px rgba(255,90,0,.55); font-family:'Manrope',sans-serif; }
+        .ll-cta-btn:hover { background:#e85100; transform:scale(1.02); }
+        .ll-ghost-btn { display:inline-block; background:rgba(255,255,255,.65); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.72); color:#0a0a0b; padding:16px 32px; border-radius:100px; font-weight:700; font-size:1rem; text-decoration:none; transition:all .2s; font-family:'Manrope',sans-serif; }
+        .ll-ghost-btn:hover { transform:scale(1.02); }
+        input[type=range].ll-slider { width:100%; height:8px; -webkit-appearance:none; appearance:none; background:rgba(0,0,0,.12); border-radius:4px; outline:none; cursor:pointer; }
+        input[type=range].ll-slider::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:#ff5a00; box-shadow:0 0 12px rgba(255,90,0,.5); transition:transform .15s; }
+        input[type=range].ll-slider::-webkit-slider-thumb:hover { transform:scale(1.2); }
+        @media(max-width:768px) { .ll-hero-grid{grid-template-columns:1fr!important} .ll-grid-2{grid-template-columns:1fr!important} .ll-grid-4{grid-template-columns:1fr 1fr!important} }
+        @media(max-width:400px) { .ll-grid-4{grid-template-columns:1fr!important} }
       `}</style>
 
-      <div className="te-grain" />
+      <div className="ll-root">
 
-      {/* NAVBAR */}
-      <nav className="fixed top-0 inset-x-0 z-50 px-4 pt-4">
-        <div className="te-glass max-w-6xl mx-auto rounded-full px-5 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center shrink-0">
-            <span className="te-display font-extrabold text-base sm:text-lg tracking-tight">
-              TUTTO<span className="text-[var(--orange)]">EVENTO</span>
-            </span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-[var(--muted)]">
-            <a href="#vantaggi" className="hover:text-[var(--orange)] transition">
-              Vantaggi
-            </a>
-            <a href="#come-funziona" className="hover:text-[var(--orange)] transition">
-              Come funziona
-            </a>
-            <a href="#budget" className="hover:text-[var(--orange)] transition">
-              Budget
-            </a>
-            <a href="#faq" className="hover:text-[var(--orange)] transition">
-              FAQ
-            </a>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="text-sm font-bold text-[var(--ink)] px-4 py-2 rounded-full hover:bg-black/5 transition"
-            >
-              Accedi
+        {/* NAVBAR */}
+        <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:100, padding:"12px 16px" }}>
+          <div className="ll-glass" style={{ maxWidth:1100, margin:"0 auto", borderRadius:100, padding:"0 20px", height:56, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <Link href="/" style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"1.1rem", letterSpacing:"-.04em", textDecoration:"none", color:"#0a0a0b" }}>
+              TUTTO<span style={{ color:"#ff5a00" }}>EVENTO</span>
             </Link>
-            <Link
-              href="/register?role=organizer"
-              className="te-cta bg-[var(--orange)] text-white text-xs sm:text-sm font-bold px-4 sm:px-5 py-2.5 rounded-full hover:scale-[1.04] transition whitespace-nowrap shadow-[0_10px_20px_rgba(255,90,0,0.22)]"
-            >
-              Trova artisti
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* HERO */}
-      <section className="relative pt-32 sm:pt-44 pb-16 sm:pb-24 px-5 sm:px-6 overflow-hidden">
-        <div
-          aria-hidden
-          className="absolute top-[-160px] left-1/2 -translate-x-1/2 w-[760px] h-[760px] rounded-full -z-10 blur-[130px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255,90,0,.30), rgba(255,177,74,.13) 48%, transparent 72%)",
-            animation: "te-float 9s ease-in-out infinite",
-          }}
-        />
-
-        <div
-          aria-hidden
-          className="absolute top-[170px] right-[-160px] w-[480px] h-[480px] rounded-full -z-10 blur-[110px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255,210,150,.35), transparent 70%)",
-            animation: "te-float2 12s ease-in-out infinite",
-          }}
-        />
-
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6 text-center lg:text-left">
-            <div
-              data-reveal
-              className="inline-flex items-center gap-2 te-glass rounded-full px-3 sm:px-4 py-1.5 mb-6 sm:mb-8 max-w-[92vw]"
-            >
-              <span
-                className="w-2 h-2 rounded-full bg-[var(--orange)] shrink-0"
-                style={{ animation: "te-pulse 2s infinite" }}
-              />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">
-                CAMPAGNA ACQUISIZIONE LOCALI 2026
-              </span>
+            <div style={{ display:"flex", gap:28, alignItems:"center" }}>
+              {[["#vantaggi","Vantaggi"],["#come-funziona","Come funziona"],["#budget","Budget"],["#faq","FAQ"]].map(([h,l]) => (
+                <a key={h} href={h} style={{ fontSize:".875rem", fontWeight:600, color:"#6b6b73", textDecoration:"none" }}>{l}</a>
+              ))}
             </div>
-
-            <h1
-              data-reveal
-              data-delay="1"
-              className="te-display text-[2.55rem] leading-[1] sm:text-6xl sm:leading-[0.95] md:text-7xl font-extrabold mb-6 sm:mb-8 text-[#0a0a0b]"
-            >
-              Riempi il tuo locale. <br />
-              Trova l'artista giusto <br />
-              <span className="te-shimmer">in pochi click</span>.
-            </h1>
-
-            <p
-              data-reveal
-              data-delay="2"
-              className="text-base sm:text-xl text-[var(--muted)] max-w-2xl mx-auto lg:mx-0 mb-9 leading-relaxed"
-            >
-              Con TuttoEvento trovi DJ, band, cantanti, performer e animatori
-              per serate, eventi privati, cene spettacolo e format ricorrenti.
-              Gestisci richieste, preventivi, chat e pagamenti da un'unica
-              dashboard.
-            </p>
-
-            <div
-              data-reveal
-              data-delay="3"
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 max-w-md mx-auto lg:mx-0 sm:max-w-none"
-            >
-              <Link
-                href="/register?role=organizer"
-                className="te-cta w-full sm:w-auto bg-[var(--orange)] text-white px-8 py-4 rounded-full font-bold text-base sm:text-lg hover:bg-[#e85100] transition shadow-[0_18px_40px_-12px_rgba(255,90,0,.6)] text-center"
-              >
-                Pubblica una richiesta gratis
-              </Link>
-
-              <a
-                href="#come-funziona"
-                className="w-full sm:w-auto te-glass text-[var(--ink)] px-8 py-4 rounded-full font-bold text-base sm:text-lg hover:scale-[1.02] transition text-center"
-              >
-                Scopri come funziona →
-              </a>
-            </div>
-
-            <div
-              data-reveal
-              className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 text-xs font-semibold text-[var(--muted)]"
-            >
-              <span>✓ Artisti filtrati per zona</span>
-              <span>✓ Preventivi rapidi</span>
-              <span>✓ Pagamenti protetti</span>
-              <span>✓ Ideale per locali ed eventi</span>
+            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+              <Link href="/login" style={{ fontSize:".875rem", fontWeight:700, color:"#0a0a0b", textDecoration:"none", padding:"7px 14px", borderRadius:100 }}>Accedi</Link>
+              <Link href="/register?role=organizer" className="ll-cta-btn" style={{ padding:"8px 18px", fontSize:".85rem" }}>Trova artisti</Link>
             </div>
           </div>
+        </nav>
 
-          {/* HERO CARD */}
-          <div data-reveal data-delay="2" className="lg:col-span-6">
-            <div className="relative">
-              <div
-                aria-hidden
-                className="absolute -inset-6 rounded-[3rem] blur-3xl opacity-50"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(255,90,0,.30), rgba(246,177,74,.22), transparent)",
-                }}
-              />
+        {/* HERO */}
+        <section style={{ position:"relative", paddingTop:160, paddingBottom:80, paddingLeft:20, paddingRight:20, overflow:"hidden" }}>
+          <div aria-hidden style={{ position:"absolute", top:-160, left:"50%", width:760, height:760, borderRadius:"50%", background:"radial-gradient(circle,rgba(255,90,0,.28),rgba(255,177,74,.12) 50%,transparent 72%)", filter:"blur(130px)", zIndex:0, animation:"float 9s ease-in-out infinite", pointerEvents:"none" }} />
+          <div aria-hidden style={{ position:"absolute", top:170, right:-160, width:480, height:480, borderRadius:"50%", background:"radial-gradient(circle,rgba(255,210,150,.3),transparent 70%)", filter:"blur(110px)", zIndex:0, animation:"float2 12s ease-in-out infinite", pointerEvents:"none" }} />
 
-              <div className="relative te-dark-glass rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden text-white">
-                <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-white/45 font-mono">
-                      tuttoevento.it/locali
-                    </p>
-                    <h3 className="te-display text-xl font-extrabold mt-1">
-                      Richieste in arrivo
-                    </h3>
-                  </div>
-                  <span className="bg-green-500/12 text-green-400 text-xs font-bold px-3 py-1.5 rounded-full">
-                    Live
-                  </span>
+          <div style={{ maxWidth:1100, margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap:48, alignItems:"center", position:"relative", zIndex:1 }} className="ll-hero-grid">
+
+            {/* Testo */}
+            <div>
+              <div data-reveal style={{ ...reveal, display:"inline-flex", alignItems:"center", gap:8, borderRadius:100, padding:"6px 16px", marginBottom:28, background:"rgba(255,255,255,.65)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,.72)" }}>
+                <span style={{ width:8, height:8, borderRadius:"50%", background:"#ff5a00", animation:"pulse 2s infinite", display:"inline-block" }} />
+                <span style={{ fontSize:".75rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".1em", color:"#6b6b73" }}>Per locali e organizzatori · 2026</span>
+              </div>
+
+              <h1 data-reveal style={{ ...reveal, fontFamily:"'Sora',sans-serif", fontSize:"clamp(2.4rem,5vw,4rem)", fontWeight:900, lineHeight:1.0, letterSpacing:"-2px", color:"#0a0a0b", marginBottom:24 }}>
+                Riempi il tuo locale.<br/>Trova l'artista giusto<br/><span className="ll-shimmer">in pochi click.</span>
+              </h1>
+
+              <p data-reveal style={{ ...reveal, fontSize:"clamp(.95rem,2vw,1.1rem)", color:"#6b6b73", marginBottom:36, lineHeight:1.7 }}>
+                Con TuttoEvento trovi DJ, band, cantanti e performer per serate ed eventi. Gestisci richieste, chat e booking da un'unica dashboard — il tuo CRM per gli eventi.
+              </p>
+
+              <div data-reveal style={{ ...reveal, display:"flex", gap:14, flexWrap:"wrap", marginBottom:28 }}>
+                <Link href="/register?role=organizer" className="ll-cta-btn">Pubblica una richiesta gratis</Link>
+                <a href="#come-funziona" className="ll-ghost-btn">Come funziona →</a>
+              </div>
+
+              <div data-reveal style={{ ...reveal, display:"flex", gap:16, flexWrap:"wrap" }}>
+                {["Artisti verificati","Prezzi su richiesta","Risposta in 48h","🇮🇹 Made in Italy"].map(t => (
+                  <span key={t} style={{ fontSize:".8rem", fontWeight:600, color:"#6b6b73" }}>✓ {t}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Hero card dashboard */}
+            <div data-reveal style={reveal}>
+              <div className="ll-dark-glass" style={{ borderRadius:32, overflow:"hidden" }}>
+                <div style={{ padding:"16px 20px", borderBottom:"1px solid rgba(255,255,255,.08)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div><p style={{ fontSize:11, color:"rgba(255,255,255,.4)", fontFamily:"monospace" }}>tuttoevento.it/locali</p><h3 style={{ fontFamily:"'Sora',sans-serif", fontSize:"1.15rem", fontWeight:800, color:"white", marginTop:4 }}>Richieste in arrivo</h3></div>
+                  <span style={{ fontSize:11, fontWeight:700, color:"#4ade80", background:"rgba(74,222,128,.12)", padding:"4px 12px", borderRadius:100 }}>Live</span>
                 </div>
-
-                <div className="p-5 sm:p-6 space-y-4">
-                  {[
-                    {
-                      type: "DJ Set",
-                      place: "Venerdì sera · Rooftop Bar",
-                      budget: "€ 350 - € 500",
-                      matches: "12 artisti disponibili",
-                    },
-                    {
-                      type: "Duo Acustico",
-                      place: "Cena spettacolo · Ristorante",
-                      budget: "€ 250 - € 400",
-                      matches: "8 artisti disponibili",
-                    },
-                    {
-                      type: "Band Live",
-                      place: "Evento aziendale · Hotel",
-                      budget: "€ 700 - € 1.200",
-                      matches: "6 artisti disponibili",
-                    },
-                  ].map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white/[0.06] border border-white/10 rounded-2xl p-4 hover:bg-white/[0.08] transition"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-extrabold text-white">{item.type}</p>
-                          <p className="text-sm text-white/50 mt-1">{item.place}</p>
-                        </div>
-                        <p className="text-sm font-bold text-[var(--orange-soft)] whitespace-nowrap">
-                          {item.budget}
-                        </p>
+                <div style={{ padding:20 }}>
+                  {[["DJ Set","Venerdì sera · Rooftop Bar","€350–€500","12 artisti"],["Duo Acustico","Cena spettacolo · Ristorante","€250–€400","8 artisti"],["Band Live","Evento aziendale · Hotel","€700–€1.200","6 artisti"]].map(([tipo,luogo,budget_r,match]) => (
+                    <div key={tipo} style={{ background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.08)", borderRadius:16, padding:"14px 16px", marginBottom:10 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                        <div><p style={{ fontWeight:700, color:"white", fontSize:".9rem" }}>{tipo}</p><p style={{ fontSize:".78rem", color:"rgba(255,255,255,.45)", marginTop:2 }}>{luogo}</p></div>
+                        <p style={{ fontSize:".8rem", fontWeight:700, color:"#ff8a3d" }}>{budget_r}</p>
                       </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <p className="text-xs font-bold text-green-400">
-                          {item.matches}
-                        </p>
-                        <button className="text-xs font-bold bg-white text-black px-3 py-1.5 rounded-full">
-                          Vedi profili
-                        </button>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <span style={{ fontSize:11, fontWeight:700, color:"#4ade80" }}>{match} disponibili</span>
+                        <button style={{ fontSize:11, fontWeight:700, background:"white", color:"#0a0a0b", border:"none", borderRadius:100, padding:"5px 12px", cursor:"pointer" }}>Vedi profili</button>
                       </div>
                     </div>
                   ))}
                 </div>
-
-                <div className="px-5 sm:px-6 pb-6 grid grid-cols-3 gap-3">
-                  {[
-                    ["24h", "tempo medio risposta"],
-                    ["150+", "categorie artistiche"],
-                    ["0", "stress operativo"],
-                  ].map((stat, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-black/20 border border-white/10 rounded-2xl p-3 text-center"
-                    >
-                      <p className="te-display text-xl sm:text-2xl font-extrabold text-white">
-                        {stat[0]}
-                      </p>
-                      <p className="text-[10px] text-white/45 mt-1 leading-tight">
-                        {stat[1]}
-                      </p>
+                <div style={{ padding:"0 20px 20px", display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+                  {[["24h","risposta media"],["100+","artisti verificati"],["0","stress operativo"]].map(([v,l]) => (
+                    <div key={l} style={{ background:"rgba(0,0,0,.2)", border:"1px solid rgba(255,255,255,.08)", borderRadius:14, padding:"12px 8px", textAlign:"center" }}>
+                      <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"1.4rem", color:"white" }}>{v}</p>
+                      <p style={{ fontSize:10, color:"rgba(255,255,255,.4)", marginTop:4, lineHeight:1.3 }}>{l}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* LOGHI / MARQUEE */}
-      <section className="py-6 bg-[var(--night)] overflow-hidden">
-        <div className="flex whitespace-nowrap" style={{ animation: "te-marquee 26s linear infinite" }}>
-          {[
-            "Ristoranti",
-            "Beach Club",
-            "Hotel",
-            "Rooftop Bar",
-            "Discoteche",
-            "Wedding Planner",
-            "Aziende",
-            "Eventi Privati",
-            "Festival",
-            "Locali Live",
-            "Ristoranti",
-            "Beach Club",
-            "Hotel",
-            "Rooftop Bar",
-            "Discoteche",
-            "Wedding Planner",
-            "Aziende",
-            "Eventi Privati",
-            "Festival",
-            "Locali Live",
-          ].map((item, idx) => (
-            <span
-              key={idx}
-              className="mx-6 text-white/55 text-sm sm:text-base font-bold uppercase tracking-[0.16em]"
-            >
-              {item}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* VANTAGGI */}
-      <section id="vantaggi" className="py-20 sm:py-28 px-5 sm:px-6 bg-white border-y border-black/5">
-        <div className="max-w-6xl mx-auto">
-          <div data-reveal className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--orange)] mb-3">
-              Pensato per chi organizza eventi
-            </p>
-            <h2 className="te-display text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight text-[#0a0a0b]">
-              Meno telefonate, meno rischio, più serate riuscite.
-            </h2>
-            <p className="text-base sm:text-lg text-[var(--muted)] mt-4">
-              Trova artisti adatti al tuo pubblico, confronta proposte e conferma
-              la serata con un flusso semplice e professionale.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: "🎧",
-                title: "Artisti per ogni format",
-                desc: "DJ set, live band, cantanti, performer, animatori, cabaret, magia e intrattenimento per ogni tipo di pubblico.",
-                glow: "rgba(255,90,0,0.22)",
-              },
-              {
-                icon: "📍",
-                title: "Ricerca geolocalizzata",
-                desc: "Trova talenti disponibili nella tua zona, riducendo tempi di ricerca, costi di trasferta e messaggi inutili.",
-                glow: "rgba(59,130,246,0.18)",
-              },
-              {
-                icon: "💬",
-                title: "Chat e preventivi",
-                desc: "Parla direttamente con gli artisti, ricevi proposte chiare e confronta le opzioni prima di confermare.",
-                glow: "rgba(168,85,247,0.18)",
-              },
-              {
-                icon: "🔒",
-                title: "Pagamento protetto",
-                desc: "Confermi la prenotazione in sicurezza e riduci problemi di accordi, disdette e pagamenti non tracciati.",
-                glow: "rgba(34,197,94,0.18)",
-              },
-            ].map((b, idx) => (
-              <TiltCard key={idx} className="rounded-3xl" glow={b.glow}>
-                <div
-                  data-reveal
-                  data-delay={idx}
-                  className="bg-[var(--paper)] border border-black/5 rounded-3xl p-6 sm:p-8 h-full flex flex-col justify-between"
-                >
-                  <div>
-                    <span className="text-3xl p-3 bg-white rounded-2xl shadow-sm border border-black/5 inline-block mb-6">
-                      {b.icon}
-                    </span>
-                    <h3 className="te-display text-xl font-extrabold mb-3 text-[#0a0a0b]">
-                      {b.title}
-                    </h3>
-                    <p className="text-sm text-[var(--muted)] leading-relaxed">
-                      {b.desc}
-                    </p>
-                  </div>
-                </div>
-              </TiltCard>
+        {/* TICKER */}
+        <section style={{ background:"#111114", padding:"18px 0", overflow:"hidden" }}>
+          <div style={{ display:"flex", whiteSpace:"nowrap", animation:"marquee 26s linear infinite" }}>
+            {["Ristoranti","Beach Club","Hotel","Rooftop Bar","Discoteche","Wedding Planner","Aziende","Festival","Locali Live","Ristoranti","Beach Club","Hotel","Rooftop Bar","Discoteche","Wedding Planner","Aziende","Festival","Locali Live"].map((item,i) => (
+              <span key={i} style={{ margin:"0 24px", color:"rgba(255,255,255,.5)", fontSize:".85rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".16em" }}>{item}</span>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* COME FUNZIONA */}
-      <section id="come-funziona" className="py-20 sm:py-28 px-5 sm:px-6 bg-[var(--paper)]">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-12 gap-12 items-center">
-            <div data-reveal className="lg:col-span-5">
-              <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--orange)] mb-3">
-                Processo semplice
-              </p>
-              <h2 className="te-display text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight text-[#0a0a0b]">
-                Dal bisogno alla serata confermata.
-              </h2>
-              <p className="text-base sm:text-lg text-[var(--muted)] mt-5 leading-relaxed">
-                Pubblica quello che ti serve, ricevi candidature coerenti e scegli
-                l'artista più adatto al tuo locale o evento.
-              </p>
+        {/* VANTAGGI */}
+        <section id="vantaggi" style={{ padding:"80px 20px", background:"white", borderTop:"1px solid rgba(0,0,0,.06)", borderBottom:"1px solid rgba(0,0,0,.06)" }}>
+          <div style={{ maxWidth:1100, margin:"0 auto" }}>
+            <div data-reveal style={{ ...reveal, textAlign:"center", marginBottom:56 }}>
+              <p style={{ fontSize:".75rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:"#ff5a00", marginBottom:10 }}>Pensato per chi organizza eventi</p>
+              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(1.8rem,4vw,2.8rem)", fontWeight:900, color:"#0a0a0b", letterSpacing:"-.04em", lineHeight:1.1 }}>Meno telefonate, più serate riuscite.</h2>
+              <p style={{ color:"#6b6b73", fontSize:"1rem", marginTop:12, maxWidth:520, margin:"12px auto 0", lineHeight:1.7 }}>Trova artisti adatti al tuo pubblico e conferma la serata con un flusso semplice e professionale.</p>
             </div>
-
-            <div className="lg:col-span-7 grid gap-5">
-              {[
-                {
-                  step: "01",
-                  title: "Pubblica la richiesta",
-                  desc: "Indica data, città, tipo di evento, genere desiderato, budget e informazioni utili.",
-                },
-                {
-                  step: "02",
-                  title: "Ricevi proposte dagli artisti",
-                  desc: "Gli artisti disponibili ti inviano disponibilità, cachet, materiali e dettagli della performance.",
-                },
-                {
-                  step: "03",
-                  title: "Confermi e gestisci tutto online",
-                  desc: "Chat, accordi, conferma, pagamento e riepilogo evento restano organizzati in dashboard.",
-                },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  data-reveal
-                  data-delay={idx}
-                  className="bg-white border border-black/5 rounded-3xl p-6 sm:p-7 flex gap-5 shadow-sm"
-                >
-                  <div className="shrink-0 w-12 h-12 rounded-2xl bg-[var(--ink)] text-white flex items-center justify-center te-display font-extrabold">
-                    {item.step}
-                  </div>
-                  <div>
-                    <h3 className="te-display text-xl font-extrabold text-[var(--ink)]">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm sm:text-base text-[var(--muted)] mt-2 leading-relaxed">
-                      {item.desc}
-                    </p>
+            <div className="ll-grid-4" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
+              {[["🎧","Artisti per ogni format","DJ, band, cantanti, performer e animatori per ogni tipo di pubblico e serata."],["📍","Ricerca per città","Trova talenti disponibili nella tua zona, riducendo tempi e costi di trasferta."],["💬","CRM integrato","Pipeline trattative, chat col team TuttoEvento, storico booking e analitiche."],["🔒","Prezzi riservati","Il budget è trattato in modo riservato. I locali non vedono mai il cachet netto dell'artista."]].map(([icon,title,desc],i) => (
+                <div key={title} data-reveal style={{ ...reveal, transitionDelay:`${i*.08}s` }}>
+                  <div className="ll-card">
+                    <span style={{ fontSize:"1.8rem", display:"block", marginBottom:14 }}>{icon}</span>
+                    <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1rem", color:"#0a0a0b", marginBottom:8 }}>{title}</h3>
+                    <p style={{ fontSize:".875rem", color:"#6b6b73", lineHeight:1.6 }}>{desc}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* BUDGET */}
-      <section id="budget" className="py-20 sm:py-28 px-5 sm:px-6 bg-white border-y border-black/5">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-12 gap-10 items-center">
-            <div data-reveal className="md:col-span-6 space-y-6">
-              <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--orange)]">
-                Simula il budget della serata
-              </p>
-              <h2 className="te-display text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight text-[#0a0a0b]">
-                Parti dal budget e trova il talento giusto.
-              </h2>
-              <p className="text-base sm:text-lg text-[var(--muted)] leading-relaxed">
-                Ogni evento ha un obiettivo diverso: aperitivo, cena spettacolo,
-                festa privata, DJ set o live music. Imposta un budget indicativo
-                e valuta quale format può essere più adatto.
-              </p>
+        {/* COME FUNZIONA */}
+        <section id="come-funziona" style={{ padding:"80px 20px", background:"#fbfaf8" }}>
+          <div style={{ maxWidth:1000, margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1.5fr", gap:48, alignItems:"center" }} className="ll-grid-2">
+            <div data-reveal style={reveal}>
+              <p style={{ fontSize:".75rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:"#ff5a00", marginBottom:10 }}>Processo semplice</p>
+              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(1.8rem,4vw,2.6rem)", fontWeight:900, color:"#0a0a0b", letterSpacing:"-.04em", lineHeight:1.1, marginBottom:14 }}>Dal bisogno alla serata confermata.</h2>
+              <p style={{ color:"#6b6b73", fontSize:".95rem", lineHeight:1.7 }}>Pubblica quello che ti serve, ricevi candidature coerenti e scegli l'artista più adatto al tuo locale.</p>
             </div>
-
-            <div
-              data-reveal
-              data-delay="1"
-              className="md:col-span-6 bg-[var(--paper)] border border-black/5 rounded-[2.5rem] p-6 sm:p-10 shadow-xl"
-            >
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between items-baseline mb-2">
-                    <label className="text-sm font-bold text-[var(--ink)]">
-                      Budget indicativo
-                    </label>
-                    <span className="te-display text-3xl font-extrabold text-[var(--orange)]">
-                      € {budget}
-                    </span>
-                  </div>
-
-                  <input
-                    type="range"
-                    min="100"
-                    max="2000"
-                    step="50"
-                    value={budget}
-                    onChange={(e) => setBudget(Number(e.target.value))}
-                    className="w-full h-2 bg-black/10 rounded-lg appearance-none cursor-pointer outline-none slider-thumb"
-                  />
-
-                  <div className="flex justify-between text-xs font-semibold text-[var(--muted)] mt-2">
-                    <span>€ 100</span>
-                    <span>€ 1.000</span>
-                    <span>€ 2.000+</span>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-black/5 space-y-4">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Format consigliati
-                  </p>
-
-                  {[
-                    {
-                      min: 100,
-                      max: 300,
-                      label: "Aperitivo / piccolo evento",
-                      desc: "DJ set light, cantante solista o musicista acustico.",
-                    },
-                    {
-                      min: 300,
-                      max: 700,
-                      label: "Serata locale / cena spettacolo",
-                      desc: "DJ, duo acustico, performer o live set strutturato.",
-                    },
-                    {
-                      min: 700,
-                      max: 2000,
-                      label: "Evento premium",
-                      desc: "Band live, show completo, corporate event o grande format.",
-                    },
-                  ].map((item, idx) => {
-                    const active = budget >= item.min && budget <= item.max;
-
-                    return (
-                      <div
-                        key={idx}
-                        className={`p-4 rounded-2xl border transition ${
-                          active
-                            ? "bg-white border-[var(--orange)] shadow-md"
-                            : "bg-white/55 border-black/5"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="font-bold text-sm text-[var(--ink)]">
-                            {item.label}
-                          </p>
-                          {active && (
-                            <span className="text-[10px] text-white bg-[var(--orange)] font-bold px-2 py-1 rounded-full">
-                              consigliato
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-[var(--muted)] mt-1.5 leading-relaxed">
-                          {item.desc}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <Link
-                  href="/register?role=organizer"
-                  className="te-cta block w-full bg-[var(--ink)] text-white text-center py-4 rounded-2xl font-bold hover:scale-[1.01] transition mt-2"
-                >
-                  Inizia ora
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIANZE */}
-      <section className="py-20 sm:py-28 px-5 sm:px-6 bg-[var(--paper)]">
-        <div className="max-w-6xl mx-auto">
-          <div data-reveal className="text-center max-w-2xl mx-auto mb-16">
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--orange)] mb-3">
-              Locali più organizzati
-            </p>
-            <h2 className="te-display text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight text-[#0a0a0b]">
-              Serate migliori, gestione più semplice.
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                quote:
-                  "Prima cercavamo DJ e musicisti tramite passaparola. Ora pubblichiamo la richiesta, confrontiamo le proposte e confermiamo tutto dalla dashboard.",
-                author: "Luca M.",
-                role: "Rooftop Bar Manager",
-                stars: 5,
-                img: "https://images.unsplash.com/photo-1559329007-40df8a9345d8?auto=format&fit=crop&w=150&q=80",
-              },
-              {
-                quote:
-                  "Per le nostre cene spettacolo è diventato molto più semplice trovare artisti coerenti con il tipo di clientela e con il budget della serata.",
-                author: "Sara P.",
-                role: "Restaurant Owner",
-                stars: 5,
-                img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80",
-              },
-              {
-                quote:
-                  "Gestiamo eventi aziendali e privati. Avere chat, profili, preventivi e pagamenti in un unico posto ci fa risparmiare tantissimo tempo.",
-                author: "Andrea R.",
-                role: "Event Planner",
-                stars: 5,
-                img: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=150&q=80",
-              },
-            ].map((t, idx) => (
-              <div
-                key={idx}
-                data-reveal
-                data-delay={idx}
-                className="bg-white border border-black/5 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition duration-300"
-              >
-                <div>
-                  <div className="flex gap-1 mb-5">
-                    {[...Array(t.stars)].map((_, i) => (
-                      <span key={i} className="text-yellow-400 text-lg">
-                        ★
-                      </span>
-                    ))}
-                  </div>
-
-                  <p className="text-sm sm:text-base text-[var(--muted)] italic leading-relaxed mb-6">
-                    “{t.quote}”
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3.5 pt-4 border-t border-black/5">
-                  <img
-                    src={t.img}
-                    alt={t.author}
-                    className="w-11 h-11 rounded-full object-cover"
-                  />
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              {PASSI.map((p,i) => (
+                <div key={p.n} data-reveal style={{ ...reveal, transitionDelay:`${i*.1}s`, background:"white", border:"1px solid rgba(0,0,0,.07)", borderRadius:22, padding:"20px 22px", display:"flex", gap:16, alignItems:"flex-start" }}>
+                  <div style={{ width:44, height:44, borderRadius:14, background:"#0a0a0b", color:"white", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:".9rem", flexShrink:0 }}>{p.n}</div>
                   <div>
-                    <p className="font-bold text-sm text-[var(--ink)]">
-                      {t.author}
-                    </p>
-                    <p className="text-xs text-[var(--muted)] font-semibold mt-0.5">
-                      {t.role}
-                    </p>
+                    <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1rem", color:"#0a0a0b", marginBottom:4 }}>{p.title}</h3>
+                    <p style={{ fontSize:".875rem", color:"#6b6b73", lineHeight:1.6 }}>{p.desc}</p>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* BUDGET SIMULATOR */}
+        <section id="budget" style={{ padding:"80px 20px", background:"white", borderTop:"1px solid rgba(0,0,0,.06)", borderBottom:"1px solid rgba(0,0,0,.06)" }}>
+          <div style={{ maxWidth:1000, margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap:48, alignItems:"center" }} className="ll-grid-2">
+            <div data-reveal style={reveal}>
+              <p style={{ fontSize:".75rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:"#ff5a00", marginBottom:10 }}>Simula il budget della serata</p>
+              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(1.8rem,4vw,2.6rem)", fontWeight:900, color:"#0a0a0b", letterSpacing:"-.04em", lineHeight:1.1, marginBottom:14 }}>Parti dal budget e trova il talento giusto.</h2>
+              <p style={{ color:"#6b6b73", fontSize:"1rem", lineHeight:1.7 }}>Ogni evento ha obiettivi diversi. Imposta un budget indicativo e valuta quale format è più adatto alla tua serata.</p>
+            </div>
+            <div data-reveal style={{ ...reveal, background:"#fbfaf8", border:"1px solid rgba(0,0,0,.07)", borderRadius:32, padding:36, boxShadow:"0 20px 60px rgba(0,0,0,.08)" }}>
+              <div style={{ marginBottom:24 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:10 }}>
+                  <label style={{ fontSize:".875rem", fontWeight:700 }}>Budget indicativo</label>
+                  <span style={{ fontFamily:"'Sora',sans-serif", fontSize:"2rem", fontWeight:900, color:"#ff5a00" }}>€{budget}</span>
+                </div>
+                <input type="range" min="100" max="2000" step="50" value={budget} onChange={e => setBudget(Number(e.target.value))} className="ll-slider" />
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:"#6b6b73", fontWeight:600, marginTop:6 }}>
+                  <span>€100</span><span>€1000</span><span>€2000+</span>
                 </div>
               </div>
-            ))}
+              <div style={{ borderTop:"1px solid rgba(0,0,0,.07)", paddingTop:20 }}>
+                <p style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".1em", color:"#6b6b73", marginBottom:14 }}>Format consigliati</p>
+                {FORMAT.map(f => {
+                  const active = budget >= f.min && budget <= f.max;
+                  return (
+                    <div key={f.label} style={{ padding:"12px 14px", borderRadius:14, marginBottom:10, border:`1px solid ${active?"#ff5a00":"rgba(0,0,0,.06)"}`, background:active?"white":"rgba(255,255,255,.55)", transition:"all .2s" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                        <p style={{ fontWeight:700, fontSize:".875rem" }}>{f.label}</p>
+                        {active && <span style={{ fontSize:10, fontWeight:700, color:"white", background:"#ff5a00", padding:"2px 8px", borderRadius:100 }}>consigliato</span>}
+                      </div>
+                      <p style={{ fontSize:".78rem", color:"#6b6b73" }}>{f.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              <Link href="/register?role=organizer" style={{ display:"block", background:"#0a0a0b", color:"white", textAlign:"center", padding:"14px", borderRadius:14, fontWeight:700, fontSize:".95rem", textDecoration:"none", marginTop:16, fontFamily:"'Manrope',sans-serif" }}>
+                Inizia ora →
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* FAQ */}
-      <section id="faq" className="py-20 sm:py-24 px-5 sm:px-6 bg-white border-y border-black/5">
-        <div className="max-w-4xl mx-auto">
-          <div data-reveal className="text-center mb-16">
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[var(--orange)] mb-3">
-              Tutte le risposte
-            </p>
-            <h2 className="te-display text-3xl sm:text-4xl font-extrabold text-[#0a0a0b]">
-              Domande Frequenti
-            </h2>
-          </div>
-
-          <div data-reveal className="space-y-4">
-            {faqs.map((faq, index) => {
-              const active = openFaq === index;
-
-              return (
-                <div
-                  key={index}
-                  className="bg-[var(--paper)] border border-black/5 rounded-2xl overflow-hidden transition-all duration-300"
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleFaq(index)}
-                    className="w-full flex items-center justify-between gap-4 p-5 text-left font-bold text-base sm:text-lg text-[var(--ink)] hover:bg-white/70 transition"
-                  >
-                    <span>{faq.q}</span>
-                    <span
-                      className={`w-6 h-6 shrink-0 rounded-full bg-white text-[var(--muted)] flex items-center justify-center font-mono text-sm transition-transform duration-300 ${
-                        active ? "rotate-180" : ""
-                      }`}
-                    >
-                      ▼
-                    </span>
+        {/* FAQ */}
+        <section id="faq" style={{ padding:"80px 20px", background:"#fbfaf8" }}>
+          <div style={{ maxWidth:760, margin:"0 auto" }}>
+            <div data-reveal style={{ ...reveal, textAlign:"center", marginBottom:48 }}>
+              <p style={{ fontSize:".75rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:"#ff5a00", marginBottom:10 }}>Hai domande?</p>
+              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(1.8rem,4vw,2.6rem)", fontWeight:900, color:"#0a0a0b", letterSpacing:"-.04em" }}>Domande frequenti</h2>
+            </div>
+            <div data-reveal style={reveal}>
+              {FAQS.map((f,i) => (
+                <div key={i} style={{ border:"1px solid rgba(0,0,0,.07)", borderRadius:18, marginBottom:10, overflow:"hidden", background:"white" }}>
+                  <button onClick={() => setOpenFaq(openFaq===i?null:i)}
+                    style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"18px 20px", background:"none", border:"none", cursor:"pointer", textAlign:"left", fontFamily:"'Manrope',sans-serif", fontWeight:700, fontSize:"1rem", color:"#0a0a0b", gap:12 }}>
+                    <span>{f.q}</span>
+                    <span style={{ transition:"transform .3s", transform:openFaq===i?"rotate(180deg)":"none", color:"#6b6b73", flexShrink:0 }}>▼</span>
                   </button>
-
-                  <div
-                    className={`transition-all duration-350 ease-in-out ${
-                      active ? "max-h-60 border-t border-black/5" : "max-h-0 opacity-0"
-                    }`}
-                    style={{ overflow: "hidden" }}
-                  >
-                    <p className="p-5 text-sm sm:text-base text-[var(--muted)] leading-relaxed">
-                      {faq.a}
-                    </p>
-                  </div>
+                  {openFaq === i && (
+                    <div style={{ padding:"0 20px 18px", borderTop:"1px solid rgba(0,0,0,.06)" }}>
+                      <p style={{ fontSize:".9rem", color:"#6b6b73", lineHeight:1.7, paddingTop:14 }}>{f.a}</p>
+                    </div>
+                  )}
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA FINALE */}
-      <section className="px-5 sm:px-6 py-14 sm:py-20 bg-[var(--paper)]">
-        <div
-          data-reveal
-          className="max-w-5xl mx-auto relative rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden text-center px-6 py-16 sm:px-8 sm:py-24"
-        >
-          <img
-            src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1600&q=80"
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-
-          <div
-            aria-hidden
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(9,9,11,.94), rgba(34,22,13,.84))",
-            }}
-          />
-
-          <div
-            aria-hidden
-            className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[500px] max-w-[90vw] rounded-full blur-[110px]"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(255,90,0,.55), transparent 70%)",
-              animation: "te-float 8s ease-in-out infinite",
-            }}
-          />
-
-          <h2 className="te-display text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight mb-5 relative">
-            La prossima serata può essere <br />
-            <span className="te-shimmer">più semplice da organizzare</span>.
-          </h2>
-
-          <p className="text-white/70 text-base sm:text-lg max-w-xl mx-auto mb-8 sm:mb-10 relative">
-            Crea il profilo del tuo locale, pubblica una richiesta gratuita e
-            trova artisti disponibili per il tuo prossimo evento.
-          </p>
-
-          <div className="relative flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto sm:max-w-none">
-            <Link
-              href="/register?role=organizer"
-              className="te-cta bg-[var(--orange)] text-white px-8 sm:px-10 py-4 rounded-full font-bold text-base sm:text-lg hover:bg-[#e85100] transition shadow-[0_18px_40px_-12px_rgba(255,90,0,.7)] text-center"
-            >
-              Pubblica una richiesta gratis
-            </Link>
-
-            <Link
-              href="/login"
-              className="bg-white/10 text-white border border-white/15 px-8 sm:px-10 py-4 rounded-full font-bold text-base sm:text-lg hover:bg-white/15 transition backdrop-blur text-center"
-            >
-              Accedi al tuo account
-            </Link>
+        {/* CTA FINALE */}
+        <section style={{ padding:"20px 20px 60px" }}>
+          <div data-reveal style={{ ...reveal, maxWidth:1000, margin:"0 auto", position:"relative", borderRadius:32, overflow:"hidden", textAlign:"center", padding:"80px 40px" }}>
+            <img src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1600&q=80" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }} />
+            <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(9,9,11,.94),rgba(34,22,13,.84))" }} />
+            <div aria-hidden style={{ position:"absolute", top:-80, left:"50%", transform:"translateX(-50%)", width:400, height:400, borderRadius:"50%", background:"radial-gradient(circle,rgba(255,90,0,.5),transparent 70%)", filter:"blur(80px)", animation:"float 8s ease-in-out infinite" }} />
+            <div style={{ position:"relative", zIndex:1 }}>
+              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(2rem,5vw,3.2rem)", fontWeight:900, color:"white", letterSpacing:"-.04em", lineHeight:1.05, marginBottom:16 }}>
+                La prossima serata può essere<br/><span className="ll-shimmer">più semplice da organizzare.</span>
+              </h2>
+              <p style={{ color:"rgba(255,255,255,.65)", fontSize:"1rem", maxWidth:460, margin:"0 auto 36px", lineHeight:1.7 }}>Crea il profilo del tuo locale, pubblica una richiesta gratuita e trova artisti disponibili per il tuo prossimo evento.</p>
+              <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap" }}>
+                <Link href="/register?role=organizer" className="ll-cta-btn">Pubblica una richiesta gratis</Link>
+                <Link href="/login" style={{ display:"inline-block", background:"rgba(255,255,255,.1)", color:"white", border:"1px solid rgba(255,255,255,.2)", padding:"16px 32px", borderRadius:100, fontWeight:700, fontSize:"1rem", textDecoration:"none", fontFamily:"'Manrope',sans-serif" }}>Accedi</Link>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-black/5 bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-4 gap-10">
-          <div className="md:col-span-2">
-            <span className="te-display font-extrabold text-lg tracking-tight mb-4 inline-block">
-              TUTTO<span className="text-[var(--orange)]">EVENTO</span>
-            </span>
-            <p className="text-[var(--muted)] max-w-sm leading-relaxed">
-              La piattaforma professionale per locali, organizzatori, artisti e
-              promoter. Trova talenti, gestisci eventi e semplifica ogni booking.
-            </p>
+        {/* FOOTER */}
+        <footer style={{ background:"white", borderTop:"1px solid rgba(0,0,0,.06)", padding:"40px 20px 24px" }}>
+          <div style={{ maxWidth:1100, margin:"0 auto", display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:40, marginBottom:32 }} className="ll-grid-2">
+            <div>
+              <span style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"1.1rem", letterSpacing:"-.04em" }}>TUTTO<span style={{ color:"#ff5a00" }}>EVENTO</span></span>
+              <p style={{ color:"#6b6b73", fontSize:".875rem", lineHeight:1.7, marginTop:10, maxWidth:280 }}>La piattaforma italiana per artisti, locali e promoter. Booking semplice, CRM completo, chat realtime.</p>
+            </div>
+            <div>
+              <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:".85rem", marginBottom:12 }}>Sezioni</p>
+              {[["#vantaggi","Vantaggi"],["#come-funziona","Come funziona"],["#budget","Budget"],["#faq","FAQ"]].map(([h,l]) => (
+                <a key={h} href={h} style={{ display:"block", color:"#6b6b73", fontSize:".875rem", textDecoration:"none", marginBottom:8 }}>{l}</a>
+              ))}
+            </div>
+            <div>
+              <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:".85rem", marginBottom:12 }}>Link utili</p>
+              {[["/","Home"],["/login","Accedi"],["/register?role=organizer","Registrati"]].map(([h,l]) => (
+                <Link key={h} href={h} style={{ display:"block", color:"#6b6b73", fontSize:".875rem", textDecoration:"none", marginBottom:8 }}>{l}</Link>
+              ))}
+            </div>
           </div>
-
-          <div>
-            <p className="te-display font-bold mb-3 text-sm">Sezioni Landing</p>
-            <ul className="space-y-2 text-sm text-[var(--muted)] font-semibold">
-              <li>
-                <a href="#vantaggi" className="hover:text-[var(--orange)]">
-                  Vantaggi
-                </a>
-              </li>
-              <li>
-                <a href="#come-funziona" className="hover:text-[var(--orange)]">
-                  Come funziona
-                </a>
-              </li>
-              <li>
-                <a href="#budget" className="hover:text-[var(--orange)]">
-                  Budget
-                </a>
-              </li>
-              <li>
-                <a href="#faq" className="hover:text-[var(--orange)]">
-                  FAQ
-                </a>
-              </li>
-            </ul>
+          <div style={{ borderTop:"1px solid rgba(0,0,0,.06)", paddingTop:20, textAlign:"center", fontSize:".78rem", color:"#6b6b73" }}>
+            © 2026 TuttoEvento. Tutti i diritti riservati.
           </div>
+        </footer>
 
-          <div>
-            <p className="te-display font-bold mb-3 text-sm">Collegamenti</p>
-            <ul className="space-y-2 text-sm text-[var(--muted)] font-semibold">
-              <li>
-                <Link href="/" className="hover:text-[var(--orange)]">
-                  Home principale
-                </Link>
-              </li>
-              <li>
-                <Link href="/login" className="hover:text-[var(--orange)]">
-                  Accedi
-                </Link>
-              </li>
-              <li>
-                <Link href="/register?role=organizer" className="hover:text-[var(--orange)]">
-                  Registrati come Locale
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-black/5 py-6 text-center text-xs text-[var(--muted)]">
-          © 2026 TuttoEvento. Tutti i diritti riservati.
-        </div>
-      </footer>
-    </main>
+      </div>
+    </>
   );
 }
