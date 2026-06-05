@@ -74,6 +74,8 @@ export default function PushNotificationButton({ user }) {
   }
 
   if (!userId) return null;
+  // Non mostrare per admin e referent — usano già la dashboard completa
+  if (user?.role === "admin" || user?.role === "referent") return null;
 
   return (
     <>

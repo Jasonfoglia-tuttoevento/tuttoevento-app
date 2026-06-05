@@ -2,270 +2,152 @@
 
 import { useMemo, useState } from "react";
 
+const ORANGE = "#ff5a00";
+const INK = "#0a0a0b";
+const MUTED = "#6b6b73";
+
 const BOOKINGS_PER_PAGE = 4;
 
-export default function OrganizerBookings({ bookings }) {
+function statusConfig(status) {
+  if (status === "accepted" || status === "confirmed" || status === "accettato")
+    return { label: "Accettata", bg: "rgba(22,163,74,.1)", color: "#16a34a" };
+  if (status === "rejected")
+    return { label: "Rifiutata", bg: "rgba(220,38,38,.1)", color: "#dc2626" };
+  return { label: "In attesa", bg: "rgba(217,119,6,.1)", color: "#d97706" };
+}
+
+export default function OrganizerBookings({ bookings = [] }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
 
   function openBookingChat(booking) {
     const artistUserId =
-      booking.artistId ||
-      booking.artistUserId ||
-      booking.artist_user_id ||
-      booking.artistUserID;
-
-    if (!artistUserId) {
-      alert(
-        "Impossibile aprire la chat: questo booking non contiene l'ID dell'artista."
-      );
-      return;
-    }
-
-    window.dispatchEvent(
-      new CustomEvent("tuttoevento:open-chat", {
-        detail: {
-          participantUserId: Number(artistUserId),
-          bookingId: booking.id,
-          eventId: booking.eventId || null,
-          title: `Booking · ${booking.artistName || "Artista"}`,
-        },
-      })
-    );
+      booking.artistId || booking.artistUserId ||
+      booking.artist_user_id || booking.artistUserID;
+    if (!artistUserId) { alert("ID artista mancante nel booking."); return; }
+    window.dispatchEvent(new CustomEvent("tuttoevento:open-chat", {
+      detail: {
+        participantUserId: Number(artistUserId),
+        bookingId: booking.id,
+        eventId: booking.eventId || null,
+        title: `Booking · ${booking.artistName || "Artista"}`,
+      },
+    }));
   }
 
-  function statusClass(status) {
-    if (status === "accepted") {
-      return "bg-green-100 text-green-700";
-    }
+  function changeFilter(f) { setStatusFilter(f); setCurrentPage(1); }
 
-    if (status === "rejected") {
-      return "bg-red-100 text-red-700";
-    }
-
-    return "bg-yellow-100 text-yellow-700";
-  }
-
-  function statusLabel(status) {
-    if (status === "accepted") return "Accettata";
-    if (status === "rejected") return "Rifiutata";
-    return "In attesa";
-  }
-
-  const filteredBookings = useMemo(() => {
+  const filtered = useMemo(() => {
     if (statusFilter === "all") return bookings;
-
-    return bookings.filter((booking) => booking.status === statusFilter);
+    if (statusFilter === "accepted") return bookings.filter(b => ["accepted","confirmed","accettato"].includes(b.status));
+    return bookings.filter(b => b.status === statusFilter);
   }, [bookings, statusFilter]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredBookings.length / BOOKINGS_PER_PAGE)
-  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / BOOKINGS_PER_PAGE));
+  const paginated  = filtered.slice((currentPage - 1) * BOOKINGS_PER_PAGE, currentPage * BOOKINGS_PER_PAGE);
 
-  const paginatedBookings = filteredBookings.slice(
-    (currentPage - 1) * BOOKINGS_PER_PAGE,
-    currentPage * BOOKINGS_PER_PAGE
-  );
-
-  function changeFilter(nextFilter) {
-    setStatusFilter(nextFilter);
-    setCurrentPage(1);
-  }
-
-  function goToPreviousPage() {
-    setCurrentPage((page) => Math.max(1, page - 1));
-  }
-
-  function goToNextPage() {
-    setCurrentPage((page) => Math.min(totalPages, page + 1));
-  }
+  const FILTERS = [
+    { key: "all",      label: "Tutte" },
+    { key: "pending",  label: "In attesa" },
+    { key: "accepted", label: "Accettate" },
+    { key: "rejected", label: "Rifiutate" },
+  ];
 
   return (
-    <section
-      id="organizer-bookings"
-      className="bg-white border border-black/5 rounded-[28px] p-5 md:p-7 shadow-sm mt-8 scroll-mt-8 overflow-hidden"
-    >
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-7">
-        <div>
-          <p className="uppercase tracking-[3px] text-[#ff5a00] text-xs font-black mb-2">
-            Booking
-          </p>
+    <section id="organizer-bookings" style={{ marginTop: 16, scrollMarginTop: 32 }}>
+      <div style={{ background: "white", border: "1px solid rgba(0,0,0,.06)", borderRadius: 24, padding: "20px 22px" }}>
 
-          <h2 className="text-3xl font-black tracking-[-0.04em] leading-tight">
-            Richieste Inviate
-          </h2>
-
-          <p className="text-black/50 mt-2">
-            Stato delle richieste inviate agli artisti.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => changeFilter("all")}
-            className={
-              statusFilter === "all"
-                ? "bg-[#111] text-white px-4 py-3 rounded-2xl text-sm font-black"
-                : "bg-[#f7f7f8] text-black/55 border border-black/5 px-4 py-3 rounded-2xl text-sm font-black"
-            }
-          >
-            Tutte
-          </button>
-
-          <button
-            type="button"
-            onClick={() => changeFilter("pending")}
-            className={
-              statusFilter === "pending"
-                ? "bg-yellow-100 text-yellow-700 px-4 py-3 rounded-2xl text-sm font-black"
-                : "bg-[#f7f7f8] text-black/55 border border-black/5 px-4 py-3 rounded-2xl text-sm font-black"
-            }
-          >
-            In attesa
-          </button>
-
-          <button
-            type="button"
-            onClick={() => changeFilter("accepted")}
-            className={
-              statusFilter === "accepted"
-                ? "bg-green-100 text-green-700 px-4 py-3 rounded-2xl text-sm font-black"
-                : "bg-[#f7f7f8] text-black/55 border border-black/5 px-4 py-3 rounded-2xl text-sm font-black"
-            }
-          >
-            Accettate
-          </button>
-
-          <button
-            type="button"
-            onClick={() => changeFilter("rejected")}
-            className={
-              statusFilter === "rejected"
-                ? "bg-red-100 text-red-700 px-4 py-3 rounded-2xl text-sm font-black"
-                : "bg-[#f7f7f8] text-black/55 border border-black/5 px-4 py-3 rounded-2xl text-sm font-black"
-            }
-          >
-            Rifiutate
-          </button>
-        </div>
-      </div>
-
-      {filteredBookings.length === 0 ? (
-        <div className="rounded-3xl bg-[#f7f7f8] border border-black/5 p-6">
-          <p className="font-black">
-            Nessuna richiesta trovata.
-          </p>
-
-          <p className="text-black/45 mt-2">
-            Cambia filtro oppure invia una nuova richiesta booking dal roster artisti.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-4">
-            {paginatedBookings.map((booking) => {
-              const artistUserId =
-                booking.artistId ||
-                booking.artistUserId ||
-                booking.artist_user_id ||
-                booking.artistUserID;
-
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".16em", color: ORANGE, margin: "0 0 4px", fontFamily: "'Manrope',system-ui,sans-serif" }}>Booking</p>
+            <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 20, letterSpacing: "-.03em", margin: 0, color: INK }}>Richieste inviate</h2>
+            <p style={{ fontSize: 13, color: MUTED, margin: "4px 0 0", fontFamily: "'Manrope',system-ui,sans-serif" }}>Stato delle richieste inviate agli artisti.</p>
+          </div>
+          {/* Filtri */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {FILTERS.map(f => {
+              const active = statusFilter === f.key;
               return (
-                <article
-                  key={booking.id}
-                  className="border border-black/10 rounded-3xl p-5 bg-[#fafafa] overflow-hidden"
-                >
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-2xl font-black break-words">
-                          {booking.artistName}
-                        </h3>
-
-                        <span
-                          className={
-                            statusClass(booking.status) +
-                            " px-3 py-2 rounded-full text-xs font-black"
-                          }
-                        >
-                          {statusLabel(booking.status)}
-                        </span>
-                      </div>
-
-                      {booking.eventTitle && (
-                        <p className="font-black text-black/70 mt-3 break-words">
-                          {booking.eventTitle}
-                        </p>
-                      )}
-
-                      <p className="text-[#ff5a00] font-black mt-2">
-                        Data evento: {booking.eventDate || "Non indicata"}
-                      </p>
-
-                      {(booking.startTime || booking.endTime) && (
-                        <p className="text-sm text-black/45 mt-1">
-                          Orario: {booking.startTime || "--:--"} -{" "}
-                          {booking.endTime || "--:--"}
-                        </p>
-                      )}
-
-                      <p className="text-black/50 mt-3 leading-relaxed break-words">
-                        {booking.message}
-                      </p>
-
-                      {!artistUserId && (
-                        <p className="text-sm text-red-500 font-bold mt-4">
-                          ID artista mancante nel booking
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap gap-3 mt-5">
-                        <button
-                          type="button"
-                          onClick={() => openBookingChat(booking)}
-                          disabled={!artistUserId}
-                          className="bg-[#111] text-white px-5 py-3 rounded-2xl font-black text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          Apri chat
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </article>
+                <button key={f.key} type="button" onClick={() => changeFilter(f.key)}
+                  style={{ padding: "6px 14px", borderRadius: 100, fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "'Manrope',system-ui,sans-serif", transition: "all .15s", border: active ? "none" : "1px solid rgba(0,0,0,.1)", background: active ? INK : "white", color: active ? "white" : MUTED }}>
+                  {f.label}
+                </button>
               );
             })}
           </div>
+        </div>
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6 border-t border-black/5 pt-5">
-            <p className="text-sm text-black/45 font-bold">
-              Pagina {currentPage} di {totalPages} ·{" "}
-              {filteredBookings.length} richieste
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
-              <button
-                type="button"
-                onClick={goToPreviousPage}
-                disabled={currentPage === 1}
-                className="bg-[#f7f7f8] border border-black/5 text-black px-5 py-3 rounded-2xl font-black text-sm disabled:opacity-40"
-              >
-                Indietro
-              </button>
-
-              <button
-                type="button"
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-                className="bg-[#111] text-white px-5 py-3 rounded-2xl font-black text-sm disabled:opacity-40"
-              >
-                Avanti
-              </button>
-            </div>
+        {/* Empty state */}
+        {filtered.length === 0 ? (
+          <div style={{ background: "#fbfaf8", border: "1px solid rgba(0,0,0,.06)", borderRadius: 18, padding: "28px 22px", textAlign: "center" }}>
+            <p style={{ fontWeight: 700, fontSize: 14, color: INK, margin: "0 0 6px", fontFamily: "'Sora',sans-serif" }}>Nessuna richiesta trovata.</p>
+            <p style={{ fontSize: 13, color: MUTED, margin: 0, fontFamily: "'Manrope',system-ui,sans-serif" }}>Cambia filtro oppure invia una nuova richiesta dal marketplace artisti.</p>
           </div>
-        </>
-      )}
+        ) : (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {paginated.map((booking) => {
+                const sc = statusConfig(booking.status);
+                const artistUserId = booking.artistId || booking.artistUserId || booking.artist_user_id || booking.artistUserID;
+                return (
+                  <div key={booking.id} style={{ border: "1px solid rgba(0,0,0,.07)", borderRadius: 20, padding: "16px 18px", background: "#fbfaf8" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                          <h3 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, margin: 0, color: INK }}>{booking.artistName || "—"}</h3>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 100, background: sc.bg, color: sc.color, flexShrink: 0 }}>
+                            {sc.label}
+                          </span>
+                        </div>
+                        {booking.eventTitle && (
+                          <p style={{ fontSize: 13, fontWeight: 600, color: INK, margin: "0 0 4px", fontFamily: "'Manrope',system-ui,sans-serif" }}>{booking.eventTitle}</p>
+                        )}
+                        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                          {booking.eventDate && (
+                            <span style={{ fontSize: 12, color: ORANGE, fontWeight: 700, fontFamily: "'Manrope',system-ui,sans-serif" }}>📅 {booking.eventDate}</span>
+                          )}
+                          {(booking.startTime || booking.endTime) && (
+                            <span style={{ fontSize: 12, color: MUTED, fontFamily: "'Manrope',system-ui,sans-serif" }}>🕐 {booking.startTime || "--:--"} – {booking.endTime || "--:--"}</span>
+                          )}
+                        </div>
+                        {booking.message && (
+                          <p style={{ fontSize: 12, color: MUTED, margin: "8px 0 0", lineHeight: 1.6, fontFamily: "'Manrope',system-ui,sans-serif", fontStyle: "italic" }}>
+                            "{booking.message}"
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => openBookingChat(booking)} disabled={!artistUserId}
+                      style={{ background: INK, color: "white", border: "none", borderRadius: 100, padding: "8px 20px", fontWeight: 700, fontSize: 12, cursor: artistUserId ? "pointer" : "not-allowed", fontFamily: "'Manrope',system-ui,sans-serif", opacity: artistUserId ? 1 : .4, transition: "all .2s" }}>
+                      💬 Apri chat
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Paginazione */}
+            {totalPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(0,0,0,.06)", gap: 10 }}>
+                <p style={{ fontSize: 12, color: MUTED, fontFamily: "'Manrope',system-ui,sans-serif", margin: 0 }}>
+                  Pagina {currentPage} di {totalPages} · {filtered.length} richieste
+                </p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="button" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                    style={{ padding: "7px 16px", borderRadius: 100, border: "1px solid rgba(0,0,0,.1)", background: "white", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "'Manrope',system-ui,sans-serif", opacity: currentPage === 1 ? .4 : 1 }}>
+                    ← Indietro
+                  </button>
+                  <button type="button" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                    style={{ padding: "7px 16px", borderRadius: 100, border: "none", background: INK, color: "white", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "'Manrope',system-ui,sans-serif", opacity: currentPage === totalPages ? .4 : 1 }}>
+                    Avanti →
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </section>
   );
 }
