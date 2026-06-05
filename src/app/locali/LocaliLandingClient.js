@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import RegisterFormInline from "@/components/RegisterFormInline";
 
 function useReveal() {
   useEffect(() => {
@@ -111,7 +112,7 @@ export default function LandingLocali() {
               </p>
 
               <div data-reveal style={{ ...reveal, display:"flex", gap:14, flexWrap:"wrap", marginBottom:28 }}>
-                <Link href="/register?role=organizer" className="ll-cta-btn">Pubblica una richiesta gratis</Link>
+                <Link href="#registrati" className="ll-cta-btn">Pubblica una richiesta gratis</Link>
                 <a href="#come-funziona" className="ll-ghost-btn">Come funziona →</a>
               </div>
 
@@ -162,6 +163,17 @@ export default function LandingLocali() {
             {["Ristoranti","Beach Club","Hotel","Rooftop Bar","Discoteche","Wedding Planner","Aziende","Festival","Locali Live","Ristoranti","Beach Club","Hotel","Rooftop Bar","Discoteche","Wedding Planner","Aziende","Festival","Locali Live"].map((item,i) => (
               <span key={i} style={{ margin:"0 24px", color:"rgba(255,255,255,.5)", fontSize:".85rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".16em" }}>{item}</span>
             ))}
+          </div>
+        </section>
+
+        {/* FORM REGISTRAZIONE INLINE */}
+        <section id="registrati" style={{ padding:"0 20px 60px" }}>
+          <div style={{ maxWidth:560, margin:"0 auto" }}>
+            <div data-reveal style={{ ...reveal, background:"white", border:"1px solid rgba(0,0,0,.07)", borderRadius:28, padding:"32px 28px", boxShadow:"0 20px 60px rgba(0,0,0,.1)" }}>
+              <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:"#ff5a00", marginBottom:6 }}>Inizia subito</p>
+              <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1.3rem", letterSpacing:"-.03em", color:"#0a0a0b", margin:"0 0 20px" }}>Registra il tuo locale</h2>
+              <RegisterFormInline role="organizer" dark={false} />
+            </div>
           </div>
         </section>
 
@@ -288,7 +300,7 @@ export default function LandingLocali() {
               </h2>
               <p style={{ color:"rgba(255,255,255,.65)", fontSize:"1rem", maxWidth:460, margin:"0 auto 36px", lineHeight:1.7 }}>Crea il profilo del tuo locale, pubblica una richiesta gratuita e trova artisti disponibili per il tuo prossimo evento.</p>
               <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap" }}>
-                <Link href="/register?role=organizer" className="ll-cta-btn">Pubblica una richiesta gratis</Link>
+                <Link href="#registrati" className="ll-cta-btn">Pubblica una richiesta gratis</Link>
                 <Link href="/login" style={{ display:"inline-block", background:"rgba(255,255,255,.1)", color:"white", border:"1px solid rgba(255,255,255,.2)", padding:"16px 32px", borderRadius:100, fontWeight:700, fontSize:"1rem", textDecoration:"none", fontFamily:"'Manrope',sans-serif" }}>Accedi</Link>
               </div>
             </div>

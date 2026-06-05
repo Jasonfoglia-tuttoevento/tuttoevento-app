@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import RegisterFormInline from "@/components/RegisterFormInline";
 
 function useReveal() {
   useEffect(() => {
@@ -96,7 +97,7 @@ export default function LandingArtisti() {
             </p>
 
             <div data-reveal style={{ ...reveal, display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginBottom:36 }}>
-              <Link href="/register?role=artist" className="la-cta-btn">Crea il profilo gratis</Link>
+              <Link href="#registrati" className="la-cta-btn">Crea il profilo gratis</Link>
               <a href="#calcolatore" className="la-ghost-btn">Calcola quanto guadagni →</a>
             </div>
 
@@ -139,6 +140,17 @@ export default function LandingArtisti() {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FORM REGISTRAZIONE INLINE */}
+        <section id="registrati" style={{ padding:"0 20px 60px" }}>
+          <div style={{ maxWidth:560, margin:"0 auto" }}>
+            <div data-reveal style={{ ...reveal, background:"white", border:"1px solid rgba(0,0,0,.07)", borderRadius:28, padding:"32px 28px", boxShadow:"0 20px 60px rgba(0,0,0,.1)" }}>
+              <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:"#ff5a00", marginBottom:6 }}>Inizia subito</p>
+              <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1.3rem", letterSpacing:"-.03em", color:"#0a0a0b", margin:"0 0 20px" }}>Crea il tuo profilo artista</h2>
+              <RegisterFormInline role="artist" dark={false} />
             </div>
           </div>
         </section>
@@ -238,7 +250,7 @@ export default function LandingArtisti() {
               </h2>
               <p style={{ color:"rgba(255,255,255,.65)", fontSize:"1rem", maxWidth:460, margin:"0 auto 36px", lineHeight:1.7 }}>Crea oggi il tuo account gratuito su TuttoEvento, carica il profilo e ricevi richieste da locali di tutta Italia.</p>
               <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap" }}>
-                <Link href="/register?role=artist" className="la-cta-btn">Crea account gratuito</Link>
+                <Link href="#registrati" className="la-cta-btn">Crea account gratuito</Link>
                 <Link href="/login" style={{ display:"inline-block", background:"rgba(255,255,255,.1)", color:"white", border:"1px solid rgba(255,255,255,.2)", padding:"16px 32px", borderRadius:100, fontWeight:700, fontSize:"1rem", textDecoration:"none", fontFamily:"'Manrope',sans-serif" }}>
                   Accedi
                 </Link>
