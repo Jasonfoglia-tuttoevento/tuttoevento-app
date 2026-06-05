@@ -52,14 +52,14 @@ function RegisterForm() {
     setLoading(false);
   }
 
-  const inp = { background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.15)", borderRadius:14, padding:"13px 16px", fontSize:14, color:"white", fontFamily:"'Manrope',system-ui,sans-serif", outline:"none", width:"100%", transition:"border-color .2s" };
+  const inp = { background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.15)", borderRadius:14, padding:"13px 16px", fontSize:14, color:"white", fontFamily:"Manrope,system-ui,sans-serif", outline:"none", width:"100%", transition:"border-color .2s" };
 
   if (done) return (
     <div style={{ textAlign:"center", padding:"32px 20px" }}>
       <div style={{ fontSize:48, marginBottom:16 }}>🎉</div>
-      <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1.3rem", color:"white", margin:"0 0 8px" }}>Account creato!</h3>
+      <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:"1.3rem", color:"white", margin:"0 0 8px" }}>Account creato!</h3>
       <p style={{ fontSize:14, color:"rgba(255,255,255,.6)", marginBottom:20 }}>Controlla la tua email per confermare l'account.</p>
-      <a href="/dashboard" style={{ display:"inline-block", background:ORANGE, color:"white", borderRadius:100, padding:"12px 28px", fontWeight:800, fontSize:14, textDecoration:"none", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+      <a href="/dashboard" style={{ display:"inline-block", background:ORANGE, color:"white", borderRadius:100, padding:"12px 28px", fontWeight:800, fontSize:14, textDecoration:"none", fontFamily:"Manrope,system-ui,sans-serif" }}>
         Vai alla dashboard →
       </a>
     </div>
@@ -72,7 +72,7 @@ function RegisterForm() {
         <input style={inp} type="email" placeholder="Email professionale *" value={email} onChange={e=>setEmail(e.target.value)} onFocus={e=>e.target.style.borderColor=ORANGE} onBlur={e=>e.target.style.borderColor="rgba(255,255,255,.15)"} />
         <input style={inp} type="password" placeholder="Password *" value={password} onChange={e=>setPass(e.target.value)} onFocus={e=>e.target.style.borderColor=ORANGE} onBlur={e=>e.target.style.borderColor="rgba(255,255,255,.15)"} />
         <button type="button" onClick={()=>{if(!name||!email||!password){setMsg("Compila tutti i campi");return;}setMsg("");setStep(2);}}
-          style={{ background:ORANGE, color:"white", border:"none", borderRadius:14, padding:"14px", fontWeight:800, fontSize:15, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif", transition:"all .2s" }}>
+          style={{ background:ORANGE, color:"white", border:"none", borderRadius:14, padding:"14px", fontWeight:800, fontSize:15, cursor:"pointer", fontFamily:"Manrope,system-ui,sans-serif", transition:"all .2s" }}>
           Continua →
         </button>
       </>}
@@ -80,16 +80,16 @@ function RegisterForm() {
         <input style={inp} placeholder="Nome agenzia / management (opzionale)" value={agency} onChange={e=>setAgency(e.target.value)} onFocus={e=>e.target.style.borderColor=ORANGE} onBlur={e=>e.target.style.borderColor="rgba(255,255,255,.15)"} />
         <div style={{ display:"flex", gap:8 }}>
           <button type="button" onClick={()=>setStep(1)}
-            style={{ flex:1, background:"rgba(255,255,255,.07)", color:"white", border:"1px solid rgba(255,255,255,.15)", borderRadius:14, padding:"13px", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+            style={{ flex:1, background:"rgba(255,255,255,.07)", color:"white", border:"1px solid rgba(255,255,255,.15)", borderRadius:14, padding:"13px", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"Manrope,system-ui,sans-serif" }}>
             ← Indietro
           </button>
           <button type="submit" disabled={loading}
-            style={{ flex:2, background:loading?"rgba(255,90,0,.5)":ORANGE, color:"white", border:"none", borderRadius:14, padding:"13px", fontWeight:800, fontSize:15, cursor:loading?"not-allowed":"pointer", fontFamily:"'Manrope',system-ui,sans-serif", transition:"all .2s" }}>
+            style={{ flex:2, background:loading?"rgba(255,90,0,.5)":ORANGE, color:"white", border:"none", borderRadius:14, padding:"13px", fontWeight:800, fontSize:15, cursor:loading?"not-allowed":"pointer", fontFamily:"Manrope,system-ui,sans-serif", transition:"all .2s" }}>
             {loading ? "Creazione..." : "Crea account gratis"}
           </button>
         </div>
       </>}
-      {msg && <p style={{ fontSize:12, color:"#fca5a5", fontWeight:700, margin:0, fontFamily:"'Manrope',system-ui,sans-serif" }}>{msg}</p>}
+      {msg && <p style={{ fontSize:12, color:"#fca5a5", fontWeight:700, margin:0, fontFamily:"Manrope,system-ui,sans-serif" }}>{msg}</p>}
       <p style={{ fontSize:11, color:"rgba(255,255,255,.3)", textAlign:"center", margin:0 }}>
         Creando un account accetti i nostri <a href="/termini/promoter" style={{ color:"rgba(255,255,255,.5)", textDecoration:"none" }}>Termini</a> e la <a href="/privacy" style={{ color:"rgba(255,255,255,.5)", textDecoration:"none" }}>Privacy Policy</a>
       </p>
@@ -180,8 +180,35 @@ export default function LandingPromoter() {
         .lp-cta:hover { background:#e85100; transform:scale(1.03); }
         .lp-ghost { background:rgba(255,255,255,.07); color:white; border:1px solid rgba(255,255,255,.15); border-radius:100px; padding:15px 32px; font-weight:700; font-size:.95rem; cursor:pointer; font-family:'Manrope',system-ui,sans-serif; transition:all .2s; text-decoration:none; display:inline-block; }
         .lp-ghost:hover { background:rgba(255,255,255,.13); }
+
+        @media(max-width:768px) {
+          .lp-nav-links { display:none!important; }
+          .lp-footer-grid { grid-template-columns:1fr!important; gap:24px!important; }
+        }
         @media(max-width:768px) { .lp-hero-grid{grid-template-columns:1fr!important} .lp-feat-grid{grid-template-columns:1fr!important} .lp-steps-grid{grid-template-columns:1fr!important} .lp-orbit{display:none!important} }
         @media(max-width:480px) { .lp-kpi-grid{grid-template-columns:1fr 1fr!important} }
+
+        /* Nav mobile */
+        .lp-nav-center { display:flex; gap:24px; align-items:center; }
+        .lp-nav-login { display:flex; gap:8px; }
+        /* Footer */
+        .lp-footer-grid { display:grid; }
+        
+        @media(max-width:900px) {
+          .lp-nav-center { display:none; }
+        }
+        @media(max-width:768px) {
+          .lp-hero-grid { grid-template-columns:1fr!important; gap:32px!important; }
+          .lp-feat-grid { grid-template-columns:1fr!important; }
+          .lp-steps { grid-template-columns:1fr!important; }
+          .lp-kpi-grid { grid-template-columns:1fr 1fr; gap:10px; }
+          .lp-footer-grid { grid-template-columns:1fr!important; gap:20px!important; }
+          .lp-orbit { display:none!important; }
+        }
+        @media(max-width:480px) {
+          .lp-kpi-grid { grid-template-columns:1fr!important; }
+        }
+    
       `}</style>
 
       <div className="lp-root">
@@ -189,10 +216,10 @@ export default function LandingPromoter() {
         {/* ── NAVBAR ── */}
         <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:100, padding:"12px 16px" }}>
           <div className="lp-glass" style={{ maxWidth:1100, margin:"0 auto", borderRadius:100, padding:"0 20px", height:56, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <a href="/" style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"1.1rem", letterSpacing:"-.04em", textDecoration:"none", color:"white" }}>
+            <a href="/" style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:"1.1rem", letterSpacing:"-.04em", textDecoration:"none", color:"white" }}>
               TUTTO<span style={{ color:ORANGE }}>EVENTO</span>
             </a>
-            <div style={{ display:"flex", gap:24, alignItems:"center" }}>
+            <div style={{ display:"flex", gap:24, alignItems:"center" }} className="lp-nav-center">
               {[["#vantaggi","Vantaggi"],["#come-funziona","Come funziona"],["#commissioni","Commissioni"],["#faq","FAQ"]].map(([h,l]) => (
                 <a key={h} href={h} style={{ fontSize:".875rem", fontWeight:600, color:"rgba(255,255,255,.6)", textDecoration:"none" }}>{l}</a>
               ))}
@@ -239,7 +266,7 @@ export default function LandingPromoter() {
                 <span style={{ fontSize:".72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".12em", color:"rgba(255,255,255,.8)" }}>Per promoter e management · 2026</span>
               </div>
 
-              <h1 data-reveal style={{ ...rev, fontFamily:"'Sora',sans-serif", fontSize:"clamp(2.6rem,5.5vw,4.2rem)", fontWeight:900, lineHeight:1.0, letterSpacing:"-3px", margin:"0 0 24px", transitionDelay:".08s" }}>
+              <h1 data-reveal style={{ ...rev, fontFamily:"Sora,sans-serif", fontSize:"clamp(2.6rem,5.5vw,4.2rem)", fontWeight:900, lineHeight:1.0, letterSpacing:"-3px", margin:"0 0 24px", transitionDelay:".08s" }}>
                 Porta i tuoi artisti<br/>dove vengono<br/><span className="lp-shimmer">cercati dai locali.</span>
               </h1>
 
@@ -262,8 +289,8 @@ export default function LandingPromoter() {
             {/* Form registrazione nel hero */}
             <div data-reveal style={{ ...rev, transitionDelay:".2s" }}>
               <div id="registrati" className="lp-glass" style={{ borderRadius:28, padding:"32px 28px" }}>
-                <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:ORANGE, marginBottom:6, fontFamily:"'Manrope',system-ui,sans-serif" }}>Inizia subito</p>
-                <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1.3rem", letterSpacing:"-.03em", color:"white", margin:"0 0 20px" }}>Crea il tuo account promoter</h2>
+                <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:ORANGE, marginBottom:6, fontFamily:"Manrope,system-ui,sans-serif" }}>Inizia subito</p>
+                <h2 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:"1.3rem", letterSpacing:"-.03em", color:"white", margin:"0 0 20px" }}>Crea il tuo account promoter</h2>
                 <RegisterForm />
               </div>
             </div>
@@ -288,7 +315,7 @@ export default function LandingPromoter() {
                 <div key={i} data-reveal style={{ ...rev, transitionDelay:`${i*.07}s` }}>
                   <TiltCard style={{ borderRadius:22, height:"100%" }}>
                     <div className="lp-card" style={{ padding:"24px 20px", height:"100%", position:"relative", zIndex:2 }}>
-                      <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"2.2rem", letterSpacing:"-2px", color: i===0?ORANGE:"white", margin:"0 0 6px" }}>{val}</p>
+                      <p style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:"2.2rem", letterSpacing:"-2px", color: i===0?ORANGE:"white", margin:"0 0 6px" }}>{val}</p>
                       <p style={{ fontWeight:700, fontSize:".875rem", color:"white", margin:"0 0 4px" }}>{label}</p>
                       <p style={{ fontSize:".78rem", color:"rgba(255,255,255,.4)", margin:0 }}>{sub}</p>
                     </div>
@@ -304,7 +331,7 @@ export default function LandingPromoter() {
           <div style={{ maxWidth:1100, margin:"0 auto" }}>
             <div data-reveal style={{ ...rev, textAlign:"center", marginBottom:56 }}>
               <p style={{ fontSize:".72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".18em", color:ORANGE, marginBottom:10 }}>Pensato per chi gestisce talenti</p>
-              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(1.8rem,4vw,2.8rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.1, margin:"0 0 12px" }}>Il tuo ufficio booking, digitale.</h2>
+              <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:"clamp(1.8rem,4vw,2.8rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.1, margin:"0 0 12px" }}>Il tuo ufficio booking, digitale.</h2>
               <p style={{ fontSize:"1rem", color:"rgba(255,255,255,.5)", maxWidth:520, margin:"0 auto", lineHeight:1.7 }}>Tutto quello che ti serve per portare i tuoi artisti sul mercato e monetizzare le tue relazioni.</p>
             </div>
 
@@ -323,7 +350,7 @@ export default function LandingPromoter() {
                       onMouseEnter={e=>e.currentTarget.style.borderColor="rgba(255,90,0,.3)"}
                       onMouseLeave={e=>e.currentTarget.style.borderColor="rgba(255,255,255,.08)"}>
                       <div style={{ fontSize:"1.6rem", marginBottom:14 }}>{f.icon}</div>
-                      <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1rem", color:"white", margin:"0 0 8px", letterSpacing:"-.02em" }}>{f.title}</h3>
+                      <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:"1rem", color:"white", margin:"0 0 8px", letterSpacing:"-.02em" }}>{f.title}</h3>
                       <p style={{ fontSize:".875rem", color:"rgba(255,255,255,.5)", lineHeight:1.6, margin:0 }}>{f.desc}</p>
                     </div>
                   </TiltCard>
@@ -338,7 +365,7 @@ export default function LandingPromoter() {
           <div style={{ maxWidth:1000, margin:"0 auto" }}>
             <div data-reveal style={{ ...rev, textAlign:"center", marginBottom:56 }}>
               <p style={{ fontSize:".72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".18em", color:ORANGE, marginBottom:10 }}>Processo semplice</p>
-              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(1.8rem,4vw,2.8rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.1, margin:0 }}>Dalla registrazione ai guadagni.</h2>
+              <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:"clamp(1.8rem,4vw,2.8rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.1, margin:0 }}>Dalla registrazione ai guadagni.</h2>
             </div>
 
             <div className="lp-steps-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, position:"relative" }}>
@@ -356,8 +383,8 @@ export default function LandingPromoter() {
                     <div style={{ width:60, height:60, borderRadius:"50%", background:i===0?ORANGE:"rgba(255,255,255,.06)", border:`2px solid ${i===0?ORANGE:"rgba(255,255,255,.12)"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.4rem", margin:"0 auto 14px", position:"relative", zIndex:1 }}>
                       {s.icon}
                     </div>
-                    <p style={{ fontFamily:"'Sora',sans-serif", fontSize:".7rem", fontWeight:700, color:ORANGE, letterSpacing:".1em", margin:"0 0 6px" }}>{s.n}</p>
-                    <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1rem", color:"white", margin:"0 0 8px" }}>{s.title}</h3>
+                    <p style={{ fontFamily:"Sora,sans-serif", fontSize:".7rem", fontWeight:700, color:ORANGE, letterSpacing:".1em", margin:"0 0 6px" }}>{s.n}</p>
+                    <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:"1rem", color:"white", margin:"0 0 8px" }}>{s.title}</h3>
                     <p style={{ fontSize:".8rem", color:"rgba(255,255,255,.45)", lineHeight:1.6, margin:0 }}>{s.desc}</p>
                   </div>
                 </div>
@@ -371,7 +398,7 @@ export default function LandingPromoter() {
           <div style={{ maxWidth:1000, margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap:60, alignItems:"center" }} className="lp-hero-grid">
             <div data-reveal style={rev}>
               <p style={{ fontSize:".72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".18em", color:ORANGE, marginBottom:10 }}>Il modello economico</p>
-              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(1.8rem,4vw,2.6rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.1, margin:"0 0 16px" }}>
+              <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:"clamp(1.8rem,4vw,2.6rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.1, margin:"0 0 16px" }}>
                 Guadagni sul margine<br/><span className="lp-shimmer">senza toccare il cachet.</span>
               </h2>
               <p style={{ fontSize:"1rem", color:"rgba(255,255,255,.55)", lineHeight:1.7, marginBottom:24 }}>
@@ -398,7 +425,7 @@ export default function LandingPromoter() {
         <section style={{ padding:"80px 20px" }}>
           <div style={{ maxWidth:800, margin:"0 auto" }}>
             <div data-reveal style={{ ...rev, textAlign:"center", marginBottom:48 }}>
-              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(1.8rem,4vw,2.6rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.1, margin:0 }}>Piano semplice. Nessuna sorpresa.</h2>
+              <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:"clamp(1.8rem,4vw,2.6rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.1, margin:0 }}>Piano semplice. Nessuna sorpresa.</h2>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }} className="lp-hero-grid">
               {/* FREE */}
@@ -406,7 +433,7 @@ export default function LandingPromoter() {
                 <TiltCard style={{ borderRadius:24, height:"100%" }}>
                   <div className="lp-card" style={{ padding:"28px 24px", height:"100%", position:"relative", zIndex:2 }}>
                     <p style={{ fontSize:".72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".14em", color:"rgba(255,255,255,.45)", marginBottom:8 }}>Free</p>
-                    <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"2.5rem", color:"white", margin:"0 0 4px", letterSpacing:"-2px" }}>€0</p>
+                    <p style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:"2.5rem", color:"white", margin:"0 0 4px", letterSpacing:"-2px" }}>€0</p>
                     <p style={{ fontSize:".8rem", color:"rgba(255,255,255,.4)", marginBottom:20 }}>per sempre</p>
                     <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:24 }}>
                       {["5 artisti nel roster","3 locali nel roster","Vista richieste (sola lettura)","Chat con il team TuttoEvento","Overview booking e commissioni","Pagina agenzia base"].map(f => (
@@ -425,7 +452,7 @@ export default function LandingPromoter() {
                   <div style={{ background:"rgba(255,90,0,.08)", border:"2px solid rgba(255,90,0,.4)", borderRadius:24, padding:"28px 24px", height:"100%", position:"relative", zIndex:2 }}>
                     <div style={{ position:"absolute", top:-12, left:"50%", transform:"translateX(-50%)", background:ORANGE, color:"white", borderRadius:100, padding:"4px 16px", fontSize:11, fontWeight:800, whiteSpace:"nowrap" }}>Più scelto</div>
                     <p style={{ fontSize:".72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".14em", color:ORANGE, marginBottom:8 }}>Pro</p>
-                    <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"2.5rem", color:"white", margin:"0 0 4px", letterSpacing:"-2px" }}>€19,90</p>
+                    <p style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:"2.5rem", color:"white", margin:"0 0 4px", letterSpacing:"-2px" }}>€19,90</p>
                     <p style={{ fontSize:".8rem", color:"rgba(255,255,255,.4)", marginBottom:20 }}>al mese · disponibile presto</p>
                     <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:24 }}>
                       {["Roster illimitato artisti e locali","Gestione attiva delle trattative","Commissioni personalizzabili per artista","Analitiche avanzate + trend","Pagina agenzia brandizzata + badge","Export CSV · Supporto prioritario"].map(f => (
@@ -447,13 +474,13 @@ export default function LandingPromoter() {
           <div style={{ maxWidth:760, margin:"0 auto" }}>
             <div data-reveal style={{ ...rev, textAlign:"center", marginBottom:48 }}>
               <p style={{ fontSize:".72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:".18em", color:ORANGE, marginBottom:10 }}>Hai domande?</p>
-              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(1.8rem,4vw,2.4rem)", fontWeight:900, letterSpacing:"-.04em", margin:0 }}>Domande frequenti</h2>
+              <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:"clamp(1.8rem,4vw,2.4rem)", fontWeight:900, letterSpacing:"-.04em", margin:0 }}>Domande frequenti</h2>
             </div>
             <div data-reveal style={rev}>
               {FAQS.map((f,i) => (
                 <div key={i} style={{ border:"1px solid rgba(255,255,255,.08)", borderRadius:18, marginBottom:10, overflow:"hidden", background:"rgba(255,255,255,.03)" }}>
                   <button onClick={() => setOpenFaq(openFaq===i?null:i)}
-                    style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"18px 20px", background:"none", border:"none", cursor:"pointer", textAlign:"left", fontFamily:"'Manrope',system-ui,sans-serif", fontWeight:700, fontSize:"1rem", color:"white", gap:12 }}>
+                    style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"18px 20px", background:"none", border:"none", cursor:"pointer", textAlign:"left", fontFamily:"Manrope,system-ui,sans-serif", fontWeight:700, fontSize:"1rem", color:"white", gap:12 }}>
                     <span>{f.q}</span>
                     <span style={{ transition:"transform .3s", transform:openFaq===i?"rotate(180deg)":"none", color:"rgba(255,255,255,.4)", flexShrink:0, fontSize:".8rem" }}>▼</span>
                   </button>
@@ -473,7 +500,7 @@ export default function LandingPromoter() {
           <div data-reveal style={{ ...rev, maxWidth:1000, margin:"0 auto", position:"relative", borderRadius:32, overflow:"hidden", padding:"80px 40px", textAlign:"center", background:"rgba(255,90,0,.06)", border:"1px solid rgba(255,90,0,.2)" }}>
             <div aria-hidden style={{ position:"absolute", top:-100, left:"50%", transform:"translateX(-50%)", width:500, height:500, borderRadius:"50%", background:"radial-gradient(circle,rgba(255,90,0,.3),transparent 70%)", filter:"blur(80px)", animation:"float 8s ease-in-out infinite" }} />
             <div style={{ position:"relative", zIndex:1 }}>
-              <h2 style={{ fontFamily:"'Sora',sans-serif", fontSize:"clamp(2rem,5vw,3rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.05, margin:"0 0 16px" }}>
+              <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:"clamp(2rem,5vw,3rem)", fontWeight:900, letterSpacing:"-.04em", lineHeight:1.05, margin:"0 0 16px" }}>
                 Il tuo roster merita<br/><span className="lp-shimmer">di essere trovato.</span>
               </h2>
               <p style={{ fontSize:"1rem", color:"rgba(255,255,255,.55)", maxWidth:460, margin:"0 auto 36px", lineHeight:1.7 }}>
@@ -489,19 +516,19 @@ export default function LandingPromoter() {
 
         {/* ── FOOTER ── */}
         <footer style={{ background:"rgba(255,255,255,.03)", borderTop:"1px solid rgba(255,255,255,.06)", padding:"40px 20px 24px" }}>
-          <div style={{ maxWidth:1100, margin:"0 auto", display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:40, marginBottom:32 }}>
+          <div style={{ maxWidth:1100, margin:"0 auto", display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:40, marginBottom:32 }} className="lp-footer-grid" style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:40, marginBottom:32 }}>
             <div>
-              <span style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"1.1rem", letterSpacing:"-.04em" }}>TUTTO<span style={{ color:ORANGE }}>EVENTO</span></span>
+              <span style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:"1.1rem", letterSpacing:"-.04em" }}>TUTTO<span style={{ color:ORANGE }}>EVENTO</span></span>
               <p style={{ fontSize:".875rem", color:"rgba(255,255,255,.4)", lineHeight:1.7, marginTop:10, maxWidth:280 }}>La piattaforma italiana per artisti, locali e promoter. Booking semplice, CRM completo.</p>
             </div>
             <div>
-              <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:".85rem", marginBottom:12 }}>Sezioni</p>
+              <p style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:".85rem", marginBottom:12 }}>Sezioni</p>
               {[["#vantaggi","Vantaggi"],["#come-funziona","Come funziona"],["#commissioni","Commissioni"],["#faq","FAQ"]].map(([h,l]) => (
                 <a key={h} href={h} style={{ display:"block", color:"rgba(255,255,255,.4)", fontSize:".875rem", textDecoration:"none", marginBottom:8 }}>{l}</a>
               ))}
             </div>
             <div>
-              <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:".85rem", marginBottom:12 }}>Link utili</p>
+              <p style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:".85rem", marginBottom:12 }}>Link utili</p>
               {[["/","Home"],["/login","Accedi"],["/landing-artisti","Per artisti"],["/landing-locali","Per locali"]].map(([h,l]) => (
                 <a key={h} href={h} style={{ display:"block", color:"rgba(255,255,255,.4)", fontSize:".875rem", textDecoration:"none", marginBottom:8 }}>{l}</a>
               ))}
@@ -520,46 +547,66 @@ export default function LandingPromoter() {
 /* ─── Simulatore commissione interattivo ──────────────────── */
 function CommissionSimulator() {
   const [cachet, setCachet] = useState(200);
-  const [markup, setMarkup] = useState(45);
 
-  const public_price = Math.round(cachet / (1 - markup/100) / 10) * 10;
-  const te_margin = public_price - cachet;
-  const my_share = Math.round(te_margin * 0.30);
+  const serate = [1, 2, 4, 8];
 
   return (
     <div className="lp-glass" style={{ borderRadius:24, padding:"28px 24px" }}>
       <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".14em", color:ORANGE, marginBottom:14 }}>Simulatore commissioni</p>
-      <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1.1rem", color:"white", margin:"0 0 20px" }}>Calcola quanto guadagni</h3>
+      <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:"1.1rem", color:"white", margin:"0 0 6px" }}>Il cachet dell'artista? Sempre intatto.</h3>
+      <p style={{ fontSize:13, color:"rgba(255,255,255,.5)", margin:"0 0 20px", lineHeight:1.6 }}>
+        L'artista incassa il 100% del suo cachet netto. La tua commissione viene dalla quota di TuttoEvento — non erode il compenso dell'artista.
+      </p>
 
       <div style={{ marginBottom:20 }}>
         <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
           <label style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,.6)" }}>Cachet netto artista</label>
-          <span style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, color:ORANGE }}>€{cachet}</span>
+          <span style={{ fontFamily:"Sora,sans-serif", fontWeight:800, color:"white" }}>€{cachet}</span>
         </div>
         <input type="range" min="50" max="1500" step="25" value={cachet} onChange={e=>setCachet(Number(e.target.value))}
           style={{ width:"100%", accentColor:ORANGE, height:6, cursor:"pointer" }} />
-      </div>
-
-      <div style={{ marginBottom:24 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-          <label style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,.6)" }}>Markup TuttoEvento</label>
-          <span style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, color:"white" }}>{markup}%</span>
+        <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:"rgba(255,255,255,.3)", marginTop:5 }}>
+          <span>€50</span><span>€750</span><span>€1500</span>
         </div>
-        <input type="range" min="20" max="70" step="5" value={markup} onChange={e=>setMarkup(Number(e.target.value))}
-          style={{ width:"100%", accentColor:ORANGE, height:6, cursor:"pointer" }} />
       </div>
 
-      <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:20 }}>
-        {[["Prezzo pubblico al locale","€"+public_price,false],["Cachet all'artista","€"+cachet,false],["Margine TuttoEvento","€"+te_margin,false],["Tua quota (30%)","€"+my_share,true]].map(([label,val,accent]) => (
-          <div key={label} style={{ display:"flex", justifyContent:"space-between", padding:"9px 12px", background:accent?"rgba(255,90,0,.12)":"rgba(255,255,255,.04)", border:`1px solid ${accent?"rgba(255,90,0,.25)":"rgba(255,255,255,.07)"}`, borderRadius:10 }}>
-            <span style={{ fontSize:12, color:"rgba(255,255,255,.6)" }}>{label}</span>
-            <span style={{ fontSize:13, fontWeight:800, color:accent?ORANGE:"white" }}>{val}</span>
+      {/* Schema visivo */}
+      <div style={{ background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:16, padding:"14px 16px", marginBottom:16 }}>
+        <p style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".1em", color:"rgba(255,255,255,.4)", margin:"0 0 10px" }}>Come si distribuisce il pagamento</p>
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 12px", background:"rgba(34,197,94,.08)", border:"1px solid rgba(34,197,94,.2)", borderRadius:10 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:16 }}>🎤</span>
+              <span style={{ fontSize:13, fontWeight:700, color:"white" }}>Artista incassa</span>
+            </div>
+            <span style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:15, color:"#22c55e" }}>€{cachet} — 100%</span>
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 12px", background:"rgba(255,90,0,.08)", border:"1px solid rgba(255,90,0,.2)", borderRadius:10 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:16 }}>💼</span>
+              <span style={{ fontSize:13, fontWeight:700, color:"white" }}>Tu guadagni (30% quota TE)</span>
+            </div>
+            <span style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:15, color:ORANGE }}>~€{Math.round(cachet * 0.15)}</span>
+          </div>
+        </div>
+        <p style={{ fontSize:11, color:"rgba(255,255,255,.3)", margin:"10px 0 0", textAlign:"center" }}>
+          ✓ Il cachet dell'artista non viene mai toccato
+        </p>
+      </div>
+
+      {/* Tabella serate */}
+      <div style={{ borderTop:"1px solid rgba(255,255,255,.08)", paddingTop:16, marginBottom:16 }}>
+        <p style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".1em", color:"rgba(255,255,255,.4)", marginBottom:10 }}>Le tue commissioni mensili</p>
+        {serate.map(n => (
+          <div key={n} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 12px", background:"rgba(255,255,255,.04)", borderRadius:10, marginBottom:6, border:"1px solid rgba(255,255,255,.06)" }}>
+            <span style={{ fontSize:12, color:"rgba(255,255,255,.6)", fontWeight:600 }}>{n} booking/mese</span>
+            <span style={{ fontFamily:"Sora,sans-serif", fontWeight:800, color:ORANGE }}>~€{Math.round(cachet * 0.15 * n)}</span>
           </div>
         ))}
       </div>
 
-      <p style={{ fontSize:11, color:"rgba(255,255,255,.3)", textAlign:"center", margin:0 }}>
-        Per {Math.round(1000/my_share*10)/10} booking/mese → <strong style={{ color:"rgba(255,255,255,.6)" }}>€1.000 di commissioni</strong>
+      <p style={{ fontSize:11, color:"rgba(255,255,255,.3)", textAlign:"center", margin:0, lineHeight:1.5 }}>
+        Stima indicativa · Il calcolo esatto dipende dal prezzo pubblico concordato con il locale
       </p>
     </div>
   );
