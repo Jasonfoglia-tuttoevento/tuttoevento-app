@@ -6,53 +6,118 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatTime(iso) {
   if (!iso) return "";
-  return new Date(iso).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffH = Math.floor(diffMs / 3600000);
+  const diffD = Math.floor(diffMs / 86400000);
+  if (diffMin < 1) return "Adesso";
+  if (diffMin < 60) return `${diffMin} min fa`;
+  if (diffH < 24) return `${diffH}h fa`;
+  if (diffD < 7) return `${diffD}g fa`;
+  return d.toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit" });
 }
+
+function formatLastSeen(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  const diffMs = Date.now() - d;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffH = Math.floor(diffMs / 3600000);
+  const diffD = Math.floor(diffMs / 86400000);
+  if (diffMin < 2) return "Online";
+  if (diffMin < 60) return `Attivo ${diffMin} min fa`;
+  if (diffH < 24) return `Attivo ${diffH}h fa`;
+  if (diffD < 7) return `Attivo ${diffD}g fa`;
+  return `Attivo il ${d.toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit" })}`;
+}
+
+function isOnline(iso) {
+  if (!iso) return false;
+  return (Date.now() - new Date(iso)) < 120000; // 2 minuti
+}
+
 function initials(name) {
   if (!name) return "?";
-  return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
+  return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+}
+
+// Ricava il nome dell'altro partecipante dal titolo conversazione
+// Il titolo viene salvato come "NomeMio & NomeAltro" o "NomeAltro & NomeMio"
+function getOtherName(title, myName) {
+  if (!title) return "Conversazione";
+  const parts = title.split(/[&·\-,]/).map(s => s.trim()).filter(Boolean);
+  if (parts.length < 2) return title;
+  const mine = (myName || "").toLowerCase();
+  const other = parts.find(p => p.toLowerCase() !== mine);
+  return other || parts[parts.length - 1];
 }
 
 /* ─── Avatar ──────────────────────────────────────────────── */
-function Avatar({ name, size = 36, orange = false }) {
+function Avatar({ name, size = 36, orange = false, online: onl = false }) {
   return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: orange ? "#ff5a00" : "#0a0a0b",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "'Sora',sans-serif", fontWeight: 800,
-      fontSize: size * 0.36, color: "white", letterSpacing: "-.02em",
-    }}>
-      {initials(name)}
+    <div style={{ position:"relative", flexShrink:0, width:size, height:size }}>
+      <div style={{
+        width:size, height:size, borderRadius:"50%",
+        background: orange ? "#ff5a00" : "#1e1e22",
+        border: "1.5px solid rgba(255,255,255,.12)",
+        display:"flex", alignItems:"center", justifyContent:"center",
+        fontFamily:"'Sora',sans-serif", fontWeight:800,
+        fontSize:size * 0.36, color:"white", letterSpacing:"-.02em",
+      }}>
+        {initials(name)}
+      </div>
+      {onl && (
+        <span style={{
+          position:"absolute", bottom:0, right:0,
+          width:size * 0.28, height:size * 0.28,
+          borderRadius:"50%", background:"#22c55e",
+          border:`${size * 0.06}px solid #111114`,
+        }} />
+      )}
     </div>
   );
 }
 
 /* ─── ConvItem ────────────────────────────────────────────── */
-function ConvItem({ conv, isActive, onClick }) {
+function ConvItem({ conv, isActive, onClick, myName, onlineMap }) {
   const unread = Number(conv.unreadCount || 0);
+  const otherName = getOtherName(conv.title, myName);
+  const lastSeen = onlineMap?.[conv.otherUserId];
+  const online = isOnline(lastSeen);
+
   return (
     <button onClick={onClick} style={{
-      width: "100%", textAlign: "left", border: "none", cursor: "pointer",
-      borderRadius: 20, padding: "12px 14px", marginBottom: 4,
-      background: isActive ? "#ff5a00" : unread > 0 ? "rgba(255,90,0,.08)" : "rgba(255,255,255,.04)",
-      borderLeft: !isActive && unread > 0 ? "3px solid #ff5a00" : "3px solid transparent",
-      transition: "background .15s",
-      fontFamily: "'Manrope',system-ui,sans-serif",
+      width:"100%", textAlign:"left", border:"none", cursor:"pointer",
+      borderRadius:18, padding:"10px 12px", marginBottom:3,
+      background: isActive ? "rgba(255,90,0,.15)" : unread > 0 ? "rgba(255,90,0,.06)" : "rgba(255,255,255,.03)",
+      borderLeft: isActive ? "3px solid #ff5a00" : unread > 0 ? "3px solid rgba(255,90,0,.4)" : "3px solid transparent",
+      transition:"background .15s",
+      fontFamily:"'Manrope',system-ui,sans-serif",
+      display:"flex", gap:10, alignItems:"center",
     }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8 }}>
-        <p style={{ fontWeight:700, fontSize:13, color: isActive ? "white" : "#fff", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>
-          {conv.title || "Conversazione"}
+      <Avatar name={otherName} size={38} online={online} />
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:6 }}>
+          <p style={{ fontWeight:700, fontSize:13, color:"white", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+            {otherName}
+          </p>
+          {unread > 0 && !isActive && (
+            <span style={{ background:"#ff5a00", color:"white", borderRadius:100, padding:"1px 7px", fontSize:10, fontWeight:800, flexShrink:0 }}>
+              {unread > 99 ? "99+" : unread}
+            </span>
+          )}
+        </div>
+        <p style={{ fontSize:11, color: unread > 0 ? "rgba(255,255,255,.55)" : "rgba(255,255,255,.3)", margin:"3px 0 0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+          {conv.lastMessage || "Nessun messaggio ancora"}
         </p>
-        {unread > 0 && !isActive && (
-          <span style={{ background:"#ff5a00", color:"white", borderRadius:100, padding:"2px 7px", fontSize:10, fontWeight:800, flexShrink:0 }}>
-            {unread > 99 ? "99+" : unread}
-          </span>
+        {lastSeen && (
+          <p style={{ fontSize:10, color: online ? "#22c55e" : "rgba(255,255,255,.25)", margin:"2px 0 0", fontWeight:600 }}>
+            {formatLastSeen(lastSeen)}
+          </p>
         )}
       </div>
-      <p style={{ fontSize:11, color: isActive ? "rgba(255,255,255,.65)" : "rgba(255,255,255,.35)", margin:"4px 0 0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-        {conv.lastMessage || "Nessun messaggio ancora"}
-      </p>
     </button>
   );
 }
@@ -60,25 +125,25 @@ function ConvItem({ conv, isActive, onClick }) {
 /* ─── Bubble ──────────────────────────────────────────────── */
 function Bubble({ msg, isMine }) {
   return (
-    <div style={{ display:"flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom:8, gap:8, alignItems:"flex-end" }}>
+    <div style={{ display:"flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom:6, gap:8, alignItems:"flex-end" }}>
       {!isMine && <Avatar name={msg.senderName || "?"} size={28} />}
-      <div style={{ maxWidth:"72%", minWidth:60 }}>
+      <div style={{ maxWidth:"72%", minWidth:48 }}>
         {!isMine && (
-          <p style={{ fontSize:10, fontWeight:700, color:"#ff5a00", marginBottom:3, marginLeft:4, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+          <p style={{ fontSize:10, fontWeight:700, color:"#ff5a00", marginBottom:3, marginLeft:2, fontFamily:"'Manrope',system-ui,sans-serif" }}>
             {msg.senderName || "Utente"}
           </p>
         )}
         <div style={{
-          background: isMine ? "#ff5a00" : "rgba(255,255,255,.08)",
+          background: isMine ? "#ff5a00" : "rgba(255,255,255,.09)",
           border: isMine ? "none" : "1px solid rgba(255,255,255,.1)",
-          borderRadius: isMine ? "20px 20px 6px 20px" : "20px 20px 20px 6px",
-          padding: "10px 14px",
+          borderRadius: isMine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+          padding:"9px 13px",
         }}>
           <p style={{ fontSize:13, lineHeight:1.6, color:"white", margin:0, whiteSpace:"pre-wrap", wordBreak:"break-word", fontFamily:"'Manrope',system-ui,sans-serif" }}>
             {msg.body}
           </p>
         </div>
-        <p style={{ fontSize:10, color:"rgba(255,255,255,.25)", marginTop:3, textAlign: isMine ? "right" : "left", marginLeft:4, marginRight:4, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+        <p style={{ fontSize:10, color:"rgba(255,255,255,.22)", marginTop:2, textAlign: isMine ? "right" : "left", marginLeft:2, marginRight:2, fontFamily:"'Manrope',system-ui,sans-serif" }}>
           {formatTime(msg.createdAt)}
         </p>
       </div>
@@ -87,24 +152,51 @@ function Bubble({ msg, isMine }) {
   );
 }
 
-/* ─── ChatPanel principale ────────────────────────────────── */
+/* ─── ChatPanel ───────────────────────────────────────────── */
 export default function ChatPanel({ user }) {
-  const [isOpen, setIsOpen]           = useState(false);
-  const [view, setView]               = useState("list"); // "list" | "chat" (mobile)
-  const [users, setUsers]             = useState([]);
-  const [conversations, setConversations] = useState([]);
-  const [selectedConversationId, setSelectedConversationId] = useState(null);
-  const [messages, setMessages]       = useState([]);
-  const [message, setMessage]         = useState("");
+  const [isOpen, setIsOpen]                 = useState(false);
+  const [view, setView]                     = useState("list");
+  const [users, setUsers]                   = useState([]);
+  const [conversations, setConversations]   = useState([]);
+  const [selectedConvId, setSelectedConvId] = useState(null);
+  const [messages, setMessages]             = useState([]);
+  const [message, setMessage]               = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [isSending, setIsSending]     = useState(false);
-  const [showNewChat, setShowNewChat] = useState(false);
-  const bottomRef = useRef(null);
-  const inputRef  = useRef(null);
+  const [isSending, setIsSending]           = useState(false);
+  const [showNewChat, setShowNewChat]       = useState(false);
+  const [onlineMap, setOnlineMap]           = useState({}); // { userId: last_seen_iso }
+  const bottomRef  = useRef(null);
+  const inputRef   = useRef(null);
+  const pingRef    = useRef(null);
 
   const totalUnread = conversations.reduce((t, c) => t + Number(c.unreadCount || 0), 0);
 
-  /* ── API helpers ── */
+  /* ── Aggiorna last_seen ogni 60s ── */
+  useEffect(() => {
+    if (!user?.id) return;
+    async function ping() {
+      try { await fetch("/api/presence", { method:"POST" }); } catch {}
+    }
+    ping();
+    pingRef.current = setInterval(ping, 60000);
+    return () => clearInterval(pingRef.current);
+  }, [user?.id]);
+
+  /* ── Carica presenza altri utenti ── */
+  const loadPresence = useCallback(async (convList) => {
+    if (!convList?.length) return;
+    try {
+      const res = await fetch("/api/presence");
+      const d = await res.json();
+      if (Array.isArray(d)) {
+        const map = {};
+        d.forEach(u => { map[u.id] = u.last_seen; });
+        setOnlineMap(map);
+      }
+    } catch {}
+  }, []);
+
+  /* ── API ── */
   const loadUsers = useCallback(async () => {
     const res = await fetch("/api/chat/users");
     const d = await res.json();
@@ -116,8 +208,9 @@ export default function ChatPanel({ user }) {
     const d = await res.json();
     if (!Array.isArray(d)) return;
     setConversations(d);
-    setSelectedConversationId(prev => prev || (d.length > 0 ? d[0].id : null));
-  }, []);
+    setSelectedConvId(prev => prev || (d.length > 0 ? d[0].id : null));
+    loadPresence(d);
+  }, [loadPresence]);
 
   const loadMessages = useCallback(async (convId) => {
     if (!convId) return;
@@ -129,7 +222,7 @@ export default function ChatPanel({ user }) {
   const markAsRead = useCallback(async (convId) => {
     if (!convId) return;
     await fetch("/api/chat/conversations", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
+      method:"PATCH", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ conversationId: convId }),
     });
     loadConversations();
@@ -143,10 +236,10 @@ export default function ChatPanel({ user }) {
       .channel("chat-realtime")
       .on("postgres_changes", { event:"INSERT", schema:"public", table:"chat_messages" }, (payload) => {
         const m = payload.new;
-        if (Number(m.conversation_id) === Number(selectedConversationId)) {
+        if (Number(m.conversation_id) === Number(selectedConvId)) {
           setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, {
-            id: m.id, conversationId: m.conversation_id, senderId: m.sender_id,
-            body: m.body, createdAt: m.created_at, senderName: "", senderRole: "",
+            id:m.id, conversationId:m.conversation_id, senderId:m.sender_id,
+            body:m.body, createdAt:m.created_at, senderName:"", senderRole:"",
           }]);
           if (isOpen) markAsRead(m.conversation_id);
         }
@@ -154,7 +247,7 @@ export default function ChatPanel({ user }) {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user?.id, selectedConversationId, isOpen, loadConversations, markAsRead]);
+  }, [user?.id, selectedConvId, isOpen, loadConversations, markAsRead]);
 
   /* ── Init ── */
   useEffect(() => {
@@ -162,35 +255,36 @@ export default function ChatPanel({ user }) {
     loadUsers(); loadConversations();
   }, [user?.id, loadUsers, loadConversations]);
 
-  /* ── Cambio conversazione ── */
   useEffect(() => {
-    if (!selectedConversationId) return;
-    loadMessages(selectedConversationId);
-    if (isOpen) markAsRead(selectedConversationId);
-  }, [selectedConversationId, isOpen, loadMessages, markAsRead]);
+    if (!selectedConvId) return;
+    loadMessages(selectedConvId);
+    if (isOpen) markAsRead(selectedConvId);
+  }, [selectedConvId, isOpen, loadMessages, markAsRead]);
 
-  /* ── Scroll automatico ── */
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior:"smooth" });
-  }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
 
-  /* ── Focus input quando si apre la chat ── */
   useEffect(() => {
     if (isOpen && view === "chat") setTimeout(() => inputRef.current?.focus(), 150);
   }, [isOpen, view]);
 
-  /* ── Apertura da eventi esterni ── */
+  /* ── Presenza ogni 30s quando aperta ── */
+  useEffect(() => {
+    if (!isOpen) return;
+    const t = setInterval(() => loadPresence(conversations), 30000);
+    return () => clearInterval(t);
+  }, [isOpen, conversations, loadPresence]);
+
+  /* ── Apertura da altri componenti ── */
   useEffect(() => {
     if (!user?.id) return;
     function handleOpenChat(e) {
       const d = e.detail;
       if (!d?.participantUserId) return;
-      createOrOpenConversation({ participantUserId: d.participantUserId, bookingId: d.bookingId || null, eventId: d.eventId || null, title: d.title || "Conversazione" });
+      createOrOpenConversation({ participantUserId:d.participantUserId, bookingId:d.bookingId||null, eventId:d.eventId||null, title:d.title||"Conversazione" });
     }
     function handleOpenButton() {
-      setIsOpen(true);
-      setView("list");
-      if (selectedConversationId) markAsRead(selectedConversationId);
+      setIsOpen(true); setView("list");
+      if (selectedConvId) markAsRead(selectedConvId);
     }
     window.addEventListener("tuttoevento:open-chat", handleOpenChat);
     window.addEventListener("tuttoevento:open-chat-button", handleOpenButton);
@@ -198,261 +292,218 @@ export default function ChatPanel({ user }) {
       window.removeEventListener("tuttoevento:open-chat", handleOpenChat);
       window.removeEventListener("tuttoevento:open-chat-button", handleOpenButton);
     };
-  }, [user?.id, selectedConversationId, markAsRead]);
+  }, [user?.id, selectedConvId, markAsRead]);
 
   /* ── Azioni ── */
   async function createOrOpenConversation({ participantUserId, bookingId=null, eventId=null, title="Nuova conversazione" }) {
+    // Titolo = solo nome dell'altro utente
+    const otherUser = users.find(u => String(u.id) === String(participantUserId));
+    const cleanTitle = otherUser?.name || title;
     const res = await fetch("/api/chat/conversations", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ participantUserId: Number(participantUserId), bookingId, eventId, title }),
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ participantUserId:Number(participantUserId), bookingId, eventId, title:cleanTitle }),
     });
     const d = await res.json();
     if (!res.ok || !d.id) { alert("Errore apertura conversazione"); return; }
-    setIsOpen(true);
-    setSelectedConversationId(d.id);
-    setSelectedUserId("");
-    setShowNewChat(false);
-    setView("chat");
-    await loadConversations();
-    await loadMessages(d.id);
-    await markAsRead(d.id);
+    setIsOpen(true); setSelectedConvId(d.id); setSelectedUserId(""); setShowNewChat(false); setView("chat");
+    await loadConversations(); await loadMessages(d.id); await markAsRead(d.id);
   }
 
-  async function handleSelectConversation(convId) {
-    setSelectedConversationId(convId);
-    setView("chat");
-    await loadMessages(convId);
-    await markAsRead(convId);
+  async function handleSelectConv(convId) {
+    setSelectedConvId(convId); setView("chat");
+    await loadMessages(convId); await markAsRead(convId);
   }
 
   async function sendMessage(e) {
     e.preventDefault();
-    if (!selectedConversationId || !message.trim() || isSending) return;
+    if (!selectedConvId || !message.trim() || isSending) return;
     setIsSending(true);
     const text = message.trim(); setMessage("");
     const res = await fetch("/api/chat/messages", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conversationId: selectedConversationId, message: text }),
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ conversationId:selectedConvId, message:text }),
     });
     if (!res.ok) { setMessage(text); alert("Errore invio messaggio"); }
     setIsSending(false);
   }
 
-  const selectedConv = conversations.find(c => c.id === selectedConversationId);
+  const selectedConv = conversations.find(c => c.id === selectedConvId);
+  const otherName = selectedConv ? getOtherName(selectedConv.title, user?.name) : null;
+  const otherLastSeen = selectedConv ? onlineMap?.[selectedConv.otherUserId] : null;
+  const otherOnline = isOnline(otherLastSeen);
 
   if (!user?.id) return null;
 
   return (
     <>
       <style>{`
-        .cp-btn-open {
-          display: none;
-          position: fixed; bottom: 24px; right: 24px; z-index: 40;
-          background: #0a0a0b; color: white;
-          border: none; border-radius: 100px; padding: 14px 24px;
-          font-family: 'Manrope',system-ui,sans-serif; font-weight: 800; font-size: .9rem;
-          cursor: pointer; box-shadow: 0 8px 32px rgba(0,0,0,.4);
-          transition: transform .2s, box-shadow .2s;
-          align-items: center; gap: 8px;
+        .cp-btn {
+          display: none; position:fixed; bottom:24px; right:24px; z-index:40;
+          background:#0a0a0b; color:white; border:none; border-radius:100px;
+          padding:13px 22px; font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:.875rem;
+          cursor:pointer; box-shadow:0 8px 32px rgba(0,0,0,.5); transition:transform .2s;
+          align-items:center; gap:8px;
         }
-        @media(min-width:1024px) { .cp-btn-open { display:flex; } }
-        .cp-btn-open:hover { transform: scale(1.03); box-shadow: 0 12px 40px rgba(0,0,0,.5); }
-        .cp-badge { background:#ff5a00; color:white; border-radius:100px; padding:2px 8px; font-size:11px; font-weight:900; }
+        @media(min-width:1024px){ .cp-btn{display:flex;} }
+        .cp-btn:hover{transform:scale(1.03);}
+        .cp-badge{background:#ff5a00;color:white;border-radius:100px;padding:2px 8px;font-size:11px;font-weight:900;}
 
-        /* Overlay */
-        .cp-overlay {
-          position: fixed; inset: 0; z-index: 50;
-          background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
-          display: flex; justify-content: flex-end;
-          animation: cp-fade-in .2s ease;
-        }
-        @keyframes cp-fade-in { from{opacity:0} to{opacity:1} }
+        .cp-overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);display:flex;justify-content:flex-end;animation:cpfi .2s ease;}
+        @keyframes cpfi{from{opacity:0}to{opacity:1}}
 
-        /* Pannello */
-        .cp-panel {
-          width: 100%; max-width: 960px; height: 100%;
-          background: #0a0a0b;
-          display: grid; grid-template-columns: 300px 1fr;
-          animation: cp-slide-in .25s cubic-bezier(.4,0,.2,1);
+        .cp-panel{
+          width:100%;max-width:940px;height:100%;background:#0a0a0b;
+          display:grid;grid-template-columns:280px 1fr;
+          animation:cpsi .25s cubic-bezier(.4,0,.2,1);
+          border-left:1px solid rgba(255,255,255,.07);
         }
-        @keyframes cp-slide-in { from{transform:translateX(60px);opacity:0} to{transform:translateX(0);opacity:1} }
-        @media(max-width:767px) {
-          .cp-panel { grid-template-columns: 1fr; max-width: 100%; }
-          .cp-sidebar { display: none; }
-          .cp-sidebar.mobile-visible { display: flex !important; }
-          .cp-main { display: none; }
-          .cp-main.mobile-visible { display: flex !important; }
+        @keyframes cpsi{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+        .cp-sidebar{background:#111114;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;height:100%;overflow:hidden;}
+        .cp-main{display:flex;flex-direction:column;height:100%;overflow:hidden;background:#0a0a0b;}
+
+        @media(max-width:767px){
+          .cp-panel{grid-template-columns:1fr;max-width:100%;}
+          .cp-sidebar{display:none;}
+          .cp-sidebar.mv{display:flex!important;}
+          .cp-main{display:none;}
+          .cp-main.mv{display:flex!important;}
+          .cp-back{display:block!important;}
         }
 
-        /* Sidebar */
-        .cp-sidebar {
-          background: #111114;
-          border-right: 1px solid rgba(255,255,255,.07);
-          display: flex; flex-direction: column;
-          height: 100%; overflow: hidden;
-        }
+        .cp-scroll::-webkit-scrollbar{width:3px;}
+        .cp-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
 
-        /* Main */
-        .cp-main {
-          display: flex; flex-direction: column;
-          height: 100%; overflow: hidden;
-          background: #0a0a0b;
+        .cp-input{
+          flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+          border-radius:14px;padding:11px 15px;color:white;font-size:13px;
+          font-family:'Manrope',system-ui,sans-serif;outline:none;resize:none;
+          min-height:42px;max-height:110px;transition:border-color .2s;line-height:1.5;
         }
+        .cp-input::placeholder{color:rgba(255,255,255,.28);}
+        .cp-input:focus{border-color:rgba(255,90,0,.45);}
 
-        /* Scrollbar sottile */
-        .cp-scroll::-webkit-scrollbar { width: 4px; }
-        .cp-scroll::-webkit-scrollbar-track { background: transparent; }
-        .cp-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+        .cp-send{background:#ff5a00;color:white;border:none;border-radius:14px;padding:11px 18px;font-weight:800;font-size:.875rem;cursor:pointer;font-family:'Manrope',system-ui,sans-serif;transition:all .2s;flex-shrink:0;align-self:flex-end;}
+        .cp-send:disabled{opacity:.35;cursor:not-allowed;}
+        .cp-send:not(:disabled):hover{background:#e85100;transform:scale(1.03);}
 
-        /* Input */
-        .cp-input {
-          flex: 1; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
-          border-radius: 14px; padding: 12px 16px; color: white; font-size: 14px;
-          font-family: 'Manrope',system-ui,sans-serif; outline: none; resize: none;
-          transition: border-color .2s;
-        }
-        .cp-input::placeholder { color: rgba(255,255,255,.3); }
-        .cp-input:focus { border-color: rgba(255,90,0,.5); }
+        .cp-select{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 12px;color:white;font-size:13px;font-family:'Manrope',system-ui,sans-serif;outline:none;margin-bottom:10px;}
+        .cp-select option{background:#1a1a1e;color:white;}
 
-        /* Send btn */
-        .cp-send {
-          background: #ff5a00; color: white; border: none; border-radius: 14px;
-          padding: 12px 20px; font-weight: 800; font-size: .875rem; cursor: pointer;
-          font-family: 'Manrope',system-ui,sans-serif; transition: all .2s; flex-shrink: 0;
-        }
-        .cp-send:disabled { opacity: .4; cursor: not-allowed; }
-        .cp-send:not(:disabled):hover { background: #e85100; transform: scale(1.02); }
+        .cp-start{width:100%;background:#ff5a00;color:white;border:none;border-radius:12px;padding:11px;font-weight:800;font-size:13px;cursor:pointer;font-family:'Manrope',system-ui,sans-serif;transition:all .2s;}
+        .cp-start:disabled{opacity:.4;cursor:not-allowed;}
+        .cp-start:not(:disabled):hover{background:#e85100;}
 
-        /* New chat form */
-        .cp-new-chat {
-          background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
-          border-radius: 20px; padding: 16px; margin: 12px 12px 0;
-        }
-        .cp-select {
-          width: 100%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
-          border-radius: 12px; padding: 10px 12px; color: white; font-size: 13px;
-          font-family: 'Manrope',system-ui,sans-serif; outline: none; margin-bottom: 10px;
-        }
-        .cp-select option { background: #1a1a1e; color: white; }
-        .cp-btn-start {
-          width: 100%; background: #ff5a00; color: white; border: none; border-radius: 12px;
-          padding: 11px; font-weight: 800; font-size: 13px; cursor: pointer;
-          font-family: 'Manrope',system-ui,sans-serif; transition: all .2s;
-        }
-        .cp-btn-start:disabled { opacity: .4; cursor: not-allowed; }
-        .cp-btn-start:not(:disabled):hover { background: #e85100; }
+        .cp-back{display:none;background:rgba(255,255,255,.08);border:none;border-radius:10px;padding:7px 12px;color:white;font-weight:700;font-size:12px;cursor:pointer;font-family:'Manrope',system-ui,sans-serif;}
 
-        /* Header back btn mobile */
-        .cp-back {
-          background: rgba(255,255,255,.08); border: none; border-radius: 10px;
-          padding: 7px 12px; color: white; font-weight: 700; font-size: 12px;
-          cursor: pointer; font-family: 'Manrope',system-ui,sans-serif; display: none;
-        }
-        @media(max-width:767px) { .cp-back { display: block; } }
-
-        /* Typing indicator */
-        @keyframes cp-blink { 0%,80%,100%{opacity:.3} 40%{opacity:1} }
-        .cp-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.5); margin:0 2px; animation:cp-blink 1.4s infinite; }
-        .cp-dot:nth-child(2) { animation-delay:.2s; }
-        .cp-dot:nth-child(3) { animation-delay:.4s; }
+        @keyframes cp-blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+        .cp-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.6);margin:0 2px;animation:cp-blink 1.4s infinite;}
+        .cp-dot:nth-child(2){animation-delay:.2s;}
+        .cp-dot:nth-child(3){animation-delay:.4s;}
       `}</style>
 
-      {/* ── Bottone apri ── */}
-      <button className="cp-btn-open" onClick={() => { setIsOpen(true); setView("list"); }}>
-        <span>💬</span>
-        <span>Chat</span>
+      {/* Bottone apri */}
+      <button className="cp-btn" onClick={() => { setIsOpen(true); setView("list"); }}>
+        <span>💬</span><span>Chat</span>
         {totalUnread > 0 && <span className="cp-badge">{totalUnread > 99 ? "99+" : totalUnread}</span>}
       </button>
 
-      {/* ── Overlay + Pannello ── */}
       {isOpen && (
         <div className="cp-overlay" onClick={e => { if (e.target === e.currentTarget) setIsOpen(false); }}>
           <div className="cp-panel">
 
             {/* ══ SIDEBAR ══ */}
-            <aside className={`cp-sidebar${view === "list" ? " mobile-visible" : ""}`}>
+            <aside className={`cp-sidebar${view === "list" ? " mv" : ""}`}>
 
-              {/* Header sidebar */}
-              <div style={{ padding:"20px 16px 14px", borderBottom:"1px solid rgba(255,255,255,.07)", flexShrink:0 }}>
+              {/* Header */}
+              <div style={{ padding:"18px 14px 12px", borderBottom:"1px solid rgba(255,255,255,.07)", flexShrink:0 }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
                   <div>
-                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:"#ff5a00", margin:0, fontFamily:"'Manrope',system-ui,sans-serif" }}>TuttoEvento</p>
-                    <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"1.3rem", letterSpacing:"-.04em", color:"white", margin:"4px 0 0" }}>Chat</h2>
+                    <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".18em", color:"#ff5a00", margin:0, fontFamily:"'Manrope',system-ui,sans-serif" }}>Messaggi</p>
+                    <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:"1.2rem", letterSpacing:"-.04em", color:"white", margin:"4px 0 0" }}>Chat</h2>
                   </div>
-                  <button onClick={() => setIsOpen(false)} style={{ width:36, height:36, borderRadius:12, background:"rgba(255,255,255,.08)", border:"none", color:"white", fontSize:"1.2rem", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900 }}>×</button>
+                  <button onClick={() => setIsOpen(false)} style={{ width:34, height:34, borderRadius:10, background:"rgba(255,255,255,.07)", border:"none", color:"white", fontSize:"1.2rem", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900 }}>×</button>
                 </div>
-                <button onClick={() => setShowNewChat(p => !p)}
-                  style={{ width:"100%", background: showNewChat ? "#ff5a00" : "rgba(255,255,255,.07)", border:`1px solid ${showNewChat ? "#ff5a00" : "rgba(255,255,255,.12)"}`, borderRadius:14, padding:"10px 14px", color:"white", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif", textAlign:"left", transition:"all .2s" }}>
+                <button onClick={() => setShowNewChat(p => !p)} style={{
+                  width:"100%", background: showNewChat ? "#ff5a00" : "rgba(255,255,255,.07)",
+                  border:`1px solid ${showNewChat ? "#ff5a00" : "rgba(255,255,255,.1)"}`,
+                  borderRadius:14, padding:"9px 14px", color:"white", fontSize:13, fontWeight:700,
+                  cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif", textAlign:"left", transition:"all .2s",
+                }}>
                   {showNewChat ? "✕ Annulla" : "+ Nuova conversazione"}
                 </button>
               </div>
 
               {/* Nuova chat */}
               {showNewChat && (
-                <div className="cp-new-chat">
-                  <p style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".12em", color:"rgba(255,255,255,.4)", marginBottom:10, fontFamily:"'Manrope',system-ui,sans-serif" }}>Seleziona utente</p>
+                <div style={{ margin:"10px 12px 0", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:18, padding:14, flexShrink:0 }}>
+                  <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".12em", color:"rgba(255,255,255,.35)", marginBottom:10, fontFamily:"'Manrope',system-ui,sans-serif" }}>Scegli utente</p>
                   <select className="cp-select" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}>
-                    <option value="">Scegli un utente...</option>
-                    {users.map(u => <option key={u.id} value={u.id}>{u.name} · {u.role}</option>)}
+                    <option value="">Seleziona...</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
-                  <button className="cp-btn-start" disabled={!selectedUserId}
+                  <button className="cp-start" disabled={!selectedUserId}
                     onClick={() => {
-                      const u = users.find(u => String(u.id) === String(selectedUserId));
-                      createOrOpenConversation({ participantUserId: Number(selectedUserId), title: u ? `${user.name} & ${u.name}` : "Nuova chat" });
+                      createOrOpenConversation({ participantUserId:Number(selectedUserId) });
                     }}>
-                    Avvia conversazione →
+                    Avvia chat →
                   </button>
                 </div>
               )}
 
               {/* Lista conversazioni */}
-              <div className="cp-scroll" style={{ flex:1, overflowY:"auto", padding:"10px 12px 80px" }}>
+              <div className="cp-scroll" style={{ flex:1, overflowY:"auto", padding:"10px 10px 80px" }}>
                 {conversations.length === 0 ? (
-                  <div style={{ textAlign:"center", padding:"40px 16px" }}>
-                    <p style={{ fontSize:24, marginBottom:8 }}>💬</p>
-                    <p style={{ fontSize:13, color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif" }}>Nessuna conversazione ancora.<br/>Inizia una nuova chat.</p>
+                  <div style={{ textAlign:"center", padding:"48px 16px" }}>
+                    <p style={{ fontSize:28, margin:"0 0 10px" }}>💬</p>
+                    <p style={{ fontSize:13, color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", lineHeight:1.6 }}>Nessuna conversazione.<br/>Inizia una nuova chat.</p>
                   </div>
                 ) : conversations.map(c => (
-                  <ConvItem key={c.id} conv={c} isActive={c.id === selectedConversationId && view === "chat"} onClick={() => handleSelectConversation(c.id)} />
+                  <ConvItem key={c.id} conv={c} isActive={c.id === selectedConvId && view === "chat"}
+                    onClick={() => handleSelectConv(c.id)}
+                    myName={user?.name} onlineMap={onlineMap}
+                  />
                 ))}
               </div>
             </aside>
 
-            {/* ══ AREA MESSAGGI ══ */}
-            <section className={`cp-main${view === "chat" ? " mobile-visible" : ""}`}>
+            {/* ══ CHAT ══ */}
+            <section className={`cp-main${view === "chat" ? " mv" : ""}`}>
 
               {/* Header chat */}
-              <div style={{ padding:"16px 20px", borderBottom:"1px solid rgba(255,255,255,.07)", flexShrink:0, display:"flex", alignItems:"center", gap:12 }}>
-                <button className="cp-back" onClick={() => setView("list")}>← Lista</button>
-                {selectedConv ? (
+              <div style={{ padding:"14px 18px", borderBottom:"1px solid rgba(255,255,255,.07)", flexShrink:0, display:"flex", alignItems:"center", gap:10 }}>
+                <button className="cp-back" onClick={() => setView("list")}>← Indietro</button>
+                {selectedConv && otherName ? (
                   <>
-                    <Avatar name={selectedConv.title} size={38} orange />
+                    <Avatar name={otherName} size={40} orange={false} online={otherOnline} />
                     <div style={{ flex:1, minWidth:0 }}>
-                      <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1rem", color:"white", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", letterSpacing:"-.03em" }}>{selectedConv.title}</h3>
-                      <p style={{ fontSize:11, color:"rgba(255,255,255,.4)", margin:"2px 0 0", fontFamily:"'Manrope',system-ui,sans-serif", display:"flex", alignItems:"center", gap:4 }}>
-                        <span style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e", display:"inline-block" }} />
-                        Live · Realtime
-                        {selectedConv.bookingId && <span style={{ marginLeft:8, color:"#ff5a00", fontWeight:700 }}>· Booking #{selectedConv.bookingId}</span>}
+                      <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:".95rem", color:"white", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", letterSpacing:"-.03em" }}>
+                        {otherName}
+                      </h3>
+                      <p style={{ fontSize:11, margin:"2px 0 0", fontFamily:"'Manrope',system-ui,sans-serif", color: otherOnline ? "#22c55e" : "rgba(255,255,255,.35)", fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
+                        {otherOnline && <span style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e", display:"inline-block" }} />}
+                        {otherLastSeen ? formatLastSeen(otherLastSeen) : "Realtime · Live"}
+                        {selectedConv.bookingId && <span style={{ marginLeft:8, color:"#ff5a00" }}>· Booking #{selectedConv.bookingId}</span>}
                       </p>
                     </div>
                   </>
                 ) : (
-                  <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", fontSize:13 }}>Seleziona una conversazione</p>
+                  <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", fontSize:13, flex:1 }}>Seleziona una conversazione</p>
                 )}
-                <button onClick={() => setIsOpen(false)} style={{ width:34, height:34, borderRadius:10, background:"rgba(255,255,255,.07)", border:"none", color:"white", fontSize:"1.1rem", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, flexShrink:0 }}>×</button>
+                <button onClick={() => setIsOpen(false)} style={{ width:32, height:32, borderRadius:10, background:"rgba(255,255,255,.07)", border:"none", color:"white", fontSize:"1.1rem", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, flexShrink:0 }}>×</button>
               </div>
 
               {/* Messaggi */}
-              <div className="cp-scroll" style={{ flex:1, overflowY:"auto", padding:"20px 16px" }}>
-                {!selectedConversationId ? (
-                  <div style={{ height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12 }}>
+              <div className="cp-scroll" style={{ flex:1, overflowY:"auto", padding:"16px 14px" }}>
+                {!selectedConvId ? (
+                  <div style={{ height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10 }}>
                     <span style={{ fontSize:48 }}>💬</span>
-                    <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", fontSize:14, textAlign:"center" }}>Seleziona una conversazione<br/>o avviarne una nuova</p>
+                    <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", fontSize:13, textAlign:"center" }}>Seleziona o avvia una conversazione</p>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div style={{ height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12 }}>
+                  <div style={{ height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10 }}>
                     <span style={{ fontSize:48 }}>✉️</span>
-                    <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", fontSize:14, textAlign:"center" }}>Nessun messaggio ancora.<br/>Scrivi il primo!</p>
+                    <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", fontSize:13, textAlign:"center" }}>Nessun messaggio ancora.<br/>Scrivi il primo!</p>
                   </div>
                 ) : (
                   <>
@@ -460,9 +511,9 @@ export default function ChatPanel({ user }) {
                       <Bubble key={m.id} msg={m} isMine={String(m.senderId) === String(user.id)} />
                     ))}
                     {isSending && (
-                      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8, gap:8, alignItems:"flex-end" }}>
-                        <div style={{ background:"rgba(255,90,0,.3)", borderRadius:"20px 20px 6px 20px", padding:"10px 16px" }}>
-                          <span className="cp-dot" /><span className="cp-dot" /><span className="cp-dot" />
+                      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:6, gap:8, alignItems:"flex-end" }}>
+                        <div style={{ background:"rgba(255,90,0,.25)", borderRadius:"18px 18px 4px 18px", padding:"10px 14px" }}>
+                          <span className="cp-dot"/><span className="cp-dot"/><span className="cp-dot"/>
                         </div>
                       </div>
                     )}
@@ -472,7 +523,7 @@ export default function ChatPanel({ user }) {
               </div>
 
               {/* Input */}
-              <form onSubmit={sendMessage} style={{ padding:"12px 16px", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", gap:10, alignItems:"flex-end", flexShrink:0, background:"#0a0a0b" }}>
+              <form onSubmit={sendMessage} style={{ padding:"10px 14px 14px", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", gap:8, alignItems:"flex-end", flexShrink:0 }}>
                 <textarea
                   ref={inputRef}
                   className="cp-input"
@@ -481,15 +532,14 @@ export default function ChatPanel({ user }) {
                   onChange={e => {
                     setMessage(e.target.value);
                     e.target.style.height = "auto";
-                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                    e.target.style.height = Math.min(e.target.scrollHeight, 110) + "px";
                   }}
                   onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(e); } }}
-                  placeholder={selectedConversationId ? "Scrivi un messaggio... (Enter per inviare)" : "Seleziona una conversazione"}
-                  disabled={!selectedConversationId}
-                  style={{ flex:1, background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", borderRadius:14, padding:"12px 16px", color:"white", fontSize:14, fontFamily:"'Manrope',system-ui,sans-serif", outline:"none", resize:"none", minHeight:44, maxHeight:120, transition:"border-color .2s" }}
+                  placeholder={selectedConvId ? "Scrivi… (Invio per inviare)" : "Seleziona una conversazione"}
+                  disabled={!selectedConvId}
                 />
-                <button className="cp-send" type="submit" disabled={!selectedConversationId || !message.trim() || isSending}>
-                  {isSending ? "..." : "Invia"}
+                <button className="cp-send" type="submit" disabled={!selectedConvId || !message.trim() || isSending}>
+                  {isSending ? "…" : "↑"}
                 </button>
               </form>
 

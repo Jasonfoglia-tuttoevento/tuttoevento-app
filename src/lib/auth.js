@@ -26,7 +26,7 @@ export async function getSessionUser() {
 
     const { data: userData } = await supabaseAdmin
       .from("users")
-      .select("id, name, email, role, business_mode")
+      .select("id, name, email, role, business_mode, plan, plan_expires_at")
       .eq("auth_id", user.id)
       .maybeSingle();
 

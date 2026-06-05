@@ -1,292 +1,426 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import Input from "./Input";
-import EventsTable from "./EventsTable";
-import ArtistMarketplace from "./ArtistMarketplace";
-import OrganizerAnalytics from "./OrganizerAnalytics";
-import OrganizerStatement from "./OrganizerStatement";
+import { useState, useEffect } from "react";
+import ProLock, { ProBadge } from "./Prolock";
+
+const ORANGE = "#ff5a00";
+const INK = "#0a0a0b";
+const MUTED = "#6b6b73";
 
 const TABS = [
-  { id: "booking", label: "Nuovo booking" },
-  { id: "events", label: "I miei eventi" },
-  { id: "marketplace", label: "Marketplace" },
-  { id: "mediakit", label: "Media Kit locale" },
-  { id: "analytics", label: "Analitiche" },
+  { id: "overview",   label: "Overview",        icon: "🏠" },
+  { id: "marketplace",label: "Trova artisti",    icon: "🎤" },
+  { id: "crm",        label: "CRM",              icon: "🎯" },
+  { id: "analitiche", label: "Analitiche",       icon: "📊" },
+  { id: "estratto",   label: "Estratto conto",   icon: "💰" },
 ];
 
-export default function OrganizerArea({
-  currentUser,
-  events,
-  artists,
-  bookings = [],
-  title, setTitle,
-  date, setDate,
-  artist, setArtist,
-  promoter, setPromoter,
-}) {
-  const defaultMode = currentUser?.businessMode === "managed" ? "managed" : "self_service";
-  const formRef = useRef(null);
-  const [activeTab, setActiveTab] = useState("booking");
+function Card({ children, style = {} }) {
+  return (
+    <div style={{ background: "white", border: "1px solid rgba(0,0,0,.06)", borderRadius: 24, padding: "20px 22px", ...style }}>
+      {children}
+    </div>
+  );
+}
 
-  const [selectedArtistId, setSelectedArtistId] = useState("");
-  const [bookingMessage, setBookingMessage] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [eventMode, setEventMode] = useState(defaultMode);
+function SectionTitle({ children }) {
+  return <h3 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, letterSpacing: "-.02em", color: INK, marginBottom: 14, marginTop: 0 }}>{children}</h3>;
+}
 
-  // Media kit locale
-  const [venueName, setVenueName] = useState(currentUser?.name || "");
-  const [venueCity, setVenueCity] = useState("");
-  const [venueType, setVenueType] = useState("");
-  const [venueCapacity, setVenueCapacity] = useState("");
-  const [venueDescription, setVenueDescription] = useState("");
-  const [venueInstagram, setVenueInstagram] = useState("");
-  const [venueSaving, setVenueSaving] = useState(false);
-  const [venueMsg, setVenueMsg] = useState("");
-  const [eventBudget, setEventBudget] = useState("");
-  const [budgetSaving, setBudgetSaving] = useState(false);
-  const [budgetMsg, setBudgetMsg] = useState("");
+function Inp({ label, value, onChange, placeholder, type = "text" }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+      <label style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: ".1em", fontFamily: "'Manrope',system-ui,sans-serif" }}>{label}</label>
+      <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+        style={{ background: "#fbfaf8", border: "1px solid rgba(0,0,0,.1)", borderRadius: 12, padding: "10px 13px", fontSize: 13, fontFamily: "'Manrope',system-ui,sans-serif", outline: "none", width: "100%" }} />
+    </div>
+  );
+}
 
-  function handleSelectArtist(selectedArtist) {
-    setSelectedArtistId(String(selectedArtist.id));
-    setArtist(selectedArtist.name || "");
-    setBookingMessage(m => m || `Ciao ${selectedArtist.name}, vorrei verificare la tua disponibilità.`);
-    setActiveTab("booking");
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  async function saveVenueProfile(e) {
-    e.preventDefault();
-    setVenueSaving(true); setVenueMsg("");
-    try {
-      const res = await fetch("/api/venue-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          venueName, city: venueCity, venueType,
-          capacity: venueCapacity ? Number(venueCapacity) : null,
-          description: venueDescription, instagram: venueInstagram,
-        }),
-      });
-      if (res.ok) setVenueMsg("Profilo locale salvato ✓");
-      else setVenueMsg("Errore salvataggio");
-    } catch { setVenueMsg("Errore tecnico"); }
-    finally { setVenueSaving(false); }
-  }
-
-  async function createEventWithBooking(e) {
-    e.preventDefault();
-    const sel = artists.find(a => String(a.id) === String(selectedArtistId));
-    if (!title || !date || !startTime || !endTime || !sel) {
-      alert("Inserisci nome evento, data, orario e artista."); return;
-    }
-    const evRes = await fetch("/api/events", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, date, startTime, endTime, artist: sel.name, artistId: sel.id,
-        artistName: sel.name, artistCachet: sel.cachet || "", cachet: sel.cachet || "",
-        promoter, organizer: currentUser.name, userId: currentUser.id, status: "draft", eventMode }),
-    });
-    if (!evRes.ok) { alert("Errore creazione evento"); return; }
-    const evData = await evRes.json();
-    const bkRes = await fetch("/api/bookings", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ organizerId: currentUser.id, organizerName: currentUser.name,
-        artistId: sel.id, artistName: sel.name, artistCachet: sel.cachet || "",
-        cachet: sel.cachet || "", eventId: evData.id, eventTitle: title, eventDate: date,
-        startTime, endTime, message: bookingMessage || `Richiesta booking per ${title}` }),
-    });
-    const bkData = await bkRes.json();
-    if (!bkRes.ok) { alert(bkData.error || "Evento creato, errore richiesta artista"); return; }
-    window.dispatchEvent(new CustomEvent("tuttoevento:open-chat", {
-      detail: { participantUserId: Number(sel.id), bookingId: bkData.id, eventId: evData.id, title: `Booking · ${sel.name}` },
-    }));
-    setTitle(""); setDate(""); setArtist(""); setPromoter("");
-    setSelectedArtistId(""); setBookingMessage(""); setStartTime(""); setEndTime("");
-    setEventMode(defaultMode);
-    alert("Evento creato, richiesta inviata e chat aperta.");
-  }
-
-  // Carica profilo venue esistente all'avvio
-  useEffect(() => {
-    fetch("/api/venue-profile").then(r => r.json()).then(d => {
-      if (!d || d.error) return;
-      if (d.venue_name) setVenueName(d.venue_name);
-      if (d.city) setVenueCity(d.city);
-      if (d.venue_type) setVenueType(d.venue_type);
-      if (d.capacity) setVenueCapacity(String(d.capacity));
-      if (d.description) setVenueDescription(d.description);
-      if (d.instagram) setVenueInstagram(d.instagram);
-    }).catch(() => {});
-  }, []);
-
-  async function saveBudget(e) {
-    e.preventDefault();
-    setBudgetSaving(true);
-    setBudgetMsg("");
-    try {
-      const res = await fetch("/api/users/update-budget", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventBudget: eventBudget ? Number(eventBudget) : null }),
-      });
-      if (res.ok) setBudgetMsg("Budget salvato ✓");
-      else setBudgetMsg("Errore salvataggio");
-    } catch { setBudgetMsg("Errore tecnico"); }
-    finally { setBudgetSaving(false); }
-  }
+// ── Tab: Overview ──────────────────────────────────────────────
+function TabOverview({ currentUser, bookings, plan }) {
+  const pending   = bookings.filter(b => ["pending","in_attesa"].includes((b.status||"").toLowerCase())).length;
+  const confirmed = bookings.filter(b => ["confirmed","accettato","accepted"].includes((b.status||"").toLowerCase())).length;
+  const fmt = n => new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:0 }).format(n);
+  const spent = bookings.filter(b => ["confirmed","accettato","accepted"].includes((b.status||"").toLowerCase()))
+    .reduce((s, b) => s + (Number(b.publicPrice) || Number(b.cachet) || 0), 0);
 
   return (
-    <div className="te-area w-full max-w-full overflow-hidden space-y-4">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700&display=swap');
-        .te-area { --orange:#ff5a00; --ink:#0a0a0b; --paper:#fbfaf8; --muted:#6b6b73; font-family:'Manrope',system-ui,sans-serif; color:var(--ink); }
-        .te-area .te-display { font-family:'Sora',sans-serif; letter-spacing:-0.03em; }
-        .te-area input, .te-area textarea, .te-area select { font-family:inherit; }
-        .te-area input:focus, .te-area textarea:focus, .te-area select:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,90,0,.12); outline:none; }
-      `}</style>
-
-      {/* Tab nav */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`shrink-0 text-xs sm:text-sm font-bold px-4 py-2 rounded-full transition ${activeTab === t.id ? "bg-[var(--ink)] text-white" : "bg-white border border-black/10 text-[var(--muted)] hover:border-[var(--orange)]/40"}`}>
-            {t.label}
-          </button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+        {[["Richieste inviate", bookings.length, false],["Booking confermati", confirmed, false],["Budget speso", fmt(spent), true]].map(([label, val, accent]) => (
+          <div key={label} style={{ background: accent ? INK : "white", border: `1px solid ${accent ? "transparent" : "rgba(0,0,0,.06)"}`, borderRadius: 20, padding: "16px 18px" }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em", color: accent ? "rgba(255,255,255,.5)" : MUTED, margin: "0 0 6px" }}>{label}</p>
+            <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 24, letterSpacing: "-.03em", color: accent ? "white" : INK, margin: 0 }}>{val}</p>
+          </div>
         ))}
       </div>
 
-      {/* BOOKING */}
-      {activeTab === "booking" && (
-        <section ref={formRef} className="bg-white border border-black/5 rounded-3xl p-5 sm:p-7 shadow-sm">
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--orange)] mb-1">Nuovo booking</p>
-          <h2 className="te-display text-xl sm:text-2xl font-extrabold mb-4">Crea Evento</h2>
-          <form onSubmit={createEventWithBooking} className="space-y-3">
-            <Input placeholder="Nome evento" value={title} onChange={setTitle} />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Input type="date" value={date} onChange={setDate} />
-              <Input type="time" value={startTime} onChange={setStartTime} />
-              <Input type="time" value={endTime} onChange={setEndTime} />
+      {bookings.length > 0 && (
+        <Card>
+          <SectionTitle>Ultime richieste</SectionTitle>
+          {bookings.slice(0, 5).map((b, i) => (
+            <div key={b.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(0,0,0,.05)", gap: 10 }}>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>{b.artistName || "—"}</p>
+                <p style={{ fontSize: 11, color: MUTED, margin: "2px 0 0" }}>{b.eventDate || b.date || "—"}</p>
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 100,
+                background: ["confirmed","accettato","accepted"].includes((b.status||"").toLowerCase()) ? "rgba(22,163,74,.1)" : "rgba(217,119,6,.1)",
+                color: ["confirmed","accettato","accepted"].includes((b.status||"").toLowerCase()) ? "#16a34a" : "#d97706" }}>
+                {b.status || "—"}
+              </span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setEventMode("self_service")}
-                className={`rounded-2xl p-3 text-left text-sm transition ${eventMode === "self_service" ? "bg-[var(--ink)] text-white" : "bg-[var(--paper)] border border-black/10 hover:border-[var(--orange)]/40"}`}>
-                <p className="font-bold">Autonoma</p>
-                <p className="text-xs opacity-60 mt-0.5">Gestisci tu l'evento.</p>
-              </button>
-              <button type="button" onClick={() => setEventMode("managed")}
-                className={`rounded-2xl p-3 text-left text-sm transition ${eventMode === "managed" ? "bg-[var(--orange)] text-white" : "bg-[var(--paper)] border border-black/10 hover:border-[var(--orange)]/40"}`}>
-                <p className="font-bold">TuttoEvento</p>
-                <p className="text-xs opacity-60 mt-0.5">Seguita da noi.</p>
-              </button>
-            </div>
-            <select value={selectedArtistId} onChange={e => { setSelectedArtistId(e.target.value); const s = artists.find(a => String(a.id) === String(e.target.value)); setArtist(s?.name || ""); }}
-              className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition">
-              <option value="">Seleziona artista</option>
-              {artists.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-            {artist && <div className="bg-[var(--ink)] text-white rounded-2xl px-4 py-3 text-sm"><span className="opacity-50 text-xs">Artista: </span><span className="font-bold">{artist}</span></div>}
-            <Input placeholder="Promoter (opzionale)" value={promoter} onChange={setPromoter} />
-            <textarea placeholder="Messaggio per l'artista" value={bookingMessage} onChange={e => setBookingMessage(e.target.value)}
-              className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm min-h-[90px] transition resize-none" />
-            <button className="w-full bg-[var(--orange)] text-white rounded-2xl py-3.5 font-bold text-sm hover:bg-[#e85100] transition shadow-[0_10px_24px_-10px_rgba(255,90,0,.6)]">
-              Crea evento e invia richiesta
-            </button>
-          </form>
-        </section>
+          ))}
+        </Card>
       )}
+    </div>
+  );
+}
 
-      {/* EVENTI */}
-      {activeTab === "events" && <EventsTable events={events} />}
+// ── Tab: Marketplace ───────────────────────────────────────────
+function TabMarketplace({ artists, plan, onContact }) {
+  const [search, setSearch]     = useState("");
+  const [genreFilter, setGenre] = useState("");
 
-      {/* MARKETPLACE */}
-      {activeTab === "marketplace" && (
-        <ArtistMarketplace artists={artists} currentUser={currentUser} onSelectArtist={handleSelectArtist} />
-      )}
+  const filtered = artists.filter(a => {
+    const name = (a.stageName || a.name || "").toLowerCase();
+    const genre = (a.musicGenres || a.genres || "").toLowerCase();
+    const matchSearch = !search || name.includes(search.toLowerCase());
+    const matchGenre  = !genreFilter || genre.includes(genreFilter.toLowerCase());
+    return matchSearch && matchGenre;
+  });
 
-      {/* MEDIA KIT LOCALE */}
-      {activeTab === "mediakit" && (
-        <div className="space-y-4">
-          {/* Budget evento */}
-          <section className="bg-white border border-black/5 rounded-3xl p-5 sm:p-7 shadow-sm">
-            <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--orange)] mb-1">Budget</p>
-            <h2 className="te-display text-lg sm:text-xl font-extrabold mb-1">Budget per evento</h2>
-            <p className="text-xs text-[var(--muted)] mb-4">Imposta il tuo budget indicativo per serata. È riservato e visibile solo al nostro team per proporti gli artisti giusti.</p>
-            <form onSubmit={saveBudget} className="flex gap-3 items-end flex-wrap">
-              <div className="flex-1 min-w-[180px]">
-                <label className="block text-xs font-bold mb-1.5">Budget massimo per evento (€)</label>
-                <input type="number" min="0" placeholder="es. 500" value={eventBudget} onChange={e => setEventBudget(e.target.value)}
-                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
-              </div>
-              <button disabled={budgetSaving} className="bg-[var(--orange)] text-white rounded-2xl px-6 py-3 font-bold text-sm hover:bg-[#e85100] transition disabled:opacity-50">
-                {budgetSaving ? "Salvo..." : "Salva budget"}
-              </button>
-              {budgetMsg && <p className="w-full text-xs font-bold text-green-600">{budgetMsg}</p>}
-            </form>
-          </section>
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-          {/* Media kit */}
-          <section className="bg-white border border-black/5 rounded-3xl p-5 sm:p-7 shadow-sm">
-            <form onSubmit={saveVenueProfile}>
-            <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--orange)] mb-1">Media Kit</p>
-            <h2 className="te-display text-lg sm:text-xl font-extrabold mb-1">Profilo del locale</h2>
-            <p className="text-xs text-[var(--muted)] mb-4">Queste informazioni sono visibili agli artisti nel marketplace. Completa il profilo per aumentare le richieste.</p>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold mb-1.5">Nome locale</label>
-                <input value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="es. Club Aurora"
-                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1.5">Città</label>
-                <input value={venueCity} onChange={e => setVenueCity(e.target.value)} placeholder="es. Napoli"
-                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1.5">Tipologia</label>
-                <select value={venueType} onChange={e => setVenueType(e.target.value)}
-                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition">
-                  <option value="">Seleziona...</option>
-                  <option>Club / Discoteca</option>
-                  <option>Bar / Pub</option>
-                  <option>Ristorante</option>
-                  <option>Venue eventi</option>
-                  <option>Festival / Arena</option>
-                  <option>Privato</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1.5">Capienza (persone)</label>
-                <input type="number" min="0" value={venueCapacity} onChange={e => setVenueCapacity(e.target.value)} placeholder="es. 300"
-                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold mb-1.5">Descrizione</label>
-                <textarea value={venueDescription} onChange={e => setVenueDescription(e.target.value)} rows={3} resize="none"
-                  placeholder="Descrivi il locale, il tipo di pubblico, l'atmosfera..."
-                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition resize-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1.5">Instagram</label>
-                <input value={venueInstagram} onChange={e => setVenueInstagram(e.target.value)} placeholder="@nomeprofilo"
-                  className="w-full bg-[var(--paper)] border border-black/10 rounded-2xl px-4 py-3 text-sm transition" />
+      {/* Filtri base */}
+      <Card>
+        <SectionTitle>Cerca artisti</SectionTitle>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <Inp label="Nome / stile" value={search} onChange={e => setSearch(e.target.value)} placeholder="Es. DJ, cantante..." />
+          <Inp label="Genere" value={genreFilter} onChange={e => setGenre(e.target.value)} placeholder="Es. House, Jazz..." />
+        </div>
+      </Card>
+
+      {/* Filtri avanzati + AI matching — solo PRO */}
+      <ProLock feature="I filtri avanzati e l'AI matching" plan={plan}>
+        <Card>
+          <SectionTitle>Filtri avanzati + AI matching <ProBadge /></SectionTitle>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+            <Inp label="Budget max (€)" placeholder="Es. 500" />
+            <Inp label="Distanza (km)" placeholder="Es. 50" />
+            <Inp label="Disponibilità" type="date" placeholder="" />
+          </div>
+          <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(255,90,0,.06)", borderRadius: 12, fontSize: 13, color: ORANGE, fontWeight: 700 }}>
+            🤖 AI matching: suggerisce i 3 artisti più adatti in base a storico, budget e tipo evento
+          </div>
+        </Card>
+      </ProLock>
+
+      {/* Grid artisti */}
+      {filtered.length === 0 ? (
+        <Card><p style={{ fontSize: 13, color: "rgba(0,0,0,.3)" }}>Nessun artista trovato.</p></Card>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
+          {filtered.map(a => (
+            <div key={a.id} style={{ background: "white", border: "1px solid rgba(0,0,0,.07)", borderRadius: 22, overflow: "hidden", transition: "box-shadow .2s" }}>
+              {a.photo && <img src={a.photo} alt={a.stageName || a.name} style={{ width: "100%", height: 140, objectFit: "cover" }} />}
+              <div style={{ padding: "14px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, margin: 0 }}>{a.stageName || a.name}</p>
+                </div>
+                <p style={{ fontSize: 12, color: ORANGE, fontWeight: 700, margin: "0 0 4px" }}>{a.musicGenres || a.genres || "—"}</p>
+                <p style={{ fontSize: 12, color: MUTED, margin: "0 0 12px" }}>📍 {a.city || "Italia"}</p>
+                <button type="button" onClick={() => onContact && onContact(a)}
+                  style={{ width: "100%", background: INK, color: "white", border: "none", borderRadius: 12, padding: "10px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Manrope',system-ui,sans-serif" }}>
+                  Richiedi contatto
+                </button>
               </div>
             </div>
-            <button type="submit" disabled={venueSaving} className="mt-4 bg-[var(--ink)] text-white rounded-2xl px-6 py-3 font-bold text-sm hover:scale-[1.01] transition disabled:opacity-50">
-              {venueSaving ? "Salvo..." : "Salva profilo locale"}
-            </button>
-            {venueMsg && <p style={{ marginTop:8, fontSize:12, fontWeight:700, color:"#16a34a" }}>{venueMsg}</p>}
-            </form>
-          </section>
+          ))}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* ANALITICHE */}
-      {activeTab === "analytics" && (
-        <div className="space-y-4">
-          <OrganizerAnalytics events={events} bookings={bookings} />
-          <OrganizerStatement events={events} bookings={bookings} />
+// ── Tab: CRM ───────────────────────────────────────────────────
+function TabCRM({ bookings, plan }) {
+  const [notes, setNotes] = useState({});
+
+  const STATI = ["pending","reviewed","confirmed","rejected"];
+  const STATUS_LABEL = { pending:"In attesa", reviewed:"In revisione", confirmed:"Confermato", rejected:"Rifiutato" };
+  const STATUS_COLOR = { pending:"#d97706", reviewed:"#2563eb", confirmed:"#16a34a", rejected:"#dc2626" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* Pipeline base */}
+      <Card>
+        <SectionTitle>Pipeline richieste</SectionTitle>
+        {bookings.length === 0 ? (
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,.3)" }}>Nessuna richiesta inviata ancora.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {bookings.slice(0, 8).map((b, i) => (
+              <div key={b.id || i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fbfaf8", borderRadius: 16, padding: "12px 16px", gap: 10 }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontWeight: 700, fontSize: 13, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.artistName || "Artista"}</p>
+                  <p style={{ fontSize: 11, color: MUTED, margin: "2px 0 0" }}>{b.eventDate || "—"} {b.eventTitle ? `· ${b.eventTitle}` : ""}</p>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 100, flexShrink: 0,
+                  background: (STATUS_COLOR[b.status] || "#6b7280") + "18",
+                  color: STATUS_COLOR[b.status] || "#6b7280" }}>
+                  {STATUS_LABEL[b.status] || b.status || "—"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* CRM avanzato — solo PRO */}
+      <ProLock feature="Il CRM completo con note, rating e storico" plan={plan}>
+        <Card>
+          <SectionTitle>CRM avanzato — Note & Rating <ProBadge /></SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {(bookings.slice(0, 3)).map((b, i) => (
+              <div key={b.id || i} style={{ background: "#fbfaf8", borderRadius: 16, padding: "14px 16px", border: "1px solid rgba(0,0,0,.07)" }}>
+                <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 8px" }}>{b.artistName || "Artista"}</p>
+                <textarea placeholder="Aggiungi note private su questo artista..." rows={2}
+                  style={{ width: "100%", background: "white", border: "1px solid rgba(0,0,0,.1)", borderRadius: 10, padding: "8px 10px", fontSize: 12, fontFamily: "'Manrope',system-ui,sans-serif", outline: "none", resize: "none" }} />
+                <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#fbbf24" }}>★</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </ProLock>
+
+      {/* Export CSV — solo PRO */}
+      <ProLock feature="L'export CSV dei dati" plan={plan}>
+        <Card>
+          <SectionTitle>Export dati <ProBadge /></SectionTitle>
+          <p style={{ fontSize: 13, color: MUTED, marginBottom: 12 }}>Esporta tutto lo storico booking e contatti in formato CSV.</p>
+          <button disabled style={{ background: INK, color: "white", border: "none", borderRadius: 100, padding: "10px 24px", fontWeight: 700, fontSize: 13, cursor: "not-allowed", fontFamily: "'Manrope',system-ui,sans-serif", opacity: .5 }}>
+            Esporta CSV
+          </button>
+        </Card>
+      </ProLock>
+    </div>
+  );
+}
+
+// ── Tab: Analitiche ────────────────────────────────────────────
+function TabAnalitiche({ bookings, plan }) {
+  const fmt = n => new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:0 }).format(n);
+  const confirmed = bookings.filter(b => ["confirmed","accettato","accepted"].includes((b.status||"").toLowerCase()));
+  const spent = confirmed.reduce((s, b) => s + (Number(b.publicPrice) || Number(b.cachet) || 0), 0);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+        {[["Booking totali", bookings.length],["Confermati", confirmed.length],["Budget totale", fmt(spent)]].map(([label, val]) => (
+          <div key={label} style={{ background: "white", border: "1px solid rgba(0,0,0,.06)", borderRadius: 20, padding: "16px 18px" }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em", color: MUTED, margin: "0 0 6px" }}>{label}</p>
+            <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 24, color: INK, margin: 0 }}>{val}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Analitiche avanzate — solo PRO */}
+      <ProLock feature="Le analitiche avanzate e il benchmark di zona" plan={plan}>
+        <Card>
+          <SectionTitle>Analitiche avanzate + benchmark zona <ProBadge /></SectionTitle>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 14 }}>
+            {["Trend serate","Generi più prenotati","Benchmark budget zona"].map(label => (
+              <div key={label} style={{ background: "#fbfaf8", borderRadius: 14, padding: "12px 14px" }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: MUTED, margin: "0 0 4px" }}>{label}</p>
+                <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 18, color: INK, margin: 0 }}>—</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, color: MUTED }}>Confronta le tue performance con altri locali nella tua zona.</p>
+        </Card>
+      </ProLock>
+
+      {/* Multi-utente staff — solo PRO */}
+      <ProLock feature="La gestione multi-utente dello staff" plan={plan}>
+        <Card>
+          <SectionTitle>Multi-utente staff <ProBadge /></SectionTitle>
+          <p style={{ fontSize: 13, color: MUTED }}>Aggiungi fino a 5 membri del tuo staff con accesso alla dashboard. Ognuno ha le proprie credenziali e permessi.</p>
+          <button disabled style={{ background: INK, color: "white", border: "none", borderRadius: 100, padding: "10px 24px", fontWeight: 700, fontSize: 13, cursor: "not-allowed", fontFamily: "'Manrope',system-ui,sans-serif", opacity: .5, marginTop: 12 }}>
+            + Aggiungi membro staff
+          </button>
+        </Card>
+      </ProLock>
+    </div>
+  );
+}
+
+// ── Tab: Estratto conto ────────────────────────────────────────
+function TabEstratto({ bookings }) {
+  const fmt = n => new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:0 }).format(n);
+  const confirmed = bookings.filter(b => ["confirmed","accettato","accepted"].includes((b.status||"").toLowerCase()));
+  const total = confirmed.reduce((s, b) => s + (Number(b.publicPrice) || Number(b.cachet) || 0), 0);
+
+  return (
+    <Card>
+      <SectionTitle>Estratto conto</SectionTitle>
+      {confirmed.length === 0 ? (
+        <p style={{ fontSize: 13, color: "rgba(0,0,0,.3)" }}>Nessun booking confermato ancora.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: "2px solid rgba(0,0,0,.07)" }}>
+                {["Artista","Evento","Data","Importo"].map(h => (
+                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: MUTED }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {confirmed.map((b, i) => (
+                <tr key={b.id || i} style={{ borderBottom: "1px solid rgba(0,0,0,.05)" }}>
+                  <td style={{ padding: "10px 12px", fontWeight: 700 }}>{b.artistName || "—"}</td>
+                  <td style={{ padding: "10px 12px", color: MUTED }}>{b.eventTitle || "—"}</td>
+                  <td style={{ padding: "10px 12px", color: MUTED }}>{b.eventDate || "—"}</td>
+                  <td style={{ padding: "10px 12px", fontWeight: 700, color: ORANGE }}>{fmt(Number(b.publicPrice) || Number(b.cachet) || 0)}</td>
+                </tr>
+              ))}
+              <tr style={{ borderTop: "2px solid rgba(0,0,0,.1)", background: "#fbfaf8" }}>
+                <td colSpan={3} style={{ padding: "12px", fontWeight: 800 }}>TOTALE SPESO</td>
+                <td style={{ padding: "12px", fontWeight: 800, color: ORANGE, fontSize: 15 }}>{fmt(total)}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
+    </Card>
+  );
+}
+
+// ── Main ───────────────────────────────────────────────────────
+export default function OrganizerArea({ currentUser, events = [], artists = [], bookings = [], title, setTitle, date, setDate, artist, setArtist, promoter, setPromoter }) {
+  const plan = currentUser?.plan || "free";
+  const [tab, setTab] = useState("overview");
+
+  const [venueName, setVenueName]   = useState("");
+  const [venueCity, setVenueCity]   = useState("");
+  const [venueType, setVenueType]   = useState("");
+  const [venuePhoto, setVenuePhoto] = useState("");
+  const [saveMsg, setSaveMsg]       = useState("");
+
+  useEffect(() => {
+    fetch("/api/venue-profile")
+      .then(r => r.json())
+      .then(d => {
+        if (!d) return;
+        setVenueName(d.name || "");
+        setVenueCity(d.city || "");
+        setVenueType(d.type || "");
+        setVenuePhoto(d.photo || "");
+      }).catch(() => {});
+  }, []);
+
+  async function saveVenueProfile(e) {
+    e.preventDefault();
+    setSaveMsg("Salvataggio...");
+    const res = await fetch("/api/venue-profile", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: venueName, city: venueCity, type: venueType, photo: venuePhoto }),
+    });
+    setSaveMsg(res.ok ? "✓ Salvato" : "Errore salvataggio");
+  }
+
+  const s = {
+    tabBtn: (active) => ({
+      display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
+      borderRadius: 100, fontWeight: 700, fontSize: 13, cursor: "pointer",
+      border: active ? "none" : "1px solid rgba(0,0,0,.1)",
+      background: active ? INK : "white", color: active ? "white" : MUTED,
+      fontFamily: "'Manrope',system-ui,sans-serif", whiteSpace: "nowrap",
+    }),
+  };
+
+  return (
+    <div id="organizer-area" style={{ fontFamily: "'Manrope',system-ui,sans-serif", color: INK, display: "flex", flexDirection: "column", gap: 16 }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Manrope:wght@400;600;700;800&display=swap');`}</style>
+
+      {/* Header */}
+      <div style={{ background: "white", border: "1px solid rgba(0,0,0,.06)", borderRadius: 24, padding: "20px 22px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".16em", color: ORANGE, marginBottom: 4 }}>Locale</p>
+            <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 22, letterSpacing: "-.03em", margin: 0 }}>
+              {venueName || currentUser?.name || "Il tuo locale"}
+            </h2>
+            <p style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Trova artisti, gestisci booking e analizza le performance.</p>
+          </div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
+            borderRadius: 100, border: plan === "pro" ? `1px solid ${ORANGE}` : "1px solid rgba(0,0,0,.1)",
+            background: plan === "pro" ? `${ORANGE}10` : "#fbfaf8",
+          }}>
+            <span style={{ fontSize: 14 }}>{plan === "pro" ? "⭐" : "🆓"}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: plan === "pro" ? ORANGE : MUTED }}>
+              Piano {plan === "pro" ? "Pro" : "Free"}
+            </span>
+            {plan === "free" && (
+              <span style={{ fontSize: 11, fontWeight: 800, color: ORANGE, marginLeft: 4 }}>→ Upgrade a €19,90/mese</span>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {TABS.map(t => (
+            <button key={t.id} type="button" onClick={() => setTab(t.id)} style={s.tabBtn(tab === t.id)}>
+              <span>{t.icon}</span>{t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Profilo locale — badge verificato PRO */}
+      {tab === "overview" && (
+        <>
+          <TabOverview currentUser={currentUser} bookings={bookings} plan={plan} />
+
+          <Card>
+            <SectionTitle>Profilo locale</SectionTitle>
+            <form onSubmit={saveVenueProfile} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Inp label="Nome locale" value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="Es. Club Aurora" />
+              <Inp label="Città" value={venueCity} onChange={e => setVenueCity(e.target.value)} placeholder="Es. Napoli" />
+              <Inp label="Tipo locale" value={venueType} onChange={e => setVenueType(e.target.value)} placeholder="Es. Disco, Bar, Ristorante" />
+              <Inp label="Foto principale (URL)" value={venuePhoto} onChange={e => setVenuePhoto(e.target.value)} placeholder="https://..." />
+              {saveMsg && <p style={{ gridColumn: "1/-1", fontSize: 13, fontWeight: 700, color: saveMsg.includes("✓") ? "#16a34a" : "#dc2626" }}>{saveMsg}</p>}
+              <button type="submit" style={{ gridColumn: "1/-1", alignSelf: "flex-start", background: INK, color: "white", border: "none", borderRadius: 100, padding: "11px 28px", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "'Manrope',system-ui,sans-serif", width: "fit-content" }}>
+                Salva profilo
+              </button>
+            </form>
+
+            {/* Badge verificato — PRO */}
+            {plan === "free" && (
+              <div style={{ marginTop: 16, background: "rgba(255,90,0,.04)", border: "1px solid rgba(255,90,0,.15)", borderRadius: 14, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 22 }}>✅</span>
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>Badge verificato <ProBadge /></p>
+                  <p style={{ fontSize: 12, color: MUTED, margin: "3px 0 0" }}>Il badge aumenta la fiducia degli artisti e la tua posizione nel marketplace.</p>
+                </div>
+              </div>
+            )}
+          </Card>
+        </>
+      )}
+
+      {tab === "marketplace" && <TabMarketplace artists={artists} plan={plan} />}
+      {tab === "crm"         && <TabCRM bookings={bookings} plan={plan} />}
+      {tab === "analitiche"  && <TabAnalitiche bookings={bookings} plan={plan} />}
+      {tab === "estratto"    && <TabEstratto bookings={bookings} />}
     </div>
   );
 }
