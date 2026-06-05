@@ -1,7 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ProLock, { ProBadge } from "./ProLock";
+
+function ProLock({ feature = "questa funzionalità", children, plan }) {
+  const isPro = plan === "pro";
+  if (isPro) return children ?? null;
+  return (
+    <div style={{ position:"relative", borderRadius:18, overflow:"hidden", border:"1px solid rgba(255,90,0,.2)" }}>
+      <div style={{ filter:"blur(3px)", pointerEvents:"none", userSelect:"none", opacity:.4 }}>{children}</div>
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(255,90,0,.06),rgba(10,10,11,.85))", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10, padding:20, textAlign:"center" }}>
+        <div style={{ width:44, height:44, borderRadius:"50%", background:"rgba(255,90,0,.15)", border:"1px solid rgba(255,90,0,.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🔒</div>
+        <p style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:"white", margin:0 }}>Funzione PRO</p>
+        <p style={{ fontFamily:"Manrope,system-ui,sans-serif", fontSize:12, color:"rgba(255,255,255,.55)", margin:0, maxWidth:220, lineHeight:1.5 }}>{feature} è disponibile nel piano Pro.</p>
+        <div style={{ background:"#ff5a00", color:"white", borderRadius:100, padding:"8px 20px", fontSize:12, fontWeight:800, opacity:.85, cursor:"default" }}>🚀 Disponibile presto</div>
+      </div>
+    </div>
+  );
+}
+
+function ProBadge() {
+  return <span style={{ display:"inline-flex", alignItems:"center", background:"rgba(255,90,0,.12)", border:"1px solid rgba(255,90,0,.25)", borderRadius:100, padding:"1px 8px", fontSize:10, fontWeight:800, color:"#ff5a00", verticalAlign:"middle", marginLeft:6 }}>PRO</span>;
+}
+
 
 const ORANGE = "#ff5a00";
 const INK = "#0a0a0b";
