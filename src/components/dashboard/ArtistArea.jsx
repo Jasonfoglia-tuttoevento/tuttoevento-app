@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ProLock, { ProBadge } from "./Prolock";
+import ProLock, { ProBadge } from "./ProLock";
 
 const ORANGE = "#ff5a00";
 const INK = "#0a0a0b";
