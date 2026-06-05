@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import LandingNav from "@/components/LandingNav";
 import RegisterFormInline from "@/components/RegisterFormInline";
 
 const ORANGE = "#ff5a00";
@@ -101,14 +102,9 @@ export default function LandingLocali() {
             @media(max-width:480px) { .ll2-kpi-grid{grid-template-columns:1fr 1fr!important} }
 
         /* Nav mobile */
-        .ll2-nav-center { display:flex; gap:24px; align-items:center; }
-        .ll2-nav-login { display:flex; gap:8px; }
         /* Footer */
         .ll2-footer-grid { display:grid; }
         
-        @media(max-width:900px) {
-          .ll2-nav-center { display:none; }
-        }
         @media(max-width:768px) {
           .ll2-hero-grid { grid-template-columns:1fr!important; gap:32px!important; }
           .ll2-feat-grid { grid-template-columns:1fr!important; }
@@ -125,25 +121,14 @@ export default function LandingLocali() {
 
       <div className="ll2-root">
 
-        {/* NAVBAR */}
-        <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:100, padding:"12px 16px" }}>
-          <div className="ll2-glass" style={{ maxWidth:1100, margin:"0 auto", borderRadius:100, padding:"0 20px", height:56, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <a href="/" style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:"1.1rem", letterSpacing:"-.04em", textDecoration:"none", color:"white" }}>
-              TUTTO<span style={{ color:ORANGE }}>EVENTO</span>
-            </a>
-            <div style={{ display:"flex", gap:24, alignItems:"center" }} className="ll2-nav-center">
-              {[["#vantaggi","Vantaggi"],["#come-funziona","Come funziona"],["#budget","Budget"],["#faq","FAQ"]].map(([h,l]) => (
-                <a key={h} href={h} style={{ fontSize:".875rem", fontWeight:600, color:"rgba(255,255,255,.6)", textDecoration:"none" }}>{l}</a>
-              ))}
-            </div>
-            <div style={{ display:"flex", gap:8 }}>
-              <a href="/login" style={{ fontSize:".875rem", fontWeight:700, color:"rgba(255,255,255,.7)", textDecoration:"none", padding:"7px 14px" }}>Accedi</a>
-              <a href="#registrati" className="ll2-cta" style={{ padding:"8px 18px", fontSize:".85rem" }}>Trova artisti</a>
-            </div>
-          </div>
-        </nav>
+                {/* NAVBAR */}
+        <LandingNav
+          links={[["#vantaggi","Vantaggi"],["#come-funziona","Come funziona"],["#budget","Budget"],["#faq","FAQ"]]}
+          ctaHref={"#registrati"}
+          ctaLabel={"Trova artisti"}
+        />
 
-        {/* HERO */}
+{/* HERO */}
         <section style={{ position:"relative", minHeight:"100vh", display:"flex", alignItems:"center", overflow:"hidden", paddingTop:80 }}>
           <div aria-hidden style={{ position:"absolute", top:-120, left:"50%", width:800, height:800, borderRadius:"50%", background:"radial-gradient(circle,rgba(255,90,0,.28),rgba(255,130,70,.1) 50%,transparent 72%)", filter:"blur(120px)", animation:"float 9s ease-in-out infinite", pointerEvents:"none" }} />
           <div aria-hidden style={{ position:"absolute", top:200, right:-150, width:500, height:500, borderRadius:"50%", background:"radial-gradient(circle,rgba(255,185,138,.2),transparent 70%)", filter:"blur(100px)", animation:"float2 12s ease-in-out infinite", pointerEvents:"none" }} />
@@ -238,7 +223,6 @@ export default function LandingLocali() {
                 { icon:"🎧", title:"Artisti per ogni format", desc:"DJ, band, cantanti, performer e animatori per ogni tipo di pubblico e serata.", delay:".05s" },
                 { icon:"📍", title:"Ricerca geolocalizzata", desc:"Trova talenti disponibili nella tua zona, riducendo tempi e costi di trasferta.", delay:".1s" },
                 { icon:"💬", title:"CRM integrato", desc:"Pipeline trattative, chat col team TuttoEvento, storico booking e analitiche.", delay:".15s" },
-                { icon:"🔒", title:"Prezzi riservati", desc:"Il budget è trattato in modo riservato. I locali non vedono mai il cachet netto dell'artista.", delay:".2s" },
                 { icon:"⚡", title:"Risposta in 48h", desc:"Il team TuttoEvento coordina ogni trattativa. Nessuna richiesta rimane senza risposta.", delay:".25s" },
                 { icon:"📊", title:"Analytics serate", desc:"Analitiche avanzate, benchmark di zona e storico completo dei booking.", delay:".3s" },
               ].map(f => (

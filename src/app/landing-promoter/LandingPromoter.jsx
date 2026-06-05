@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import LandingNav from "@/components/LandingNav";
 
 const ORANGE = "#ff5a00";
 const INK = "#0a0a0b";
@@ -189,14 +190,9 @@ export default function LandingPromoter() {
         @media(max-width:480px) { .lp-kpi-grid{grid-template-columns:1fr 1fr!important} }
 
         /* Nav mobile */
-        .lp-nav-center { display:flex; gap:24px; align-items:center; }
-        .lp-nav-login { display:flex; gap:8px; }
         /* Footer */
         .lp-footer-grid { display:grid; }
         
-        @media(max-width:900px) {
-          .lp-nav-center { display:none; }
-        }
         @media(max-width:768px) {
           .lp-hero-grid { grid-template-columns:1fr!important; gap:32px!important; }
           .lp-feat-grid { grid-template-columns:1fr!important; }
@@ -214,23 +210,6 @@ export default function LandingPromoter() {
       <div className="lp-root">
 
         {/* ── NAVBAR ── */}
-        <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:100, padding:"12px 16px" }}>
-          <div className="lp-glass" style={{ maxWidth:1100, margin:"0 auto", borderRadius:100, padding:"0 20px", height:56, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <a href="/" style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:"1.1rem", letterSpacing:"-.04em", textDecoration:"none", color:"white" }}>
-              TUTTO<span style={{ color:ORANGE }}>EVENTO</span>
-            </a>
-            <div style={{ display:"flex", gap:24, alignItems:"center" }} className="lp-nav-center">
-              {[["#vantaggi","Vantaggi"],["#come-funziona","Come funziona"],["#commissioni","Commissioni"],["#faq","FAQ"]].map(([h,l]) => (
-                <a key={h} href={h} style={{ fontSize:".875rem", fontWeight:600, color:"rgba(255,255,255,.6)", textDecoration:"none" }}>{l}</a>
-              ))}
-            </div>
-            <div style={{ display:"flex", gap:8 }}>
-              <a href="/login" style={{ fontSize:".875rem", fontWeight:700, color:"rgba(255,255,255,.7)", textDecoration:"none", padding:"7px 14px" }}>Accedi</a>
-              <a href="#registrati" className="lp-cta" style={{ padding:"8px 18px", fontSize:".85rem" }}>Inizia gratis</a>
-            </div>
-          </div>
-        </nav>
-
         {/* ── HERO ── */}
         <section style={{ position:"relative", minHeight:"100vh", display:"flex", alignItems:"center", overflow:"hidden", paddingTop:80 }}>
 
