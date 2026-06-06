@@ -206,19 +206,28 @@ export default function AccountSettings({ user }) {
       </div>
 
       {/* ── Piano ── */}
-      {plan === "free" && (
-        <div style={{ background:"white", borderRadius:20, padding:"20px 24px", border:`1px solid rgba(0,0,0,.06)` }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
-            <div>
-              <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1.05rem", color:INK, margin:0 }}>Piano attivo</p>
-              <p style={{ fontSize:13, color:MUTED, margin:"4px 0 0" }}>Stai usando il piano gratuito.</p>
-            </div>
-            <div style={{ background:"rgba(255,90,0,.06)", border:"1px solid rgba(255,90,0,.15)", borderRadius:14, padding:"10px 16px", fontSize:12, color:ORANGE, fontWeight:700 }}>
-              Upgrade disponibile a breve
-            </div>
+      <div style={{ background:"white", borderRadius:20, padding:"20px 24px", border:"1px solid rgba(0,0,0,.06)" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+          <div>
+            <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:"1.05rem", color:INK, margin:0 }}>Piano attivo</p>
+            <p style={{ fontSize:13, color:MUTED, margin:"4px 0 0" }}>
+              {plan === "pro" ? "Tutte le funzionalità sbloccate." : "Stai usando il piano gratuito."}
+            </p>
           </div>
+          <a href="/pricing" style={{
+            display:"inline-flex", alignItems:"center", gap:6,
+            background: plan==="pro" ? "rgba(22,163,74,.08)" : ORANGE,
+            border: plan==="pro" ? "1px solid rgba(22,163,74,.2)" : "none",
+            color: plan==="pro" ? "#16a34a" : "white",
+            borderRadius:100, padding:"9px 18px",
+            fontSize:13, fontWeight:700, textDecoration:"none",
+            fontFamily:"'Manrope',system-ui,sans-serif",
+            transition:"all .2s",
+          }}>
+            {plan === "pro" ? "✓ Piano Pro attivo" : "Vedi tutti i piani →"}
+          </a>
         </div>
-      )}
+      </div>
     </div>
   );
 }

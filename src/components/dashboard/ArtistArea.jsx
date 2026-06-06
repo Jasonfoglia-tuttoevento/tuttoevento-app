@@ -403,7 +403,8 @@ function TabEstratto({ bookings }) {
 
 // ── Main component ─────────────────────────────────────────────
 export default function ArtistArea(props) {
-  const initialTab = props.tab || "mediakit";
+  const tabMapA = { profile:"mediakit", calendar:"calendario", analytics:"analitiche", earnings:"estratto" };
+  const initialTab = tabMapA[props.tab] || props.tab || "mediakit";
   const { currentUser } = props;
   const plan = currentUser?.plan || "free";
   const [tab, setTab] = useState(initialTab);
@@ -413,31 +414,6 @@ export default function ArtistArea(props) {
 
   return (
     <div id="artist-area" style={{ fontFamily: "'Manrope',system-ui,sans-serif", color: INK, display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Header */}
-      <div style={{ background: "white", border: "1px solid rgba(0,0,0,.06)", borderRadius: 24, padding: "20px 22px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".16em", color: ORANGE, marginBottom: 4 }}>Artista</p>
-            <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: "clamp(18px,4vw,22px)", letterSpacing: "-.03em", margin: 0 }}>
-              {props.stageName || currentUser?.name || "Il tuo profilo"}
-            </h2>
-            <p style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Gestisci il tuo profilo e la visibilità nel marketplace.</p>
-          </div>
-          {/* Piano attuale */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
-            borderRadius: 100, border: plan === "pro" ? `1px solid ${ORANGE}` : "1px solid rgba(0,0,0,.1)",
-            background: plan === "pro" ? `${ORANGE}10` : "#fbfaf8",
-          }}>
-            <span style={{ fontSize: 14 }}>{plan === "pro" ? "⭐" : "🆓"}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: plan === "pro" ? ORANGE : MUTED }}>
-              Piano {plan === "pro" ? "Pro" : "Free"}
-            </span>
-            {plan === "free" && (
-              <span style={{ fontSize: 11, fontWeight: 800, color: ORANGE, marginLeft: 4 }}>→ Upgrade a €9/mese</span>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Tab content */}

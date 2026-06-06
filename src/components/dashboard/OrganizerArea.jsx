@@ -325,7 +325,8 @@ function TabEstratto({ bookings }) {
 // ── Main ───────────────────────────────────────────────────────
 export default function OrganizerArea({ currentUser, events = [], artists = [], bookings = [], title, setTitle, date, setDate, artist, setArtist, promoter, setPromoter, tab: initialTab }) {
   const plan = currentUser?.plan || "free";
-  const [tab, setTab] = useState(initialTab || "overview");
+  const tabMap = { bookings:"crm", analytics:"analitiche", earnings:"estratto" };
+  const [tab, setTab] = useState(tabMap[initialTab] || initialTab || "overview");
 
   const [venueName, setVenueName]   = useState("");
   const [venueCity, setVenueCity]   = useState("");
@@ -360,30 +361,6 @@ export default function OrganizerArea({ currentUser, events = [], artists = [], 
 
   return (
     <div id="organizer-area" style={{ fontFamily: "'Manrope',system-ui,sans-serif", color: INK, display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Header */}
-      <div style={{ background: "white", border: "1px solid rgba(0,0,0,.06)", borderRadius: 24, padding: "20px 22px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".16em", color: ORANGE, marginBottom: 4 }}>Locale</p>
-            <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: "clamp(18px,4vw,22px)", letterSpacing: "-.03em", margin: 0 }}>
-              {venueName || currentUser?.name || "Il tuo locale"}
-            </h2>
-            <p style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Trova artisti, gestisci booking e analizza le performance.</p>
-          </div>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
-            borderRadius: 100, border: plan === "pro" ? `1px solid ${ORANGE}` : "1px solid rgba(0,0,0,.1)",
-            background: plan === "pro" ? `${ORANGE}10` : "#fbfaf8",
-          }}>
-            <span style={{ fontSize: 14 }}>{plan === "pro" ? "⭐" : "🆓"}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: plan === "pro" ? ORANGE : MUTED }}>
-              Piano {plan === "pro" ? "Pro" : "Free"}
-            </span>
-            {plan === "free" && (
-              <span style={{ fontSize: 11, fontWeight: 800, color: ORANGE, marginLeft: 4 }}>→ Upgrade a €19,90/mese</span>
-            )}
-          </div>
-        </div>
 
         
       </div>

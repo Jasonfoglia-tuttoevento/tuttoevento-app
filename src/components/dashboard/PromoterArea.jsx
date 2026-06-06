@@ -708,7 +708,9 @@ function TabAgenzia({ currentUser, portfolio, plan }) {
 ═══════════════════════════════════════════════════════════ */
 export default function PromoterArea({ currentUser, events=[], bookings=[], users=[], artists=[], tab: initialTab }) {
   const plan = currentUser?.plan || "free";
-  const [tab, setTab]              = useState(initialTab || "overview");
+  // Mappa i nuovi ID Shell ai tab interni
+  const tabMap = { deals:"trattative", commissions:"commissioni", agency:"agenzia" };
+  const [tab, setTab] = useState(tabMap[initialTab] || initialTab || "overview");
   const [portfolio, setPortfolio]  = useState([]);
   const [contactRequests, setContactRequests] = useState([]);
   const [commissions, setCommissions] = useState([]);
@@ -753,27 +755,13 @@ export default function PromoterArea({ currentUser, events=[], bookings=[], user
     if (res.ok) setContactRequests(prev=>prev.map(r=>r.id===id?{...r,status}:r));
   }
 
-  const s = {
-  };
-
   return (
     <div id="promoter-area" style={{ fontFamily:"'Manrope',system-ui,sans-serif", color:INK, display:"flex", flexDirection:"column", gap:16 }}>
-      {/* Header + Tabs */}
-      <div style={{ background:"white", border:"1px solid rgba(0,0,0,.06)", borderRadius:24, padding:"20px 22px" }}>
-        <div style={{ marginBottom:16 }}>
-          <p style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:ORANGE, margin:"0 0 4px" }}>Promoter</p>
-          <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:22, letterSpacing:"-.03em", margin:"0 0 4px" }}>
-            {currentUser?.name||"Area Promoter"}
-          </h2>
-          <p style={{ fontSize:13, color:MUTED, margin:0 }}>Roster, trattative, commissioni e pagina pubblica agenzia.</p>
-        </div>
-      </div>
-
       {tab==="overview"    && <TabOverview currentUser={currentUser} bookings={bookings} portfolio={portfolio} contactRequests={contactRequests} plan={plan} commissions={commissions} />}
-      {tab==="roster"      && <TabRoster portfolio={portfolio} users={[...users,...artists]} plan={plan} onAdd={handleAdd} onRemove={handleRemove} addingEntry={addingEntry} addMsg={addMsg} />}
-      {tab==="trattative"  && <TabTrattative contactRequests={contactRequests} portfolio={portfolio} plan={plan} onUpdateStatus={handleUpdateStatus} />}
-      {tab==="commissioni" && <TabCommissioni commissions={commissions} bookings={bookings} portfolio={portfolio} plan={plan} />}
-      {tab==="agenzia"     && <TabAgenzia currentUser={currentUser} portfolio={portfolio} plan={plan} />}
+      {(tab==="roster") && <TabRoster portfolio={portfolio} users={[...users,...artists]} plan={plan} onAdd={handleAdd} onRemove={handleRemove} addingEntry={addingEntry} addMsg={addMsg} />}
+      {(tab==="trattative"||tab==="deals") && <TabTrattative contactRequests={contactRequests} portfolio={portfolio} plan={plan} onUpdateStatus={handleUpdateStatus} />}
+      {(tab==="commissioni"||tab==="commissions") && <TabCommissioni commissions={commissions} bookings={bookings} portfolio={portfolio} plan={plan} />}
+      {(tab==="agenzia"||tab==="agency") && <TabAgenzia currentUser={currentUser} portfolio={portfolio} plan={plan} />}
     </div>
   );
 }

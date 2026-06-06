@@ -443,11 +443,13 @@ export default function DashboardShell({ user, activeTab, onTabChange, children 
               {navItems.find(i => i.id === activeTab)?.label || "Dashboard"}
             </span>
             <div className="ds-topbar-actions">
-              {user?.plan === "pro" && (
-                <span style={{ fontSize:11, fontWeight:700, color:ORANGE, background:"rgba(255,90,0,.1)", border:`1px solid rgba(255,90,0,.2)`, borderRadius:100, padding:"3px 10px" }}>
-                  PRO
-                </span>
-              )}
+              <a href="/pricing" style={{ fontSize:11, fontWeight:700, textDecoration:"none",
+                color: user?.plan==="pro" ? ORANGE : "rgba(0,0,0,.4)",
+                background: user?.plan==="pro" ? "rgba(255,90,0,.1)" : "rgba(0,0,0,.06)",
+                border: user?.plan==="pro" ? "1px solid rgba(255,90,0,.2)" : "1px solid rgba(0,0,0,.08)",
+                borderRadius:100, padding:"3px 10px" }}>
+                {user?.plan === "pro" ? "PRO" : "Free →"}
+              </a>
               <Avatar name={user?.name} size={32} />
             </div>
           </div>
