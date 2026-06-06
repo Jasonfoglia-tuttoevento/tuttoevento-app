@@ -12,6 +12,15 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
   const [msg, setMsg]         = useState("");
   const [done, setDone]       = useState(false);
 
+  function validatePassword(pw) {
+    const errors = [];
+    if (!pw || pw.length < 8)          errors.push("Almeno 8 caratteri");
+    if (!/[A-Z]/.test(pw))             errors.push("Una lettera maiuscola");
+    if (!/[0-9]/.test(pw))             errors.push("Un numero");
+    if (!/[^A-Za-z0-9]/.test(pw))      errors.push("Un carattere speciale (!@#$%...)");
+    return errors;
+  }
+
   const isArtist   = role === "artist";
   const isPromoter = role === "promoter";
 
@@ -47,6 +56,8 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
     e.preventDefault();
     if (!terms) { setMsg("Devi accettare i termini e condizioni per procedere."); return; }
     if (!name || !email || !password) { setMsg("Compila tutti i campi obbligatori."); return; }
+              const pwErrs = validatePassword(password);
+              if (pwErrs.length > 0) { setMsg("Password: " + pwErrs[0]); return; }
     setLoad(true); setMsg("");
     try {
       const res = await fetch("/api/register", {

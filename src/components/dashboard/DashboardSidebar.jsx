@@ -12,6 +12,7 @@ export default function DashboardSidebar({ user }) {
 
   const commonItems = [
     { label:"Overview", sectionId:"dashboard-overview" },
+    { label:"Impostazioni", sectionId:"account-settings" },
   ];
 
   const organizerItems = [

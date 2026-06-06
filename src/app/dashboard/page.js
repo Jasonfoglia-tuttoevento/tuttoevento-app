@@ -11,6 +11,7 @@ import AdminArea from "@/components/dashboard/AdminArea";
 import ReferentArea from "@/components/dashboard/ReferentArea";
 import ArtistBookings from "@/components/dashboard/ArtistBookings";
 import OrganizerBookings from "@/components/dashboard/OrganizerBookings";
+import AccountSettings from "@/components/dashboard/AccountSettings";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -230,6 +231,8 @@ export default function DashboardPage() {
           users={users}
         />
       )}
+      {/* Impostazioni account — visibile a tutti i ruoli */}
+      <AccountSettings user={user} />
     </DashboardShell>
   );
 }

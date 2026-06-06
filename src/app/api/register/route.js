@@ -6,6 +6,14 @@ import path from "path";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function validatePassword(pw) {
+  if (!pw || pw.length < 8)         return "Password di almeno 8 caratteri";
+  if (!/[A-Z]/.test(pw))            return "Serve almeno una lettera maiuscola";
+  if (!/[0-9]/.test(pw))            return "Serve almeno un numero";
+  if (!/[^A-Za-z0-9]/.test(pw))     return "Serve almeno un carattere speciale (!@#$%...)";
+  return null;
+}
+
 const TERMS_BY_ROLE = {
   organizer: "termini-locali.pdf",
   artist:    "termini-artisti.pdf",
@@ -106,9 +114,8 @@ export async function POST(request) {
     if (!body.termsAccepted) {
       return NextResponse.json({ error: "Devi accettare i termini e condizioni" }, { status: 400 });
     }
-    if (body.password.length < 8) {
-      return NextResponse.json({ error: "Password di almeno 8 caratteri" }, { status: 400 });
-    }
+    const pwError = validatePassword(body.password);
+    if (pwError) return NextResponse.json({ error: pwError }, { status: 400 });
 
     const normalizedEmail = String(body.email).trim().toLowerCase();
     const safeRole        = ALLOWED_PUBLIC_ROLES.includes(body.role) ? body.role : "organizer";
