@@ -357,6 +357,129 @@ function SectionContacts({ contacts, setContacts }) {
   );
 }
 
+
+/* ── Sezione Utenti ── */
+function SectionUsers({ users }) {
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editPlan, setEditPlan] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const ROLES = ["all", "organizer", "artist", "promoter", "admin"];
+  const ROLE_LABELS = { organizer:"Locale", artist:"Artista", promoter:"Promoter", admin:"Admin", referent:"Referente" };
+  const ROLE_COLORS = { organizer:"#2563eb", artist:"#7c3aed", promoter:"#d97706", admin:"#ff5a00", referent:"#16a34a" };
+
+  const filtered = users.filter(u => {
+    const matchRole   = filter === "all" || u.role === filter;
+    const matchSearch = !search || (u.name||"").toLowerCase().includes(search.toLowerCase()) || (u.email||"").toLowerCase().includes(search.toLowerCase());
+    return matchRole && matchSearch;
+  });
+
+  async function savePlan(userId) {
+    setSaving(true); setMsg("");
+    try {
+      const res = await fetch("/api/admin/user-plan", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, plan: editPlan }),
+      });
+      if (res.ok) { setMsg("✓ Piano aggiornato"); setEditingId(null); }
+      else setMsg("Errore aggiornamento");
+    } catch { setMsg("Errore di rete"); }
+    setSaving(false);
+  }
+
+  const byRole = { organizer:0, artist:0, promoter:0, admin:0 };
+  users.forEach(u => { if (byRole[u.role] !== undefined) byRole[u.role]++; });
+
+  const inp = { background:"#f5f5f6", border:"1px solid rgba(0,0,0,.08)", borderRadius:10, padding:"8px 12px", fontSize:13, fontFamily:"inherit", outline:"none" };
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+      {/* KPI utenti */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))", gap:10 }}>
+        {[["Totale",users.length,"#0a0a0b"],["Locali",byRole.organizer,"#2563eb"],["Artisti",byRole.artist,"#7c3aed"],["Promoter",byRole.promoter,"#d97706"],["Admin",byRole.admin,"#ff5a00"]].map(([label,val,color]) => (
+          <div key={label} style={{ background:"white", border:"1px solid rgba(0,0,0,.06)", borderRadius:14, padding:"12px 14px" }}>
+            <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".1em", color:"#6b6b73", margin:"0 0 4px" }}>{label}</p>
+            <p style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:20, color, margin:0 }}>{val}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filtri + ricerca */}
+      <div style={{ background:"white", border:"1px solid rgba(0,0,0,.06)", borderRadius:18, padding:"16px 18px", display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cerca per nome o email..."
+          style={{ ...inp, flex:1, minWidth:200 }} />
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+          {ROLES.map(r => (
+            <button key={r} onClick={()=>setFilter(r)}
+              style={{ padding:"6px 14px", borderRadius:100, fontWeight:700, fontSize:12, cursor:"pointer", border:filter===r?"none":"1px solid rgba(0,0,0,.1)", background:filter===r?"#0a0a0b":"white", color:filter===r?"white":"#6b6b73", fontFamily:"inherit" }}>
+              {r === "all" ? "Tutti" : (ROLE_LABELS[r]||r)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {msg && <p style={{ fontSize:12, fontWeight:700, color:msg.startsWith("✓")?"#16a34a":"#dc2626" }}>{msg}</p>}
+
+      {/* Lista utenti */}
+      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+        {filtered.length === 0 ? (
+          <Card><p style={{ fontSize:13, color:"rgba(0,0,0,.3)" }}>Nessun utente trovato.</p></Card>
+        ) : filtered.map(u => (
+          <div key={u.id} style={{ background:"white", border:"1px solid rgba(0,0,0,.07)", borderRadius:16, padding:"14px 18px", display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
+            {/* Avatar */}
+            <div style={{ width:38, height:38, borderRadius:"50%", background:`${ROLE_COLORS[u.role]||"#6b7280"}20`, border:`1px solid ${ROLE_COLORS[u.role]||"#6b7280"}30`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:ROLE_COLORS[u.role]||"#6b7280", flexShrink:0 }}>
+              {(u.name||"?").charAt(0).toUpperCase()}
+            </div>
+            {/* Info */}
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                <p style={{ fontWeight:700, fontSize:14, margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.name||"—"}</p>
+                <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:100, background:`${ROLE_COLORS[u.role]||"#6b7280"}15`, color:ROLE_COLORS[u.role]||"#6b7280" }}>
+                  {ROLE_LABELS[u.role]||u.role}
+                </span>
+                <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:100, background: u.plan==="pro"?"rgba(255,90,0,.1)":"rgba(0,0,0,.05)", color: u.plan==="pro"?"#ff5a00":"#6b6b73" }}>
+                  {u.plan==="pro"?"PRO":"Free"}
+                </span>
+              </div>
+              <p style={{ fontSize:12, color:"#6b6b73", margin:"3px 0 0" }}>{u.email||"—"} · ID #{u.id}</p>
+              {u.createdAt && <p style={{ fontSize:11, color:"rgba(0,0,0,.3)", margin:"2px 0 0" }}>Iscritto il {new Date(u.createdAt).toLocaleDateString("it-IT")}</p>}
+            </div>
+            {/* Piano edit */}
+            <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+              {editingId === u.id ? (
+                <>
+                  <select value={editPlan} onChange={e=>setEditPlan(e.target.value)} style={{ ...inp, padding:"6px 10px" }}>
+                    <option value="free">Free</option>
+                    <option value="pro">Pro</option>
+                  </select>
+                  <button onClick={()=>savePlan(u.id)} disabled={saving}
+                    style={{ background:"#ff5a00", color:"white", border:"none", borderRadius:100, padding:"6px 14px", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
+                    {saving?"...":"Salva"}
+                  </button>
+                  <button onClick={()=>setEditingId(null)}
+                    style={{ background:"none", border:"1px solid rgba(0,0,0,.1)", borderRadius:100, padding:"6px 12px", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
+                    ×
+                  </button>
+                </>
+              ) : (
+                <button onClick={()=>{ setEditingId(u.id); setEditPlan(u.plan||"free"); }}
+                  style={{ background:"none", border:"1px solid rgba(0,0,0,.1)", borderRadius:100, padding:"6px 14px", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"inherit", color:"#6b6b73" }}>
+                  Modifica piano
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── Main ── */
 export default function AdminArea({ users=[], events=[], bookings=[], tab: initialTab }) {
   const [finance, setFinance]               = useState({});
@@ -395,6 +518,7 @@ export default function AdminArea({ users=[], events=[], bookings=[], tab: initi
   return (
     <div style={{ fontFamily:"'Manrope',system-ui,sans-serif", color:INK }}>
       {tab === "overview"  && <SectionOverview fin={fin} stats={stats} byRole={byRole} eventModes={eventModes} />}
+      {tab === "users"     && <SectionUsers users={users} />}
       {tab === "finance"   && <AdminFinance bookings={bookings} finance={finance} />}
       {tab === "crm"       && <AdminCRM users={users} bookings={bookings} contactRequests={contactRequests} />}
       {tab === "calendar"  && <AdminCalendar events={events} bookings={bookings} />}

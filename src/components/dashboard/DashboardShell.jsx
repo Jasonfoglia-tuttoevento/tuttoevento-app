@@ -60,10 +60,11 @@ function getNavItems(role) {
 
   if (role === "admin" || role === "referent") return [
     { id: "overview",    label: "Panoramica",     icon: Icons.dashboard  },
-    { id: "finance",     label: "Finanza",        icon: Icons.wallet     },
-    { id: "crm",         label: "CRM",            icon: Icons.users      },
+    { id: "users",       label: "Utenti",         icon: Icons.users      },
     { id: "artists",     label: "Artisti",        icon: Icons.mic        },
-    { id: "requests",    label: "Richieste",      icon: Icons.briefcase  },
+    { id: "finance",     label: "Finanza",        icon: Icons.wallet     },
+    { id: "crm",         label: "CRM",            icon: Icons.briefcase  },
+    { id: "requests",    label: "Richieste",      icon: Icons.shield     },
     { id: "settings",    label: "Impostazioni",   icon: Icons.settings   },
   ];
 

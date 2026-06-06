@@ -14,6 +14,8 @@ import AccountSettings from "@/components/dashboard/AccountSettings";
 
 // Booking views
 import ArtistBookings    from "@/components/dashboard/ArtistBookings";
+import ArtistEstratto   from "@/components/dashboard/ArtistEstratto";
+import PromoterCommissions from "@/components/dashboard/PromoterCommissions";
 import OrganizerBookings from "@/components/dashboard/OrganizerBookings";
 
 export default function DashboardPage() {
@@ -121,7 +123,8 @@ export default function DashboardPage() {
         case "profile":   return <ArtistArea currentUser={user} tab="mediakit"   {...p} {...Object.fromEntries(Object.keys(p).map(k=>[`set${k.charAt(0).toUpperCase()+k.slice(1)}`, setP(k)]))} saveArtistProfile={saveArtistProfile} artistMessage={artistMessage} bookings={bookings} />;
         case "calendar":  return <ArtistArea currentUser={user} tab="calendario" {...p} {...Object.fromEntries(Object.keys(p).map(k=>[`set${k.charAt(0).toUpperCase()+k.slice(1)}`, setP(k)]))} saveArtistProfile={saveArtistProfile} artistMessage={artistMessage} bookings={bookings} />;
         case "analytics": return <ArtistArea currentUser={user} tab="analitiche" {...p} {...Object.fromEntries(Object.keys(p).map(k=>[`set${k.charAt(0).toUpperCase()+k.slice(1)}`, setP(k)]))} saveArtistProfile={saveArtistProfile} artistMessage={artistMessage} bookings={bookings} />;
-        case "earnings":  return <ArtistArea currentUser={user} tab="estratto"   {...p} {...Object.fromEntries(Object.keys(p).map(k=>[`set${k.charAt(0).toUpperCase()+k.slice(1)}`, setP(k)]))} saveArtistProfile={saveArtistProfile} artistMessage={artistMessage} bookings={bookings} />;
+        case "earnings":  return <ArtistEstratto bookings={bookings} onRefresh={() => loadBookings(`?artistId=${user.id}`)} />; // eslint-disable-next-line no-unreachable
+        case "_earnings_old":  return <ArtistArea currentUser={user} tab="estratto"   {...p} {...Object.fromEntries(Object.keys(p).map(k=>[`set${k.charAt(0).toUpperCase()+k.slice(1)}`, setP(k)]))} saveArtistProfile={saveArtistProfile} artistMessage={artistMessage} bookings={bookings} />;
         default: return null;
       }
     }
@@ -130,7 +133,7 @@ export default function DashboardPage() {
       switch(activeTab) {
         case "overview":    return <OrganizerArea currentUser={user} tab="overview"    events={events} artists={artists} bookings={bookings} />;
         case "marketplace": return <OrganizerArea currentUser={user} tab="marketplace" events={events} artists={artists} bookings={bookings} />;
-        case "bookings":    return <OrganizerBookings bookings={bookings} />;
+        case "bookings":    return <OrganizerBookings bookings={bookings} onRefresh={() => loadBookings(`?organizerId=${user.id}`)} />;
         case "analytics":   return <OrganizerArea currentUser={user} tab="analitiche"  events={events} artists={artists} bookings={bookings} />;
         case "earnings":    return <OrganizerArea currentUser={user} tab="estratto"    events={events} artists={artists} bookings={bookings} />;
         default: return null;
@@ -142,7 +145,8 @@ export default function DashboardPage() {
         case "overview":     return <PromoterArea currentUser={user} tab="overview"    events={events} artists={artists} bookings={bookings} users={users} />;
         case "roster":       return <PromoterArea currentUser={user} tab="roster"      events={events} artists={artists} bookings={bookings} users={users} />;
         case "deals":        return <PromoterArea currentUser={user} tab="trattative"  events={events} artists={artists} bookings={bookings} users={users} />;
-        case "commissions":  return <PromoterArea currentUser={user} tab="commissioni" events={events} artists={artists} bookings={bookings} users={users} />;
+        case "commissions":  return <PromoterCommissions bookings={bookings} onRefresh={() => loadBookings()} />; // eslint-disable-next-line no-unreachable
+        case "_commissions_old":  return <PromoterArea currentUser={user} tab="commissioni" events={events} artists={artists} bookings={bookings} users={users} />;
         case "agency":       return <PromoterArea currentUser={user} tab="agenzia"     events={events} artists={artists} bookings={bookings} users={users} />;
         default: return null;
       }
@@ -151,9 +155,10 @@ export default function DashboardPage() {
     if (role === "admin") {
       switch(activeTab) {
         case "overview":  return <AdminArea users={users} events={events} bookings={bookings} tab="overview"  />;
+        case "users":     return <AdminArea users={users} events={events} bookings={bookings} tab="users"     />;
+        case "artists":   return <AdminArea users={users} events={events} bookings={bookings} tab="artists"   />;
         case "finance":   return <AdminArea users={users} events={events} bookings={bookings} tab="finance"   />;
         case "crm":       return <AdminArea users={users} events={events} bookings={bookings} tab="crm"       />;
-        case "artists":   return <AdminArea users={users} events={events} bookings={bookings} tab="artists"   />;
         case "requests":  return <AdminArea users={users} events={events} bookings={bookings} tab="requests"  />;
         default: return null;
       }
