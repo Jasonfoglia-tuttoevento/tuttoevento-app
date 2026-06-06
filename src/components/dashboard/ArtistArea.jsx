@@ -6,26 +6,19 @@ function ProLock({ feature = "questa funzionalità", children, plan }) {
   const isPro = plan === "pro";
   if (isPro) return children ?? null;
   return (
-    <div style={{ position:"relative", borderRadius:18, overflow:"hidden", border:"1px solid rgba(255,90,0,.15)" }}>
-      <div style={{ filter:"blur(4px)", pointerEvents:"none", userSelect:"none", opacity:.3, maxHeight:160, overflow:"hidden" }}>{children}</div>
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.97) 45%)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-end", padding:"20px 20px 22px", textAlign:"center" }}>
-        <div style={{ background:"white", border:"1px solid rgba(0,0,0,.08)", borderRadius:20, padding:"16px 20px", boxShadow:"0 4px 24px rgba(0,0,0,.08)", maxWidth:320, width:"100%" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
-            <div style={{ width:32, height:32, borderRadius:10, background:"#0a0a0b", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-              <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="7" width="12" height="9" rx="2" fill="white"/>
-                <path d="M3.5 7V5C3.5 2.79 5.07 1 7 1C8.93 1 10.5 2.79 10.5 5V7" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <div style={{ textAlign:"left" }}>
-              <p style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:13, color:"#0a0a0b", margin:0, letterSpacing:"-.02em" }}>Funzione Piano Pro</p>
-              <p style={{ fontFamily:"Manrope,system-ui,sans-serif", fontSize:11, color:"#6b6b73", margin:0 }}>{feature}</p>
-            </div>
-          </div>
-          <div style={{ background:"rgba(255,90,0,.06)", border:"1px solid rgba(255,90,0,.15)", borderRadius:12, padding:"8px 12px", fontSize:11, color:"#ff5a00", fontWeight:700, fontFamily:"Manrope,system-ui,sans-serif" }}>
-            Disponibile a breve · Piano Pro €9/mese
-          </div>
-        </div>
+    <div style={{ background:"rgba(255,90,0,.04)", border:"1px dashed rgba(255,90,0,.25)", borderRadius:18, padding:"20px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:12 }}>
+      <div style={{ width:36, height:36, borderRadius:10, background:"#0a0a0b", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="7" width="12" height="9" rx="2" fill="white"/>
+          <path d="M3.5 7V5C3.5 2.79 5.07 1 7 1C8.93 1 10.5 2.79 10.5 5V7" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <p style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:"#0a0a0b", margin:"0 0 4px", letterSpacing:"-.02em" }}>Funzione Piano Pro</p>
+        <p style={{ fontFamily:"Manrope,system-ui,sans-serif", fontSize:12, color:"#6b6b73", margin:0, lineHeight:1.5 }}>{feature} è disponibile nel piano Pro.</p>
+      </div>
+      <div style={{ background:"rgba(255,90,0,.08)", border:"1px solid rgba(255,90,0,.2)", borderRadius:100, padding:"7px 16px", fontSize:11, color:"#ff5a00", fontWeight:700, fontFamily:"Manrope,system-ui,sans-serif" }}>
+        Disponibile a breve · Piano Pro
       </div>
     </div>
   );
@@ -39,13 +32,6 @@ function ProBadge() {
 const ORANGE = "#ff5a00";
 const INK = "#0a0a0b";
 const MUTED = "#6b6b73";
-
-const TABS = [
-  { id: "mediakit",   label: "Media Kit",     icon: "🎤" },
-  { id: "calendario", label: "Calendario",     icon: "📅" },
-  { id: "analitiche", label: "Analitiche",     icon: "📊" },
-  { id: "estratto",   label: "Estratto conto", icon: "💰" },
-];
 
 const MUSIC_GENRES = ["House","Tech House","Techno","Trance","Drum & Bass","Hip Hop","Rap","R&B","Soul","Jazz","Blues","Rock","Indie","Pop","Reggae","Funk","Electronic","Ambient","Classica","Folk","Latino","Afrobeat","Altro"];
 const EVENT_TYPES = ["Serata in club","Festival","Evento privato","Concerto","Opening","Matrimonio","Evento aziendale","Altro"];
@@ -114,7 +100,7 @@ function TabMediaKit({ props }) {
       {/* Dati base */}
       <Card>
         <SectionTitle>Profilo artista</SectionTitle>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
           <Inp label="Nome d'arte *" value={stageName} onChange={e => setStageName(e.target.value)} placeholder="Es. Marco DJ" />
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             <label style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: ".1em", fontFamily: "'Manrope',system-ui,sans-serif" }}>Tipo artista</label>
@@ -334,7 +320,7 @@ function TabAnalitiche({ bookings, plan }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
       {/* KPI base — disponibili a tutti */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12 }}>
         {[["Booking totali", totalBookings, false],["Confermati", confirmed, false],["Cachet incassato", fmt(revenue), true]].map(([label, val, accent]) => (
           <div key={label} style={{ background: accent ? INK : "white", border: `1px solid ${accent ? "transparent" : "rgba(0,0,0,.06)"}`, borderRadius: 20, padding: "16px 18px" }}>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em", color: accent ? "rgba(255,255,255,.5)" : MUTED, margin: "0 0 6px", fontFamily: "'Manrope',system-ui,sans-serif" }}>{label}</p>
@@ -347,7 +333,7 @@ function TabAnalitiche({ bookings, plan }) {
       <ProLock feature="Le analitiche avanzate del profilo" plan={plan}>
         <Card>
           <SectionTitle>Analitiche avanzate <ProBadge /></SectionTitle>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12, marginBottom: 16 }}>
             {[["Visite profilo","—"],["Chi ha guardato","—"],["Da dove","—"]].map(([label, val]) => (
               <div key={label} style={{ background: "#fbfaf8", borderRadius: 16, padding: "14px 16px" }}>
                 <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em", color: MUTED, margin: "0 0 4px" }}>{label}</p>
@@ -423,13 +409,6 @@ export default function ArtistArea(props) {
   const [tab, setTab] = useState(initialTab);
 
   const s = {
-    tabBtn: (active) => ({
-      display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
-      borderRadius: 100, fontWeight: 700, fontSize: 13, cursor: "pointer",
-      border: active ? "none" : "1px solid rgba(0,0,0,.1)",
-      background: active ? INK : "white", color: active ? "white" : MUTED,
-      fontFamily: "'Manrope',system-ui,sans-serif", whiteSpace: "nowrap",
-    }),
   };
 
   return (
@@ -439,7 +418,7 @@ export default function ArtistArea(props) {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
           <div>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".16em", color: ORANGE, marginBottom: 4 }}>Artista</p>
-            <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 22, letterSpacing: "-.03em", margin: 0 }}>
+            <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: "clamp(18px,4vw,22px)", letterSpacing: "-.03em", margin: 0 }}>
               {props.stageName || currentUser?.name || "Il tuo profilo"}
             </h2>
             <p style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Gestisci il tuo profilo e la visibilità nel marketplace.</p>
@@ -458,15 +437,6 @@ export default function ArtistArea(props) {
               <span style={{ fontSize: 11, fontWeight: 800, color: ORANGE, marginLeft: 4 }}>→ Upgrade a €9/mese</span>
             )}
           </div>
-        </div>
-
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {TABS.map(t => (
-            <button key={t.id} type="button" onClick={() => setTab(t.id)} style={s.tabBtn(tab === t.id)}>
-              <span>{t.icon}</span>{t.label}
-            </button>
-          ))}
         </div>
       </div>
 

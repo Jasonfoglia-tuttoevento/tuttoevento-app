@@ -6,13 +6,19 @@ function ProLock({ feature = "questa funzionalità", children, plan }) {
   const isPro = plan === "pro";
   if (isPro) return children ?? null;
   return (
-    <div style={{ position:"relative", borderRadius:18, overflow:"hidden", border:"1px solid rgba(255,90,0,.2)" }}>
-      <div style={{ filter:"blur(3px)", pointerEvents:"none", userSelect:"none", opacity:.4 }}>{children}</div>
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(255,90,0,.06),rgba(10,10,11,.85))", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10, padding:20, textAlign:"center" }}>
-        <div style={{ width:44, height:44, borderRadius:"50%", background:"rgba(255,90,0,.15)", border:"1px solid rgba(255,90,0,.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>🔒</div>
-        <p style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:"white", margin:0 }}>Funzione PRO</p>
-        <p style={{ fontFamily:"Manrope,system-ui,sans-serif", fontSize:12, color:"rgba(255,255,255,.55)", margin:0, maxWidth:220, lineHeight:1.5 }}>{feature} è disponibile nel piano Pro.</p>
-        <div style={{ background:"#ff5a00", color:"white", borderRadius:100, padding:"8px 20px", fontSize:12, fontWeight:800, opacity:.85, cursor:"default" }}>🚀 Disponibile presto</div>
+    <div style={{ background:"rgba(255,90,0,.04)", border:"1px dashed rgba(255,90,0,.25)", borderRadius:18, padding:"20px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:12 }}>
+      <div style={{ width:36, height:36, borderRadius:10, background:"#0a0a0b", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="7" width="12" height="9" rx="2" fill="white"/>
+          <path d="M3.5 7V5C3.5 2.79 5.07 1 7 1C8.93 1 10.5 2.79 10.5 5V7" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <p style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:"#0a0a0b", margin:"0 0 4px", letterSpacing:"-.02em" }}>Funzione Piano Pro</p>
+        <p style={{ fontFamily:"Manrope,system-ui,sans-serif", fontSize:12, color:"#6b6b73", margin:0, lineHeight:1.5 }}>{feature} è disponibile nel piano Pro.</p>
+      </div>
+      <div style={{ background:"rgba(255,90,0,.08)", border:"1px solid rgba(255,90,0,.2)", borderRadius:100, padding:"7px 16px", fontSize:11, color:"#ff5a00", fontWeight:700, fontFamily:"Manrope,system-ui,sans-serif" }}>
+        Disponibile a breve · Piano Pro
       </div>
     </div>
   );
@@ -700,14 +706,6 @@ function TabAgenzia({ currentUser, portfolio, plan }) {
 /* ══════════════════════════════════════════════════════════
    MAIN
 ═══════════════════════════════════════════════════════════ */
-const TABS = [
-  { id:"overview",    label:"Overview",    icon:"📊" },
-  { id:"roster",      label:"Roster",      icon:"🎤" },
-  { id:"trattative",  label:"Trattative",  icon:"🎯" },
-  { id:"commissioni", label:"Commissioni", icon:"💰" },
-  { id:"agenzia",     label:"Agenzia",     icon:"🏢" },
-];
-
 export default function PromoterArea({ currentUser, events=[], bookings=[], users=[], artists=[], tab: initialTab }) {
   const plan = currentUser?.plan || "free";
   const [tab, setTab]              = useState(initialTab || "overview");
@@ -756,19 +754,10 @@ export default function PromoterArea({ currentUser, events=[], bookings=[], user
   }
 
   const s = {
-    tabBtn: (active) => ({
-      display:"flex", alignItems:"center", gap:6, padding:"7px 14px",
-      borderRadius:100, fontWeight:700, fontSize:13, cursor:"pointer",
-      border: active?"none":"1px solid rgba(0,0,0,.1)",
-      background: active?INK:"white", color: active?"white":MUTED,
-      fontFamily:"'Manrope',system-ui,sans-serif", whiteSpace:"nowrap",
-    }),
   };
 
   return (
     <div id="promoter-area" style={{ fontFamily:"'Manrope',system-ui,sans-serif", color:INK, display:"flex", flexDirection:"column", gap:16 }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Manrope:wght@400;600;700;800&display=swap');`}</style>
-
       {/* Header + Tabs */}
       <div style={{ background:"white", border:"1px solid rgba(0,0,0,.06)", borderRadius:24, padding:"20px 22px" }}>
         <div style={{ marginBottom:16 }}>
@@ -778,14 +767,6 @@ export default function PromoterArea({ currentUser, events=[], bookings=[], user
           </h2>
           <p style={{ fontSize:13, color:MUTED, margin:0 }}>Roster, trattative, commissioni e pagina pubblica agenzia.</p>
         </div>
-        <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-          {TABS.map(t => (
-            <button key={t.id} type="button" onClick={()=>setTab(t.id)} style={s.tabBtn(tab===t.id)}>
-              <span>{t.icon}</span>{t.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {tab==="overview"    && <TabOverview currentUser={currentUser} bookings={bookings} portfolio={portfolio} contactRequests={contactRequests} plan={plan} commissions={commissions} />}
       {tab==="roster"      && <TabRoster portfolio={portfolio} users={[...users,...artists]} plan={plan} onAdd={handleAdd} onRemove={handleRemove} addingEntry={addingEntry} addMsg={addMsg} />}

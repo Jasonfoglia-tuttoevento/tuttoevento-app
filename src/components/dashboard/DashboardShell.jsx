@@ -261,7 +261,18 @@ export default function DashboardShell({ user, activeTab, onTabChange, children 
           position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
           background: #0a0a0b;
           border-top: 1px solid rgba(255,255,255,.06);
-          padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+          padding: 8px 4px calc(12px + env(safe-area-inset-bottom));
+          /* Fix Safari: compensa la barra di navigazione */
+          padding-bottom: max(12px, calc(12px + env(safe-area-inset-bottom)));
+        }
+        /* Fix contenuto non oscurato dalla bottom nav Safari */
+        @supports (-webkit-touch-callout: none) {
+          .ds-mobile-bottom {
+            padding-bottom: max(20px, calc(8px + env(safe-area-inset-bottom)));
+          }
+          .ds-content {
+            padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+          }
         }
         .ds-mobile-nav {
           display: flex; justify-content: space-around;
@@ -312,7 +323,7 @@ export default function DashboardShell({ user, activeTab, onTabChange, children 
           .ds-mobile-bottom { display: block; }
           .ds-topbar { display: none; }
           .ds-main { height: calc(100vh - 56px); margin-top: 56px; }
-          .ds-content { padding: 16px 16px calc(80px + env(safe-area-inset-bottom)); }
+          .ds-content { padding: 16px 16px calc(90px + env(safe-area-inset-bottom)); }
         }
 
         /* Animazione contenuto */

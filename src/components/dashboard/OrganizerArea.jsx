@@ -6,26 +6,19 @@ function ProLock({ feature = "questa funzionalità", children, plan }) {
   const isPro = plan === "pro";
   if (isPro) return children ?? null;
   return (
-    <div style={{ position:"relative", borderRadius:18, overflow:"hidden", border:"1px solid rgba(255,90,0,.15)" }}>
-      <div style={{ filter:"blur(4px)", pointerEvents:"none", userSelect:"none", opacity:.3, maxHeight:160, overflow:"hidden" }}>{children}</div>
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.97) 45%)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-end", padding:"20px 20px 22px", textAlign:"center" }}>
-        <div style={{ background:"white", border:"1px solid rgba(0,0,0,.08)", borderRadius:20, padding:"16px 20px", boxShadow:"0 4px 24px rgba(0,0,0,.08)", maxWidth:320, width:"100%" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
-            <div style={{ width:32, height:32, borderRadius:10, background:"#0a0a0b", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-              <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="7" width="12" height="9" rx="2" fill="white"/>
-                <path d="M3.5 7V5C3.5 2.79 5.07 1 7 1C8.93 1 10.5 2.79 10.5 5V7" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <div style={{ textAlign:"left" }}>
-              <p style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:13, color:"#0a0a0b", margin:0, letterSpacing:"-.02em" }}>Funzione Piano Pro</p>
-              <p style={{ fontFamily:"Manrope,system-ui,sans-serif", fontSize:11, color:"#6b6b73", margin:0 }}>{feature}</p>
-            </div>
-          </div>
-          <div style={{ background:"rgba(255,90,0,.06)", border:"1px solid rgba(255,90,0,.15)", borderRadius:12, padding:"8px 12px", fontSize:11, color:"#ff5a00", fontWeight:700, fontFamily:"Manrope,system-ui,sans-serif" }}>
-            Disponibile a breve · Piano Pro €19,90/mese
-          </div>
-        </div>
+    <div style={{ background:"rgba(255,90,0,.04)", border:"1px dashed rgba(255,90,0,.25)", borderRadius:18, padding:"20px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:12 }}>
+      <div style={{ width:36, height:36, borderRadius:10, background:"#0a0a0b", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="7" width="12" height="9" rx="2" fill="white"/>
+          <path d="M3.5 7V5C3.5 2.79 5.07 1 7 1C8.93 1 10.5 2.79 10.5 5V7" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <p style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:"#0a0a0b", margin:"0 0 4px", letterSpacing:"-.02em" }}>Funzione Piano Pro</p>
+        <p style={{ fontFamily:"Manrope,system-ui,sans-serif", fontSize:12, color:"#6b6b73", margin:0, lineHeight:1.5 }}>{feature} è disponibile nel piano Pro.</p>
+      </div>
+      <div style={{ background:"rgba(255,90,0,.08)", border:"1px solid rgba(255,90,0,.2)", borderRadius:100, padding:"7px 16px", fontSize:11, color:"#ff5a00", fontWeight:700, fontFamily:"Manrope,system-ui,sans-serif" }}>
+        Disponibile a breve · €19,90/mese
       </div>
     </div>
   );
@@ -39,14 +32,6 @@ function ProBadge() {
 const ORANGE = "#ff5a00";
 const INK = "#0a0a0b";
 const MUTED = "#6b6b73";
-
-const TABS = [
-  { id: "overview",   label: "Overview",        icon: "🏠" },
-  { id: "marketplace",label: "Trova artisti",    icon: "🎤" },
-  { id: "crm",        label: "CRM",              icon: "🎯" },
-  { id: "analitiche", label: "Analitiche",       icon: "📊" },
-  { id: "estratto",   label: "Estratto conto",   icon: "💰" },
-];
 
 function Card({ children, style = {} }) {
   return (
@@ -80,7 +65,7 @@ function TabOverview({ currentUser, bookings, plan }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12 }}>
         {[["Richieste inviate", bookings.length, false],["Booking confermati", confirmed, false],["Budget speso", fmt(spent), true]].map(([label, val, accent]) => (
           <div key={label} style={{ background: accent ? INK : "white", border: `1px solid ${accent ? "transparent" : "rgba(0,0,0,.06)"}`, borderRadius: 20, padding: "16px 18px" }}>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em", color: accent ? "rgba(255,255,255,.5)" : MUTED, margin: "0 0 6px" }}>{label}</p>
@@ -140,7 +125,7 @@ function TabMarketplace({ artists, plan, onContact }) {
       <ProLock feature="I filtri avanzati e l'AI matching" plan={plan}>
         <Card>
           <SectionTitle>Filtri avanzati + AI matching <ProBadge /></SectionTitle>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 10 }}>
             <Inp label="Budget max (€)" placeholder="Es. 500" />
             <Inp label="Distanza (km)" placeholder="Es. 50" />
             <Inp label="Disponibilità" type="date" placeholder="" />
@@ -256,7 +241,7 @@ function TabAnalitiche({ bookings, plan }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12 }}>
         {[["Booking totali", bookings.length],["Confermati", confirmed.length],["Budget totale", fmt(spent)]].map(([label, val]) => (
           <div key={label} style={{ background: "white", border: "1px solid rgba(0,0,0,.06)", borderRadius: 20, padding: "16px 18px" }}>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em", color: MUTED, margin: "0 0 6px" }}>{label}</p>
@@ -269,7 +254,7 @@ function TabAnalitiche({ bookings, plan }) {
       <ProLock feature="Le analitiche avanzate e il benchmark di zona" plan={plan}>
         <Card>
           <SectionTitle>Analitiche avanzate + benchmark zona <ProBadge /></SectionTitle>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12, marginBottom: 14 }}>
             {["Trend serate","Generi più prenotati","Benchmark budget zona"].map(label => (
               <div key={label} style={{ background: "#fbfaf8", borderRadius: 14, padding: "12px 14px" }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: MUTED, margin: "0 0 4px" }}>{label}</p>
@@ -371,13 +356,6 @@ export default function OrganizerArea({ currentUser, events = [], artists = [], 
   }
 
   const s = {
-    tabBtn: (active) => ({
-      display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
-      borderRadius: 100, fontWeight: 700, fontSize: 13, cursor: "pointer",
-      border: active ? "none" : "1px solid rgba(0,0,0,.1)",
-      background: active ? INK : "white", color: active ? "white" : MUTED,
-      fontFamily: "'Manrope',system-ui,sans-serif", whiteSpace: "nowrap",
-    }),
   };
 
   return (
@@ -387,7 +365,7 @@ export default function OrganizerArea({ currentUser, events = [], artists = [], 
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
           <div>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".16em", color: ORANGE, marginBottom: 4 }}>Locale</p>
-            <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 22, letterSpacing: "-.03em", margin: 0 }}>
+            <h2 style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: "clamp(18px,4vw,22px)", letterSpacing: "-.03em", margin: 0 }}>
               {venueName || currentUser?.name || "Il tuo locale"}
             </h2>
             <p style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Trova artisti, gestisci booking e analizza le performance.</p>
@@ -407,13 +385,7 @@ export default function OrganizerArea({ currentUser, events = [], artists = [], 
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {TABS.map(t => (
-            <button key={t.id} type="button" onClick={() => setTab(t.id)} style={s.tabBtn(tab === t.id)}>
-              <span>{t.icon}</span>{t.label}
-            </button>
-          ))}
-        </div>
+        
       </div>
 
       {/* Profilo locale — badge verificato PRO */}
@@ -423,7 +395,7 @@ export default function OrganizerArea({ currentUser, events = [], artists = [], 
 
           <Card>
             <SectionTitle>Profilo locale</SectionTitle>
-            <form onSubmit={saveVenueProfile} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <form onSubmit={saveVenueProfile} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
               <Inp label="Nome locale" value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="Es. Club Aurora" />
               <Inp label="Città" value={venueCity} onChange={e => setVenueCity(e.target.value)} placeholder="Es. Napoli" />
               <Inp label="Tipo locale" value={venueType} onChange={e => setVenueType(e.target.value)} placeholder="Es. Disco, Bar, Ristorante" />
