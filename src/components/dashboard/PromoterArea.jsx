@@ -136,7 +136,7 @@ function TabOverview({ currentUser, bookings, portfolio, contactRequests, plan, 
         <KpiCard label="Richieste attive"  value={myRequests.filter(r=>r.status==="pending"||r.status==="reviewed").length} hint="in corso" />
         <KpiCard label="Booking chiusi"    value={confirmed} hint="confermati" />
         <KpiCard label="Volume gestito"    value={fmt(totalVolume)} hint="sui tuoi artisti" accent />
-        <KpiCard label="Commissioni maturate" value={fmt(totalShare)} hint="~30% del margine TE" orange />
+        <KpiCard label="Commissioni maturate" value={fmt(totalShare)} hint="~50% del margine TE" orange />
       </div>
 
       {/* Ultime richieste rapide */}
@@ -263,7 +263,7 @@ function TabRoster({ portfolio, users, plan, onAdd, onRemove, addingEntry, addMs
       <ProLock feature="La commissione personalizzabile per artista" plan={plan}>
         <Card>
           <STitle>Commissione per artista <ProBadge /></STitle>
-          <p style={{ fontSize:13, color:MUTED, marginBottom:14 }}>Imposta una % di commissione diversa per ogni artista che gestisci. Default: 30% del margine TuttoEvento.</p>
+          <p style={{ fontSize:13, color:MUTED, marginBottom:14 }}>Imposta una % di commissione diversa per ogni artista che gestisci. Default: 50% del margine TuttoEvento.</p>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {portfolioArtists.slice(0,3).map((a,i) => (
               <div key={a.id||i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"#fbfaf8", borderRadius:14, padding:"10px 14px", gap:10 }}>
@@ -379,7 +379,7 @@ function TabCommissioni({ commissions, bookings, portfolio, plan }) {
     ["confirmed","accettato","accepted"].includes((b.status||"").toLowerCase())
   );
 
-  const SHARE_PCT = 30; // % del margine ceduta da TuttoEvento al promoter
+  const SHARE_PCT = 50; // % del margine ceduta da TuttoEvento al promoter
   const TE_MARGIN_PCT = 0.45; // margine medio TuttoEvento (stimato)
 
   const rows = myBookings.map(b => {
@@ -401,7 +401,7 @@ function TabCommissioni({ commissions, bookings, portfolio, plan }) {
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12 }}>
         <KpiCard label="Volume sui tuoi artisti" value={fmt(totalVolume)} hint="booking confermati" />
         <KpiCard label="Margine TuttoEvento"     value={fmt(totalMargin)} hint="stimato" />
-        <KpiCard label="Tua quota (30%)"          value={fmt(totalShare)}  hint="del margine TE" orange />
+        <KpiCard label="Tua quota (50%)"          value={fmt(totalShare)}  hint="del margine TE" orange />
         <KpiCard label="Booking coinvolti"         value={rows.length}      accent />
       </div>
 
@@ -412,7 +412,7 @@ function TabCommissioni({ commissions, bookings, portfolio, plan }) {
           <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:700, fontSize:14, color:INK, margin:"0 0 4px" }}>Come funzionano le commissioni</p>
           <p style={{ fontSize:12, color:MUTED, margin:0, lineHeight:1.6, fontFamily:"'Manrope',system-ui,sans-serif" }}>
             TuttoEvento trattiene la differenza tra il prezzo pubblico pagato dal locale e il cachet netto dell'artista.
-            Come promoter che porta un artista sulla piattaforma, ricevi il <strong>30% di questo margine</strong> per ogni booking confermato del tuo roster.
+            Come promoter che porta un artista sulla piattaforma, ricevi il <strong>50% di questo margine</strong> per ogni booking confermato del tuo roster.
             I pagamenti vengono elaborati mensilmente una volta aperta la struttura societaria.
           </p>
         </div>
@@ -428,7 +428,7 @@ function TabCommissioni({ commissions, bookings, portfolio, plan }) {
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
               <thead>
                 <tr style={{ borderBottom:"2px solid rgba(0,0,0,.07)" }}>
-                  {["Artista","Evento","Data","Prezzo pub.","Margine TE","Tua quota (30%)"].map(h => (
+                  {["Artista","Evento","Data","Prezzo pub.","Margine TE","Tua quota (50%)"].map(h => (
                     <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontWeight:700, color:MUTED, whiteSpace:"nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -708,9 +708,9 @@ const TABS = [
   { id:"agenzia",     label:"Agenzia",     icon:"🏢" },
 ];
 
-export default function PromoterArea({ currentUser, events=[], bookings=[], users=[], artists=[] }) {
+export default function PromoterArea({ currentUser, events=[], bookings=[], users=[], artists=[], tab }) {
   const plan = currentUser?.plan || "free";
-  const [tab, setTab]              = useState("overview");
+  const [tab, setTab]              = useState(tab || "overview");
   const [portfolio, setPortfolio]  = useState([]);
   const [contactRequests, setContactRequests] = useState([]);
   const [commissions, setCommissions] = useState([]);

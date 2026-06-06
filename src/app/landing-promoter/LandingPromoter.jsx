@@ -150,7 +150,7 @@ export default function LandingPromoter() {
   const [openFaq, setOpenFaq] = useState(null);
 
   const FAQS = [
-    { q:"Come funziona la mia commissione?", a:"TuttoEvento trattiene la differenza tra il prezzo pubblico pagato dal locale e il cachet netto dell'artista. Come promoter che ha portato l'artista sulla piattaforma, ricevi il 30% di questo margine per ogni booking confermato del tuo roster." },
+    { q:"Come funziona la mia commissione?", a:"TuttoEvento trattiene la differenza tra il prezzo pubblico pagato dal locale e il cachet netto dell'artista. Come promoter che ha portato l'artista sulla piattaforma, ricevi il 50% di questo margine per ogni booking confermato del tuo roster." },
     { q:"Quanti artisti posso inserire nel roster?", a:"Con il piano Free puoi gestire fino a 5 artisti e 3 locali. Con il piano Pro (€19,90/mese) il roster è illimitato, con commissioni personalizzabili per artista." },
     { q:"Come faccio a portare i miei artisti sulla piattaforma?", a:"Una volta registrato, vai nell'area Roster della tua dashboard e aggiungi gli artisti già iscritti a TuttoEvento. Se non sono ancora registrati, puoi invitarli condividendo il link di registrazione artisti." },
     { q:"Posso gestire attivamente le trattative?", a:"Con il piano Pro puoi spostare gli stati delle richieste (In attesa → In revisione → Connessi), agire come intermediario attivo tra locale e artista e impostare commissioni diverse per ogni artista." },
@@ -250,7 +250,7 @@ export default function LandingPromoter() {
               </h1>
 
               <p data-reveal style={{ ...rev, fontSize:"clamp(.95rem,2vw,1.15rem)", color:"rgba(255,255,255,.6)", lineHeight:1.7, marginBottom:36, maxWidth:540, transitionDelay:".16s" }}>
-                TuttoEvento è il marketplace italiano per artisti e locali. Come promoter, inserisci il tuo roster, monitora le trattative e <strong style={{ color:"white" }}>guadagni il 30% del margine su ogni booking confermato.</strong>
+                TuttoEvento è il marketplace italiano per artisti e locali. Come promoter, inserisci il tuo roster, monitora le trattative e <strong style={{ color:"white" }}>guadagni il 50% del margine su ogni booking confermato.</strong>
               </p>
 
               <div data-reveal style={{ ...rev, display:"flex", gap:12, flexWrap:"wrap", marginBottom:40, transitionDelay:".24s" }}>
@@ -290,7 +290,7 @@ export default function LandingPromoter() {
         <section style={{ padding:"80px 20px" }}>
           <div style={{ maxWidth:1000, margin:"0 auto" }}>
             <div className="lp-kpi-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
-              {[["30%","del margine TE","è tuo per ogni booking"],["+∞","artisti nel roster","con il piano Pro"],["0€","per iniziare","nessuna carta richiesta"],["100%","controllo","gestisci tu le trattative"]].map(([val,label,sub],i) => (
+              {[["50%","del margine TE","è tuo per ogni booking"],["+∞","artisti nel roster","con il piano Pro"],["0€","per iniziare","nessuna carta richiesta"],["100%","controllo","gestisci tu le trattative"]].map(([val,label,sub],i) => (
                 <div key={i} data-reveal style={{ ...rev, transitionDelay:`${i*.07}s` }}>
                   <TiltCard style={{ borderRadius:22, height:"100%" }}>
                     <div className="lp-card" style={{ padding:"24px 20px", height:"100%", position:"relative", zIndex:2 }}>
@@ -381,10 +381,10 @@ export default function LandingPromoter() {
                 Guadagni sul margine<br/><span className="lp-shimmer">senza toccare il cachet.</span>
               </h2>
               <p style={{ fontSize:"1rem", color:"rgba(255,255,255,.55)", lineHeight:1.7, marginBottom:24 }}>
-                TuttoEvento trattiene la differenza tra il prezzo pubblico pagato dal locale e il cachet netto dell'artista. Tu, come promoter che ha portato quell'artista, ricevi il <strong style={{ color:"white" }}>30% di questo margine</strong> — senza toccare il compenso dell'artista.
+                TuttoEvento trattiene la differenza tra il prezzo pubblico pagato dal locale e il cachet netto dell'artista. Tu, come promoter che ha portato quell'artista, ricevi il <strong style={{ color:"white" }}>50% di questo margine</strong> — senza toccare il compenso dell'artista.
               </p>
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                {[["L'artista incassa", "il 100% del cachet concordato"],["Il locale paga","il prezzo pubblico"],["TuttoEvento","trattiene il margine (differenza)"],["Tu incassi","30% del margine TE"]].map(([label,val]) => (
+                {[["L'artista incassa", "il 100% del cachet concordato"],["Il locale paga","il prezzo pubblico"],["TuttoEvento","trattiene il margine (differenza)"],["Tu incassi","50% del margine TE"]].map(([label,val]) => (
                   <div key={label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", background:"rgba(255,255,255,.04)", borderRadius:12, border:"1px solid rgba(255,255,255,.07)" }}>
                     <span style={{ fontSize:".875rem", color:"rgba(255,255,255,.6)", fontWeight:600 }}>{label}</span>
                     <span style={{ fontSize:".875rem", fontWeight:700, color:label==="Tu incassi"?ORANGE:"white" }}>{val}</span>
@@ -563,9 +563,9 @@ function CommissionSimulator() {
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 12px", background:"rgba(255,90,0,.08)", border:"1px solid rgba(255,90,0,.2)", borderRadius:10 }}>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
               <span style={{ fontSize:16 }}>💼</span>
-              <span style={{ fontSize:13, fontWeight:700, color:"white" }}>Tu guadagni (30% quota TE)</span>
+              <span style={{ fontSize:13, fontWeight:700, color:"white" }}>Tu guadagni (50% quota TE)</span>
             </div>
-            <span style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:15, color:ORANGE }}>~€{Math.round(cachet * 0.15)}</span>
+            <span style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:15, color:ORANGE }}>~€{Math.round(cachet * 0.25)}</span>
           </div>
         </div>
         <p style={{ fontSize:11, color:"rgba(255,255,255,.3)", margin:"10px 0 0", textAlign:"center" }}>
@@ -579,7 +579,7 @@ function CommissionSimulator() {
         {serate.map(n => (
           <div key={n} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 12px", background:"rgba(255,255,255,.04)", borderRadius:10, marginBottom:6, border:"1px solid rgba(255,255,255,.06)" }}>
             <span style={{ fontSize:12, color:"rgba(255,255,255,.6)", fontWeight:600 }}>{n} booking/mese</span>
-            <span style={{ fontFamily:"Sora,sans-serif", fontWeight:800, color:ORANGE }}>~€{Math.round(cachet * 0.15 * n)}</span>
+            <span style={{ fontFamily:"Sora,sans-serif", fontWeight:800, color:ORANGE }}>~€{Math.round(cachet * 0.25 * n)}</span>
           </div>
         ))}
       </div>

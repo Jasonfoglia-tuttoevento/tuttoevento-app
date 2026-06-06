@@ -417,9 +417,10 @@ function TabEstratto({ bookings }) {
 
 // ── Main component ─────────────────────────────────────────────
 export default function ArtistArea(props) {
+  const initialTab = props.tab || "mediakit";
   const { currentUser } = props;
   const plan = currentUser?.plan || "free";
-  const [tab, setTab] = useState("mediakit");
+  const [tab, setTab] = useState(initialTab);
 
   const s = {
     tabBtn: (active) => ({
