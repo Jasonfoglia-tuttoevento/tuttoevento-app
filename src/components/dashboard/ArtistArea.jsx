@@ -414,7 +414,6 @@ export default function ArtistArea(props) {
 
   return (
     <div id="artist-area" style={{ fontFamily: "'Manrope',system-ui,sans-serif", color: INK, display: "flex", flexDirection: "column", gap: 16 }}>
-      </div>
 
       {/* Tab content */}
       {tab === "mediakit"   && <TabMediaKit props={{ ...props, plan }} />}

@@ -363,7 +363,6 @@ export default function OrganizerArea({ currentUser, events = [], artists = [], 
     <div id="organizer-area" style={{ fontFamily: "'Manrope',system-ui,sans-serif", color: INK, display: "flex", flexDirection: "column", gap: 16 }}>
 
         
-      </div>
 
       {/* Profilo locale — badge verificato PRO */}
       {tab === "overview" && (
