@@ -767,6 +767,7 @@ export default function PromoterArea({ currentUser, events=[], bookings=[], user
           </h2>
           <p style={{ fontSize:13, color:MUTED, margin:0 }}>Roster, trattative, commissioni e pagina pubblica agenzia.</p>
         </div>
+      </div>
 
       {tab==="overview"    && <TabOverview currentUser={currentUser} bookings={bookings} portfolio={portfolio} contactRequests={contactRequests} plan={plan} commissions={commissions} />}
       {tab==="roster"      && <TabRoster portfolio={portfolio} users={[...users,...artists]} plan={plan} onAdd={handleAdd} onRemove={handleRemove} addingEntry={addingEntry} addMsg={addMsg} />}
