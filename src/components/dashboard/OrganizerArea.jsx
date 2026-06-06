@@ -338,9 +338,9 @@ function TabEstratto({ bookings }) {
 }
 
 // ── Main ───────────────────────────────────────────────────────
-export default function OrganizerArea({ currentUser, events = [], artists = [], bookings = [], title, setTitle, date, setDate, artist, setArtist, promoter, setPromoter, tab }) {
+export default function OrganizerArea({ currentUser, events = [], artists = [], bookings = [], title, setTitle, date, setDate, artist, setArtist, promoter, setPromoter, tab: initialTab }) {
   const plan = currentUser?.plan || "free";
-  const [tab, setTab] = useState(tab || "overview");
+  const [tab, setTab] = useState(initialTab || "overview");
 
   const [venueName, setVenueName]   = useState("");
   const [venueCity, setVenueCity]   = useState("");

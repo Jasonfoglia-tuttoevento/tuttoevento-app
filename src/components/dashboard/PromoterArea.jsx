@@ -708,9 +708,9 @@ const TABS = [
   { id:"agenzia",     label:"Agenzia",     icon:"🏢" },
 ];
 
-export default function PromoterArea({ currentUser, events=[], bookings=[], users=[], artists=[], tab }) {
+export default function PromoterArea({ currentUser, events=[], bookings=[], users=[], artists=[], tab: initialTab }) {
   const plan = currentUser?.plan || "free";
-  const [tab, setTab]              = useState(tab || "overview");
+  const [tab, setTab]              = useState(initialTab || "overview");
   const [portfolio, setPortfolio]  = useState([]);
   const [contactRequests, setContactRequests] = useState([]);
   const [commissions, setCommissions] = useState([]);
