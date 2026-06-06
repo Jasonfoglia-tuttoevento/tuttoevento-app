@@ -151,6 +151,7 @@ export async function POST(request) {
         terms_accepted_at: new Date().toISOString(),
         terms_doc:         pdfFileName,
         plan:              "free",
+        referred_by:       body.referralCode || null,
       })
       .select("id, name, email, role, business_mode")
       .single();

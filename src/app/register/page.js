@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -37,32 +37,30 @@ const FEATURES = [
   { icon: "🔔", text: "Notifiche push" },
 ];
 
+function validatePassword(pw) {
+  const errors = [];
+  if (!pw || pw.length < 8)           errors.push("Almeno 8 caratteri");
+  if (!/[A-Z]/.test(pw))              errors.push("Una lettera maiuscola");
+  if (!/[0-9]/.test(pw))              errors.push("Un numero");
+  if (!/[^A-Za-z0-9]/.test(pw))       errors.push("Un carattere speciale (!@#$%...)");
+  return errors;
+}
+
 function Input({ label, type = "text", placeholder, value, onChange, autoComplete }) {
   const [focused, setFocused] = useState(false);
   return (
     <div style={{ marginBottom: 16 }}>
       <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 6 }}>{label}</label>
       <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
+        type={type} placeholder={placeholder} value={value} onChange={onChange}
         autoComplete={autoComplete}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
         style={{
-          width: "100%",
-          background: focused ? C.white : C.paper,
+          width: "100%", background: focused ? C.white : C.paper,
           border: `1.5px solid ${focused ? C.orange : "rgba(0,0,0,.12)"}`,
-          borderRadius: 16,
-          padding: "13px 16px",
-          fontSize: 15,
-          color: C.ink,
-          outline: "none",
-          boxSizing: "border-box",
-          transition: "all .2s",
-          boxShadow: focused ? `0 0 0 3px rgba(255,90,0,.1)` : "none",
-          fontFamily: "inherit",
+          borderRadius: 16, padding: "13px 16px", fontSize: 15, color: C.ink,
+          outline: "none", boxSizing: "border-box", transition: "all .2s",
+          boxShadow: focused ? `0 0 0 3px rgba(255,90,0,.1)` : "none", fontFamily: "inherit",
         }}
       />
     </div>
@@ -74,25 +72,45 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const qr = searchParams.get("role");
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState(["artist","promoter","organizer"].includes(qr) ? qr : "organizer");
+  const [name, setName]           = useState("");
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
+  const [role, setRole]           = useState(["artist","promoter","organizer"].includes(qr) ? qr : "organizer");
   const [businessMode, setBusinessMode] = useState("both");
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: dati, 2: ruolo, 3: conferma
-  const [showPwd, setShowPwd] = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const [step, setStep]           = useState(1);
+  const [showPwd, setShowPwd]     = useState(false);
+
+  // ── REFERRAL ──────────────────────────────────────────────
+  const [referralCode, setReferralCode]   = useState("");
+  const [promoterName, setPromoterName]   = useState("");
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (!ref) return;
+    setReferralCode(ref.toUpperCase());
+    fetch(`/api/referral/resolve?code=${ref}`)
+      .then(r => r.json())
+      .then(d => { if (d.promoterName) setPromoterName(d.promoterName); })
+      .catch(() => {});
+  }, [searchParams]);
+  // ─────────────────────────────────────────────────────────
 
   async function handleRegister(e) {
     e.preventDefault();
     if (!termsAccepted) { alert("Devi accettare i termini e condizioni"); return; }
+    const pwErrors = validatePassword(password);
+    if (pwErrors.length > 0) { alert("Password: " + pwErrors[0]); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role, businessMode, termsAccepted }),
+        body: JSON.stringify({
+          name, email, password, role, businessMode, termsAccepted,
+          referralCode: referralCode || undefined,  // ← REFERRAL
+        }),
       });
       const data = await res.json();
       if (!res.ok) { alert(data.error || "Errore registrazione"); return; }
@@ -102,7 +120,8 @@ function RegisterForm() {
     finally { setLoading(false); }
   }
 
-  const canGoStep2 = name.trim() && email.trim() && password.length >= 8;
+  const pwErrors = validatePassword(password);
+  const canGoStep2 = name.trim() && email.trim() && pwErrors.length === 0;
   const selectedRole = ROLES.find(r => r.id === role);
 
   return (
@@ -115,7 +134,6 @@ function RegisterForm() {
         @keyframes floatGlow { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-30px)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes spin { to{transform:rotate(360deg)} }
-        @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
         .reg-root { min-height:100vh; background:#0a0a0b; font-family:'Manrope',system-ui,sans-serif; display:flex; flex-direction:column; position:relative; overflow:hidden; }
         .reg-glow { position:absolute; top:-200px; left:50%; transform:translateX(-50%); width:700px; height:700px; border-radius:50%; background:radial-gradient(circle,rgba(255,90,0,.35),transparent 70%); filter:blur(80px); pointer-events:none; animation:floatGlow 10s ease-in-out infinite; }
         .reg-glow2 { position:absolute; bottom:-100px; right:-100px; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,rgba(255,90,0,.15),transparent 70%); filter:blur(60px); pointer-events:none; }
@@ -154,11 +172,10 @@ function RegisterForm() {
         .reg-checkbox-label { font-size:.85rem; color:#6b6b73; line-height:1.5; }
         .reg-checkbox-label a { color:#ff5a00; font-weight:700; }
         .reg-btn-primary { width:100%; background:#ff5a00; color:#fff; border:none; border-radius:14px; padding:15px; font-size:1rem; font-weight:800; cursor:pointer; transition:all .25s; font-family:'Manrope',sans-serif; box-shadow:0 12px 30px rgba(255,90,0,.35); }
-        .reg-btn-primary:hover:not(:disabled) { background:#e85100; transform:translateY(-1px); box-shadow:0 16px 36px rgba(255,90,0,.45); }
+        .reg-btn-primary:hover:not(:disabled) { background:#e85100; transform:translateY(-1px); }
         .reg-btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
         .reg-btn-secondary { width:100%; background:rgba(0,0,0,.05); color:#0a0a0b; border:none; border-radius:14px; padding:13px; font-size:.95rem; font-weight:700; cursor:pointer; font-family:'Manrope',sans-serif; margin-top:10px; transition:all .2s; }
         .reg-btn-secondary:hover { background:rgba(0,0,0,.09); }
-        .reg-divider { text-align:center; color:#9a9ab0; font-size:.8rem; margin:16px 0; }
         .reg-login-link { text-align:center; font-size:.875rem; color:#6b6b73; margin-top:16px; }
         .reg-login-link a { color:#ff5a00; font-weight:700; text-decoration:none; }
         .reg-spinner { width:20px; height:20px; border:2.5px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; display:inline-block; vertical-align:middle; margin-right:8px; }
@@ -170,6 +187,7 @@ function RegisterForm() {
         .reg-strength { display:flex; gap:4px; margin-top:6px; }
         .reg-strength-bar { flex:1; height:3px; border-radius:3px; transition:background .3s; }
         .reg-strength-label { font-size:.72rem; font-weight:700; margin-top:3px; }
+        .reg-referral-banner { display:flex; align-items:center; gap:8px; background:rgba(255,90,0,.08); border:1px solid rgba(255,90,0,.2); border-radius:12px; padding:10px 14px; margin-bottom:18px; }
         @media(max-width:900px) {
           .reg-grid { grid-template-columns:1fr; }
           .reg-left { display:none; }
@@ -182,16 +200,11 @@ function RegisterForm() {
         <div className="reg-glow2" />
 
         <div className="reg-grid">
-          {/* LATO SINISTRO — marketing */}
+          {/* LATO SINISTRO */}
           <div className="reg-left">
             <Link href="/" className="reg-logo">TUTTO<span>EVENTO</span></Link>
-            <h1 className="reg-headline">
-              Il tuo prossimo<br/><em>show</em><br/>inizia qui.
-            </h1>
-            <p className="reg-sub">
-              La piattaforma italiana per artisti, locali e promoter.<br/>
-              Booking semplice, chat realtime, CRM completo.
-            </p>
+            <h1 className="reg-headline">Il tuo prossimo<br/><em>show</em><br/>inizia qui.</h1>
+            <p className="reg-sub">La piattaforma italiana per artisti, locali e promoter.<br/>Booking semplice, chat realtime, CRM completo.</p>
             <div className="reg-features">
               {FEATURES.map(f => (
                 <div key={f.text} className="reg-feat">
@@ -207,150 +220,131 @@ function RegisterForm() {
             </div>
           </div>
 
-          {/* LATO DESTRO — form */}
+          {/* LATO DESTRO */}
           <div className="reg-right">
             <div className="reg-card">
+
+              {/* ── Banner referral ── */}
+              {promoterName && (
+                <div className="reg-referral-banner">
+                  <span style={{ fontSize:18 }}>🤝</span>
+                  <p style={{ fontSize:13, fontWeight:700, color:"#ff5a00", margin:0, fontFamily:"Manrope,system-ui,sans-serif" }}>
+                    Invitato da <strong>{promoterName}</strong>
+                  </p>
+                </div>
+              )}
+
               {/* Progress steps */}
               <div className="reg-steps">
                 {[1,2,3].map(s => (
-                  <div key={s} className="reg-step"
-                    style={{ background: s <= step ? C.orange : "rgba(0,0,0,.1)" }} />
+                  <div key={s} className="reg-step" style={{ background: s <= step ? C.orange : "rgba(0,0,0,.1)" }} />
                 ))}
               </div>
 
-              {/* Step 1: dati personali */}
+              {/* Step 1 */}
               {step === 1 && (
                 <>
                   <p className="reg-form-title">Crea il tuo account</p>
                   <p className="reg-form-sub">Registrati gratis in 2 minuti. Nessuna carta richiesta.</p>
-
                   <Input label="Nome completo" placeholder="Mario Rossi" value={name} onChange={e => setName(e.target.value)} autoComplete="name" />
                   <Input label="Email" type="email" placeholder="nome@email.com" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
-
-                  {/* Password con toggle e strength */}
                   <div className="reg-pwd-wrap">
                     <label>Password</label>
-                    <input
-                      type={showPwd ? "text" : "password"}
-                      placeholder="Almeno 8 caratteri"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      autoComplete="new-password"
-                      className="reg-pwd-input"
-                    />
+                    <input type={showPwd ? "text" : "password"} placeholder="Min 8 car., 1 maiuscola, 1 numero, 1 simbolo"
+                      value={password} onChange={e => setPassword(e.target.value)}
+                      autoComplete="new-password" className="reg-pwd-input" />
                     <button type="button" className="reg-pwd-toggle" onClick={() => setShowPwd(!showPwd)}>
                       {showPwd ? "Nascondi" : "Mostra"}
                     </button>
                     {password.length > 0 && (
                       <>
                         <div className="reg-strength">
-                          {[1,2,3,4].map(n => (
+                          {[0,1,2,3].map(n => (
                             <div key={n} className="reg-strength-bar"
-                              style={{ background: password.length >= n*2 ? (password.length >= 8 ? "#16a34a" : "#f59e0b") : "rgba(0,0,0,.08)" }} />
+                              style={{ background: n < (4 - pwErrors.length) ? (pwErrors.length===0?"#16a34a":pwErrors.length<=2?"#f59e0b":"#dc2626") : "rgba(0,0,0,.08)" }} />
                           ))}
                         </div>
-                        <p className="reg-strength-label" style={{ color: password.length >= 8 ? "#16a34a" : "#f59e0b" }}>
-                          {password.length < 4 ? "Troppo corta" : password.length < 8 ? "Quasi..." : "Password sicura ✓"}
+                        <p className="reg-strength-label" style={{ color: pwErrors.length===0?"#16a34a":"#f59e0b" }}>
+                          {pwErrors.length===0 ? "Password sicura ✓" : pwErrors[0]}
                         </p>
                       </>
                     )}
                   </div>
-
                   <button className="reg-btn-primary" disabled={!canGoStep2} onClick={() => setStep(2)}>
                     Continua →
                   </button>
-                  <div className="reg-login-link">
-                    Hai già un account? <Link href="/login">Accedi</Link>
-                  </div>
+                  <div className="reg-login-link">Hai già un account? <Link href="/login">Accedi</Link></div>
                 </>
               )}
 
-              {/* Step 2: ruolo */}
+              {/* Step 2 */}
               {step === 2 && (
                 <>
                   <p className="reg-form-title">Sei un...</p>
                   <p className="reg-form-sub">Scegli la categoria che ti descrive meglio.</p>
-
                   <div className="reg-role-grid">
                     {ROLES.map(r => (
-                      <div key={r.id} className={`reg-role-btn${role === r.id ? " active" : ""}`}
-                        onClick={() => setRole(r.id)}>
+                      <div key={r.id} className={`reg-role-btn${role === r.id ? " active" : ""}`} onClick={() => setRole(r.id)}>
                         <div className="reg-role-icon">{r.icon}</div>
                         <div className="reg-role-label">{r.label}</div>
                         <div className="reg-role-desc">{r.desc}</div>
                       </div>
                     ))}
                   </div>
-
                   {role === "organizer" && (
                     <div style={{ marginBottom: 20 }}>
                       <p style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 10 }}>Come vuoi gestire gli eventi?</p>
                       {MODES.map(m => {
                         const active = businessMode === m.id;
                         return (
-                          <button key={m.id} className={`reg-mode-btn${active ? " active" : ""}`}
-                            onClick={() => setBusinessMode(m.id)}>
+                          <button key={m.id} className={`reg-mode-btn${active ? " active" : ""}`} onClick={() => setBusinessMode(m.id)}>
                             <div className="reg-mode-radio" style={{ borderColor: active ? "#fff" : "rgba(0,0,0,.25)" }}>
-                              {active && <div className="reg-mode-radio-inner" style={{ background: active ? "#fff" : "transparent" }} />}
+                              {active && <div className="reg-mode-radio-inner" style={{ background:"#fff" }} />}
                             </div>
                             <div>
-                              <p style={{ fontSize: ".85rem", fontWeight: 800, color: active ? "#fff" : C.ink, margin: 0 }}>{m.label}</p>
-                              <p style={{ fontSize: ".75rem", color: active ? "rgba(255,255,255,.75)" : C.muted, margin: "2px 0 0" }}>{m.desc}</p>
+                              <p style={{ fontSize:".85rem", fontWeight:800, color:active?"#fff":C.ink, margin:0 }}>{m.label}</p>
+                              <p style={{ fontSize:".75rem", color:active?"rgba(255,255,255,.75)":C.muted, margin:"2px 0 0" }}>{m.desc}</p>
                             </div>
                           </button>
                         );
                       })}
                     </div>
                   )}
-
-                  <button className="reg-btn-primary" onClick={() => setStep(3)}>
-                    Continua →
-                  </button>
+                  <button className="reg-btn-primary" onClick={() => setStep(3)}>Continua →</button>
                   <button className="reg-btn-secondary" onClick={() => setStep(1)}>← Indietro</button>
                 </>
               )}
 
-              {/* Step 3: conferma e termini */}
+              {/* Step 3 */}
               {step === 3 && (
                 <form onSubmit={handleRegister}>
                   <p className="reg-form-title">Quasi fatto!</p>
                   <p className="reg-form-sub">Controlla il riepilogo e accetta i termini.</p>
-
-                  {/* Riepilogo */}
-                  <div style={{ background: "#f5f5f6", borderRadius: 16, padding: "16px 18px", marginBottom: 20 }}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 10 }}>Riepilogo</p>
-                    {[
-                      ["Nome", name],
-                      ["Email", email],
-                      ["Ruolo", selectedRole?.icon + " " + selectedRole?.label],
-                    ].map(([k, v]) => (
-                      <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
-                        <span style={{ color: C.muted, fontWeight: 600 }}>{k}</span>
-                        <span style={{ fontWeight: 800, color: C.ink }}>{v}</span>
+                  <div style={{ background:"#f5f5f6", borderRadius:16, padding:"16px 18px", marginBottom:20 }}>
+                    <p style={{ fontSize:12, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:".1em", marginBottom:10 }}>Riepilogo</p>
+                    {[["Nome",name],["Email",email],["Ruolo",selectedRole?.icon+" "+selectedRole?.label],
+                      ...(referralCode ? [["Invitato da", promoterName || referralCode]] : [])
+                    ].map(([k,v]) => (
+                      <div key={k} style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:6 }}>
+                        <span style={{ color:C.muted, fontWeight:600 }}>{k}</span>
+                        <span style={{ fontWeight:800, color:k==="Invitato da"?"#ff5a00":C.ink }}>{v}</span>
                       </div>
                     ))}
                   </div>
-
                   <div className="reg-checkbox-wrap">
                     <input type="checkbox" className="reg-checkbox" checked={termsAccepted}
                       onChange={e => setTermsAccepted(e.target.checked)} id="terms" />
                     <label htmlFor="terms" className="reg-checkbox-label">
                       Dichiaro di aver letto e accettato i{" "}
-                      <a href={TERMS[role] || TERMS.organizer} target="_blank" rel="noopener noreferrer">
-                        termini e condizioni
-                      </a>{" "}
+                      <a href={TERMS[role]||TERMS.organizer} target="_blank" rel="noopener noreferrer">termini e condizioni</a>{" "}
                       di TuttoEvento.
                     </label>
                   </div>
-
-                  <button type="submit" className="reg-btn-primary" disabled={loading || !termsAccepted}>
+                  <button type="submit" className="reg-btn-primary" disabled={loading||!termsAccepted}>
                     {loading ? <><span className="reg-spinner"/>Creazione account...</> : "🎉 Crea account gratis"}
                   </button>
                   <button type="button" className="reg-btn-secondary" onClick={() => setStep(2)}>← Indietro</button>
-
-                  <div className="reg-login-link">
-                    Hai già un account? <Link href="/login">Accedi</Link>
-                  </div>
+                  <div className="reg-login-link">Hai già un account? <Link href="/login">Accedi</Link></div>
                 </form>
               )}
             </div>
@@ -364,11 +358,8 @@ function RegisterForm() {
 export default function RegisterPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: "100vh", background: "#0a0a0b", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 40, height: 40, border: "3px solid rgba(255,90,0,.3)", borderTopColor: "#ff5a00", borderRadius: "50%", animation: "spin .7s linear infinite", margin: "0 auto 16px" }} />
-          <p style={{ color: "rgba(255,255,255,.5)", fontSize: 14 }}>Caricamento...</p>
-        </div>
+      <div style={{ minHeight:"100vh", background:"#0a0a0b", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ width:40, height:40, border:"3px solid rgba(255,90,0,.3)", borderTopColor:"#ff5a00", borderRadius:"50%", animation:"spin .7s linear infinite", margin:"0 auto" }} />
       </div>
     }>
       <RegisterForm />

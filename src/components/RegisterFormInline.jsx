@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function RegisterFormInline({ role = "artist", dark = true }) {
   const [step, setStep]       = useState(1);
@@ -8,6 +8,22 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
   const [password, setPass]   = useState("");
   const [extra, setExtra]     = useState("");
   const [terms, setTerms]     = useState(false);
+  const [referralCode, setReferralCode] = useState("");
+  const [promoterName, setPromoterName] = useState("");
+
+  // Leggi il codice referral dall'URL ?ref=XXXXXXXX
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (!ref) return;
+    setReferralCode(ref.toUpperCase());
+    // Risolvi il codice per mostrare il nome del promoter
+    fetch(`/api/referral/resolve?code=${ref}`)
+      .then(r => r.json())
+      .then(d => { if (d.promoterName) setPromoterName(d.promoterName); })
+      .catch(() => {});
+  }, []);
   const [loading, setLoad]    = useState(false);
   const [msg, setMsg]         = useState("");
   const [done, setDone]       = useState(false);
@@ -63,7 +79,7 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
       const res = await fetch("/api/register", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name, email, password, role,
+          name, email, password, role, referralCode: referralCode || undefined,
           stageName:  isArtist   ? extra : undefined,
           agencyName: isPromoter ? extra : undefined,
           venueName:  !isArtist && !isPromoter ? extra : undefined,
@@ -97,6 +113,15 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
   );
 
   return (
+    <>
+      {promoterName && (
+        <div style={{ background:"rgba(255,90,0,.08)", border:"1px solid rgba(255,90,0,.2)", borderRadius:14, padding:"10px 14px", marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ fontSize:16 }}>🤝</span>
+          <p style={{ fontSize:12, fontWeight:700, color:"#ff5a00", margin:0, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+            Invitato da <strong>{promoterName}</strong>
+          </p>
+        </div>
+      )}
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
 
       {/* Step 1 — dati base */}
@@ -206,5 +231,6 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
         </a>
       </p>
     </form>
+    </>
   );
 }
