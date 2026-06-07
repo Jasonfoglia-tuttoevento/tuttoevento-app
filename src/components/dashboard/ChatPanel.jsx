@@ -2,40 +2,36 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatTime(iso) {
   if (!iso) return "";
   const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now - d;
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffH = Math.floor(diffMs / 3600000);
-  const diffD = Math.floor(diffMs / 86400000);
-  if (diffMin < 1) return "Adesso";
+  const diffMin = Math.floor((Date.now() - d) / 60000);
+  const diffH   = Math.floor(diffMin / 60);
+  const diffD   = Math.floor(diffH   / 24);
+  if (diffMin < 1)  return "Adesso";
   if (diffMin < 60) return `${diffMin} min fa`;
-  if (diffH < 24) return `${diffH}h fa`;
-  if (diffD < 7) return `${diffD}g fa`;
+  if (diffH < 24)   return `${diffH}h fa`;
+  if (diffD < 7)    return `${diffD}g fa`;
   return d.toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit" });
 }
 
 function formatLastSeen(iso) {
   if (!iso) return null;
-  const d = new Date(iso);
-  const diffMs = Date.now() - d;
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffH = Math.floor(diffMs / 3600000);
-  const diffD = Math.floor(diffMs / 86400000);
-  if (diffMin < 2) return "Online";
+  const diffMin = Math.floor((Date.now() - new Date(iso)) / 60000);
+  const diffH   = Math.floor(diffMin / 60);
+  const diffD   = Math.floor(diffH   / 24);
+  if (diffMin < 2)  return "Online";
   if (diffMin < 60) return `Attivo ${diffMin} min fa`;
-  if (diffH < 24) return `Attivo ${diffH}h fa`;
-  if (diffD < 7) return `Attivo ${diffD}g fa`;
-  return `Attivo il ${d.toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit" })}`;
+  if (diffH < 24)   return `Attivo ${diffH}h fa`;
+  if (diffD < 7)    return `Attivo ${diffD}g fa`;
+  return `Attivo il ${new Date(iso).toLocaleDateString("it-IT", { day:"2-digit", month:"2-digit" })}`;
 }
 
 function isOnline(iso) {
-  if (!iso) return false;
-  return (Date.now() - new Date(iso)) < 120000; // 2 minuti
+  return iso && (Date.now() - new Date(iso)) < 120000;
 }
 
 function initials(name) {
@@ -43,8 +39,6 @@ function initials(name) {
   return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
-// Ricava il nome dell'altro partecipante dal titolo conversazione
-// Il titolo viene salvato come "NomeMio & NomeAltro" o "NomeAltro & NomeMio"
 function getOtherName(title, myName) {
   if (!title) return "Conversazione";
   const parts = title.split(/[&·\-,]/).map(s => s.trim()).filter(Boolean);
@@ -54,21 +48,35 @@ function getOtherName(title, myName) {
   return other || parts[parts.length - 1];
 }
 
-/* ─── Avatar ──────────────────────────────────────────────── */
-function Avatar({ name, size = 36, orange = false, online: onl = false }) {
+/* ─── Avatar con foto e badge verificato ─────────────────── */
+function Avatar({ name, photo, verified, size = 36, orange = false, online: onl = false }) {
   return (
     <div style={{ position:"relative", flexShrink:0, width:size, height:size }}>
-      <div style={{
-        width:size, height:size, borderRadius:"50%",
-        background: orange ? "#ff5a00" : "#1e1e22",
-        border: "1.5px solid rgba(255,255,255,.12)",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        fontFamily:"'Sora',sans-serif", fontWeight:800,
-        fontSize:size * 0.36, color:"white", letterSpacing:"-.02em",
-      }}>
-        {initials(name)}
-      </div>
-      {onl && (
+      {photo ? (
+        <img src={photo} alt={name} style={{
+          width:size, height:size, borderRadius:"50%", objectFit:"cover",
+          border:"1.5px solid rgba(255,255,255,.12)",
+        }} />
+      ) : (
+        <div style={{
+          width:size, height:size, borderRadius:"50%",
+          background: orange ? "#ff5a00" : "#1e1e22",
+          border:"1.5px solid rgba(255,255,255,.12)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontFamily:"'Sora',sans-serif", fontWeight:800,
+          fontSize:size * 0.36, color:"white", letterSpacing:"-.02em",
+        }}>
+          {initials(name)}
+        </div>
+      )}
+      {/* Badge verificato */}
+      {verified && (
+        <div style={{ position:"absolute", bottom:-2, right:-2 }}>
+          <VerifiedBadge size={size * 0.42} />
+        </div>
+      )}
+      {/* Dot online (solo se non c'è badge) */}
+      {onl && !verified && (
         <span style={{
           position:"absolute", bottom:0, right:0,
           width:size * 0.28, height:size * 0.28,
@@ -81,11 +89,12 @@ function Avatar({ name, size = 36, orange = false, online: onl = false }) {
 }
 
 /* ─── ConvItem ────────────────────────────────────────────── */
-function ConvItem({ conv, isActive, onClick, myName, onlineMap }) {
+function ConvItem({ conv, isActive, onClick, myName, onlineMap, usersMap }) {
   const unread = Number(conv.unreadCount || 0);
   const otherName = getOtherName(conv.title, myName);
   const lastSeen = onlineMap?.[conv.otherUserId];
   const online = isOnline(lastSeen);
+  const otherUser = usersMap?.[conv.otherUserId];
 
   return (
     <button onClick={onClick} style={{
@@ -97,7 +106,7 @@ function ConvItem({ conv, isActive, onClick, myName, onlineMap }) {
       fontFamily:"'Manrope',system-ui,sans-serif",
       display:"flex", gap:10, alignItems:"center",
     }}>
-      <Avatar name={otherName} size={38} online={online} />
+      <Avatar name={otherName} photo={otherUser?.photo} verified={otherUser?.verified} size={38} online={online} />
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:6 }}>
           <p style={{ fontWeight:700, fontSize:13, color:"white", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
@@ -123,10 +132,10 @@ function ConvItem({ conv, isActive, onClick, myName, onlineMap }) {
 }
 
 /* ─── Bubble ──────────────────────────────────────────────── */
-function Bubble({ msg, isMine }) {
+function Bubble({ msg, isMine, senderPhoto, senderVerified }) {
   return (
     <div style={{ display:"flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom:6, gap:8, alignItems:"flex-end" }}>
-      {!isMine && <Avatar name={msg.senderName || "?"} size={28} />}
+      {!isMine && <Avatar name={msg.senderName || "?"} photo={senderPhoto} verified={senderVerified} size={28} />}
       <div style={{ maxWidth:"72%", minWidth:48 }}>
         {!isMine && (
           <p style={{ fontSize:10, fontWeight:700, color:"#ff5a00", marginBottom:3, marginLeft:2, fontFamily:"'Manrope',system-ui,sans-serif" }}>
@@ -152,37 +161,56 @@ function Bubble({ msg, isMine }) {
   );
 }
 
+/* ─── TypingIndicator ────────────────────────────────────── */
+function TypingIndicator({ name }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 0 8px" }}>
+      <div style={{ background:"rgba(255,255,255,.09)", border:"1px solid rgba(255,255,255,.1)", borderRadius:"18px 18px 18px 4px", padding:"8px 13px", display:"flex", gap:3, alignItems:"center" }}>
+        <span className="cp-dot" />
+        <span className="cp-dot" />
+        <span className="cp-dot" />
+      </div>
+      <span style={{ fontSize:11, color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+        {name} sta scrivendo...
+      </span>
+    </div>
+  );
+}
+
 /* ─── ChatPanel ───────────────────────────────────────────── */
 export default function ChatPanel({ user }) {
-  const [isOpen, setIsOpen]                 = useState(false);
-  const [view, setView]                     = useState("list");
-  const [users, setUsers]                   = useState([]);
-  const [conversations, setConversations]   = useState([]);
+  const [isOpen, setIsOpen]               = useState(false);
+  const [view, setView]                   = useState("list");
+  const [users, setUsers]                 = useState([]);
+  const [conversations, setConversations] = useState([]);
   const [selectedConvId, setSelectedConvId] = useState(null);
-  const [messages, setMessages]             = useState([]);
-  const [message, setMessage]               = useState("");
+  const [messages, setMessages]           = useState([]);
+  const [message, setMessage]             = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [isSending, setIsSending]           = useState(false);
-  const [showNewChat, setShowNewChat]       = useState(false);
-  const [onlineMap, setOnlineMap]           = useState({}); // { userId: last_seen_iso }
+  const [isSending, setIsSending]         = useState(false);
+  const [showNewChat, setShowNewChat]     = useState(false);
+  const [onlineMap, setOnlineMap]         = useState({});
+  const [typingUsers, setTypingUsers]     = useState({}); // { convId: { userId: timestamp } }
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
   const pingRef    = useRef(null);
+  const typingRef  = useRef(null);
+  const supabaseRef = useRef(null);
 
   const totalUnread = conversations.reduce((t, c) => t + Number(c.unreadCount || 0), 0);
 
-  /* ── Aggiorna last_seen ogni 60s ── */
+  // Map userId → user info (photo, verified)
+  const usersMap = Object.fromEntries(users.map(u => [u.id, u]));
+
+  /* ── Presenza ── */
   useEffect(() => {
     if (!user?.id) return;
-    async function ping() {
-      try { await fetch("/api/presence", { method:"POST" }); } catch {}
-    }
+    async function ping() { try { await fetch("/api/presence", { method:"POST" }); } catch {} }
     ping();
     pingRef.current = setInterval(ping, 60000);
     return () => clearInterval(pingRef.current);
   }, [user?.id]);
 
-  /* ── Carica presenza altri utenti ── */
   const loadPresence = useCallback(async (convList) => {
     if (!convList?.length) return;
     try {
@@ -232,8 +260,10 @@ export default function ChatPanel({ user }) {
   useEffect(() => {
     if (!user?.id) return;
     const supabase = createSupabaseBrowserClient();
+    supabaseRef.current = supabase;
+
     const channel = supabase
-      .channel("chat-realtime")
+      .channel(`chat-realtime-${user.id}`)
       .on("postgres_changes", { event:"INSERT", schema:"public", table:"chat_messages" }, (payload) => {
         const m = payload.new;
         if (Number(m.conversation_id) === Number(selectedConvId)) {
@@ -244,8 +274,34 @@ export default function ChatPanel({ user }) {
           if (isOpen) markAsRead(m.conversation_id);
         }
         loadConversations();
+        // Rimuovi typing indicator di chi ha mandato il messaggio
+        if (m.sender_id !== user.id) {
+          setTypingUsers(prev => {
+            const next = { ...prev };
+            if (next[m.conversation_id]) {
+              delete next[m.conversation_id][m.sender_id];
+            }
+            return next;
+          });
+        }
+      })
+      // Typing indicator via Realtime Broadcast
+      .on("broadcast", { event:"typing" }, (payload) => {
+        const { userId, convId, isTyping } = payload.payload || {};
+        if (userId === user.id) return; // ignora il mio stesso typing
+        setTypingUsers(prev => {
+          const next = { ...prev };
+          if (!next[convId]) next[convId] = {};
+          if (isTyping) {
+            next[convId][userId] = Date.now();
+          } else {
+            delete next[convId][userId];
+          }
+          return next;
+        });
       })
       .subscribe();
+
     return () => { supabase.removeChannel(channel); };
   }, [user?.id, selectedConvId, isOpen, loadConversations, markAsRead]);
 
@@ -267,12 +323,29 @@ export default function ChatPanel({ user }) {
     if (isOpen && view === "chat") setTimeout(() => inputRef.current?.focus(), 150);
   }, [isOpen, view]);
 
-  /* ── Presenza ogni 30s quando aperta ── */
   useEffect(() => {
     if (!isOpen) return;
     const t = setInterval(() => loadPresence(conversations), 30000);
     return () => clearInterval(t);
   }, [isOpen, conversations, loadPresence]);
+
+  // Pulizia typing stale ogni 5s
+  useEffect(() => {
+    const t = setInterval(() => {
+      const now = Date.now();
+      setTypingUsers(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(convId => {
+          Object.keys(next[convId]).forEach(uid => {
+            if (now - next[convId][uid] > 5000) delete next[convId][uid];
+          });
+          if (!Object.keys(next[convId]).length) delete next[convId];
+        });
+        return next;
+      });
+    }, 5000);
+    return () => clearInterval(t);
+  }, []);
 
   /* ── Apertura da altri componenti ── */
   useEffect(() => {
@@ -294,9 +367,27 @@ export default function ChatPanel({ user }) {
     };
   }, [user?.id, selectedConvId, markAsRead]);
 
+  /* ── Typing broadcast ── */
+  function broadcastTyping(isTyping) {
+    if (!selectedConvId || !supabaseRef.current) return;
+    supabaseRef.current.channel(`chat-realtime-${user.id}`)
+      .send({ type:"broadcast", event:"typing", payload:{ userId:user.id, convId:selectedConvId, isTyping } })
+      .catch(() => {});
+  }
+
+  function handleInputChange(e) {
+    setMessage(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 110) + "px";
+    // Broadcast typing start
+    broadcastTyping(true);
+    // Reset timer stop typing
+    clearTimeout(typingRef.current);
+    typingRef.current = setTimeout(() => broadcastTyping(false), 2500);
+  }
+
   /* ── Azioni ── */
   async function createOrOpenConversation({ participantUserId, bookingId=null, eventId=null, title="Nuova conversazione" }) {
-    // Titolo = solo nome dell'altro utente
     const otherUser = users.find(u => String(u.id) === String(participantUserId));
     const cleanTitle = otherUser?.name || title;
     const res = await fetch("/api/chat/conversations", {
@@ -318,7 +409,10 @@ export default function ChatPanel({ user }) {
     e.preventDefault();
     if (!selectedConvId || !message.trim() || isSending) return;
     setIsSending(true);
+    broadcastTyping(false);
+    clearTimeout(typingRef.current);
     const text = message.trim(); setMessage("");
+    if (inputRef.current) { inputRef.current.style.height = "auto"; }
     const res = await fetch("/api/chat/messages", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ conversationId:selectedConvId, message:text }),
@@ -331,6 +425,11 @@ export default function ChatPanel({ user }) {
   const otherName = selectedConv ? getOtherName(selectedConv.title, user?.name) : null;
   const otherLastSeen = selectedConv ? onlineMap?.[selectedConv.otherUserId] : null;
   const otherOnline = isOnline(otherLastSeen);
+  const otherUser = selectedConv ? usersMap[selectedConv.otherUserId] : null;
+
+  // Chi sta scrivendo nella conversazione attiva
+  const activeTyping = selectedConvId ? Object.keys(typingUsers[selectedConvId] || {}) : [];
+  const isOtherTyping = activeTyping.length > 0;
 
   if (!user?.id) return null;
 
@@ -338,7 +437,7 @@ export default function ChatPanel({ user }) {
     <>
       <style>{`
         .cp-btn {
-          display: none; position:fixed; bottom:24px; right:24px; z-index:40;
+          display:none; position:fixed; bottom:24px; right:24px; z-index:40;
           background:#0a0a0b; color:white; border:none; border-radius:100px;
           padding:13px 22px; font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:.875rem;
           cursor:pointer; box-shadow:0 8px 32px rgba(0,0,0,.5); transition:transform .2s;
@@ -414,8 +513,6 @@ export default function ChatPanel({ user }) {
 
             {/* ══ SIDEBAR ══ */}
             <aside className={`cp-sidebar${view === "list" ? " mv" : ""}`}>
-
-              {/* Header */}
               <div style={{ padding:"18px 14px 12px", borderBottom:"1px solid rgba(255,255,255,.07)", flexShrink:0 }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
                   <div>
@@ -434,7 +531,6 @@ export default function ChatPanel({ user }) {
                 </button>
               </div>
 
-              {/* Nuova chat */}
               {showNewChat && (
                 <div style={{ margin:"10px 12px 0", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:18, padding:14, flexShrink:0 }}>
                   <p style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".12em", color:"rgba(255,255,255,.35)", marginBottom:10, fontFamily:"'Manrope',system-ui,sans-serif" }}>Scegli utente</p>
@@ -443,25 +539,22 @@ export default function ChatPanel({ user }) {
                     {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                   <button className="cp-start" disabled={!selectedUserId}
-                    onClick={() => {
-                      createOrOpenConversation({ participantUserId:Number(selectedUserId) });
-                    }}>
+                    onClick={() => createOrOpenConversation({ participantUserId:Number(selectedUserId) })}>
                     Avvia chat →
                   </button>
                 </div>
               )}
 
-              {/* Lista conversazioni */}
               <div className="cp-scroll" style={{ flex:1, overflowY:"auto", padding:"10px 10px 80px" }}>
                 {conversations.length === 0 ? (
                   <div style={{ textAlign:"center", padding:"48px 16px" }}>
                     <p style={{ fontSize:28, margin:"0 0 10px" }}>💬</p>
-                    <p style={{ fontSize:13, color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", lineHeight:1.6 }}>Nessuna conversazione.<br/>Inizia una nuova chat.</p>
+                    <p style={{ fontSize:13, color:"rgba(255,255,255,.3)", fontFamily:"'Manrope',system-ui,sans-serif", lineHeight:1.6 }}>Nessuna conversazione.</p>
                   </div>
                 ) : conversations.map(c => (
                   <ConvItem key={c.id} conv={c} isActive={c.id === selectedConvId && view === "chat"}
                     onClick={() => handleSelectConv(c.id)}
-                    myName={user?.name} onlineMap={onlineMap}
+                    myName={user?.name} onlineMap={onlineMap} usersMap={usersMap}
                   />
                 ))}
               </div>
@@ -470,19 +563,31 @@ export default function ChatPanel({ user }) {
             {/* ══ CHAT ══ */}
             <section className={`cp-main${view === "chat" ? " mv" : ""}`}>
 
-              {/* Header chat */}
+              {/* Header chat con foto + badge + stato */}
               <div style={{ padding:"14px 18px", borderBottom:"1px solid rgba(255,255,255,.07)", flexShrink:0, display:"flex", alignItems:"center", gap:10 }}>
                 <button className="cp-back" onClick={() => setView("list")}>← Indietro</button>
                 {selectedConv && otherName ? (
                   <>
-                    <Avatar name={otherName} size={40} orange={false} online={otherOnline} />
+                    <Avatar name={otherName} photo={otherUser?.photo} verified={otherUser?.verified} size={40} online={otherOnline} />
                     <div style={{ flex:1, minWidth:0 }}>
-                      <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:".95rem", color:"white", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", letterSpacing:"-.03em" }}>
-                        {otherName}
-                      </h3>
-                      <p style={{ fontSize:11, margin:"2px 0 0", fontFamily:"'Manrope',system-ui,sans-serif", color: otherOnline ? "#22c55e" : "rgba(255,255,255,.35)", fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
-                        {otherOnline && <span style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e", display:"inline-block" }} />}
-                        {otherLastSeen ? formatLastSeen(otherLastSeen) : "Realtime · Live"}
+                      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                        <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:".95rem", color:"white", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", letterSpacing:"-.03em" }}>
+                          {otherName}
+                        </h3>
+                        {otherUser?.verified && <VerifiedBadge size={14} />}
+                      </div>
+                      <p style={{ fontSize:11, margin:"2px 0 0", fontFamily:"'Manrope',system-ui,sans-serif", color: isOtherTyping ? "#ff5a00" : otherOnline ? "#22c55e" : "rgba(255,255,255,.35)", fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
+                        {isOtherTyping ? (
+                          <>
+                            <span className="cp-dot" /><span className="cp-dot" /><span className="cp-dot" />
+                            <span style={{ marginLeft:4 }}>sta scrivendo</span>
+                          </>
+                        ) : (
+                          <>
+                            {otherOnline && <span style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e", display:"inline-block" }} />}
+                            {otherLastSeen ? formatLastSeen(otherLastSeen) : "Realtime · Live"}
+                          </>
+                        )}
                         {selectedConv.bookingId && <span style={{ marginLeft:8, color:"#ff5a00" }}>· Booking #{selectedConv.bookingId}</span>}
                       </p>
                     </div>
@@ -507,11 +612,20 @@ export default function ChatPanel({ user }) {
                   </div>
                 ) : (
                   <>
-                    {messages.map(m => (
-                      <Bubble key={m.id} msg={m} isMine={String(m.senderId) === String(user.id)} />
-                    ))}
+                    {messages.map(m => {
+                      const sender = usersMap[m.senderId];
+                      return (
+                        <Bubble key={m.id} msg={m}
+                          isMine={String(m.senderId) === String(user.id)}
+                          senderPhoto={sender?.photo}
+                          senderVerified={sender?.verified}
+                        />
+                      );
+                    })}
+                    {/* Sta scrivendo */}
+                    {isOtherTyping && <TypingIndicator name={otherName} />}
                     {isSending && (
-                      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:6, gap:8, alignItems:"flex-end" }}>
+                      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:6 }}>
                         <div style={{ background:"rgba(255,90,0,.25)", borderRadius:"18px 18px 4px 18px", padding:"10px 14px" }}>
                           <span className="cp-dot"/><span className="cp-dot"/><span className="cp-dot"/>
                         </div>
@@ -529,12 +643,9 @@ export default function ChatPanel({ user }) {
                   className="cp-input"
                   rows={1}
                   value={message}
-                  onChange={e => {
-                    setMessage(e.target.value);
-                    e.target.style.height = "auto";
-                    e.target.style.height = Math.min(e.target.scrollHeight, 110) + "px";
-                  }}
+                  onChange={handleInputChange}
                   onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(e); } }}
+                  onBlur={() => broadcastTyping(false)}
                   placeholder={selectedConvId ? "Scrivi… (Invio per inviare)" : "Seleziona una conversazione"}
                   disabled={!selectedConvId}
                 />
@@ -542,7 +653,6 @@ export default function ChatPanel({ user }) {
                   {isSending ? "…" : "↑"}
                 </button>
               </form>
-
             </section>
           </div>
         </div>

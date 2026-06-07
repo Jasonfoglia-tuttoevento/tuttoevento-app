@@ -7,10 +7,9 @@ export async function GET() {
   if (!user) return unauthorized();
 
   try {
-    // Esclude l'utente corrente dalla lista (preso dalla sessione, non dal body)
     const { data: users, error } = await supabaseAdmin
       .from("users")
-      .select("id, name, email, role")
+      .select("id, name, email, role, photo, verified")
       .neq("id", Number(user.id))
       .order("role", { ascending: true })
       .order("name", { ascending: true });
@@ -18,7 +17,14 @@ export async function GET() {
     if (error) return NextResponse.json({ error: "Errore caricamento utenti chat" }, { status: 500 });
 
     return NextResponse.json(
-      (users || []).map((u) => ({ id: u.id, name: u.name || "", email: u.email || "", role: u.role || "" }))
+      (users || []).map((u) => ({
+        id:       u.id,
+        name:     u.name     || "",
+        email:    u.email    || "",
+        role:     u.role     || "",
+        photo:    u.photo    || null,
+        verified: u.verified || false,
+      }))
     );
   } catch (e) {
     console.error("Errore API chat users:", e);

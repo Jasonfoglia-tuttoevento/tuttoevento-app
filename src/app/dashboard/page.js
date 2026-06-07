@@ -11,6 +11,7 @@ import PromoterArea  from "@/components/dashboard/PromoterArea";
 import AdminArea     from "@/components/dashboard/AdminArea";
 import ReferentArea  from "@/components/dashboard/ReferentArea";
 import AccountSettings from "@/components/dashboard/AccountSettings";
+import ChatPanel from "@/components/ChatPanel";
 
 // Booking views
 import ArtistBookings    from "@/components/dashboard/ArtistBookings";
@@ -186,6 +187,7 @@ export default function DashboardPage() {
   return (
     <DashboardShell user={user} activeTab={activeTab} onTabChange={setActiveTab}>
       {renderTab()}
+      <ChatPanel user={user} />
     </DashboardShell>
   );
 }
