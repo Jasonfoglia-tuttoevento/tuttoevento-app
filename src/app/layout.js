@@ -7,7 +7,13 @@ export const metadata = {
   description: "CRM all-in-one per organizer, artisti e promoter.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "TuttoEvento" },
-  icons: { apple: "/icons/icon-180x180.png" },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192x192.png", type: "image/png" },
+    ],
+    apple: "/icons/icon-180x180.png",
+  },
   openGraph: {
     title: "TuttoEvento — Il marketplace per artisti, locali e promoter",
     description: "Trova artisti per il tuo locale o fatti trovare dai locali giusti. Chat realtime, booking semplice, CRM completo. Gratis per iniziare.",
@@ -31,6 +37,7 @@ export default function RootLayout({ children }) {
       <head>
         {/* Favicon */}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/favicon.svg" />
         <link rel="alternate icon" href="/icons/icon-192x192.png" />
 
         {/* Font globali */}
