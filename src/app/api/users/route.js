@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const { data: users, error } = await supabaseAdmin
       .from("users")
-      .select("id, name, email, role, business_mode, referent_id, created_at")
+      .select("id, name, email, role, business_mode, referent_id, created_at, plan, verified")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -20,13 +20,15 @@ export async function GET() {
 
     return NextResponse.json(
       (users || []).map((u) => ({
-        id: u.id,
-        name: u.name || "",
-        email: u.email || "",
-        role: u.role || "other",
+        id:           u.id,
+        name:         u.name         || "",
+        email:        u.email        || "",
+        role:         u.role         || "other",
         businessMode: u.business_mode || "both",
-        referentId: u.referent_id || null,
-        createdAt: u.created_at || null,
+        referentId:   u.referent_id  || null,
+        createdAt:    u.created_at   || null,
+        plan:         u.plan         || "free",
+        verified:     u.verified     || false,
       }))
     );
   } catch (e) {

@@ -1,4 +1,5 @@
 "use client";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 import { useState, useEffect } from "react";
 

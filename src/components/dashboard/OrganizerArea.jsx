@@ -1,4 +1,5 @@
 "use client";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 import { useState, useEffect } from "react";
 
@@ -146,7 +147,10 @@ function TabMarketplace({ artists, plan, onContact }) {
               {a.photo && <img src={a.photo} alt={a.stageName || a.name} style={{ width: "100%", height: 140, objectFit: "cover" }} />}
               <div style={{ padding: "14px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, margin: 0 }}>{a.stageName || a.name}</p>
+                  <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                <p style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, margin: 0 }}>{a.stageName || a.name}</p>
+                {a.verified && <VerifiedBadge size={15} />}
+              </div>
                 </div>
                 <p style={{ fontSize: 12, color: ORANGE, fontWeight: 700, margin: "0 0 4px" }}>{a.musicGenres || a.genres || "—"}</p>
                 <p style={{ fontSize: 12, color: MUTED, margin: "0 0 12px" }}>📍 {a.city || "Italia"}</p>

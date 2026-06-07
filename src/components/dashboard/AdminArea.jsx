@@ -1,4 +1,5 @@
 "use client";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 import { useMemo, useState, useEffect } from "react";
 import { aggregate, financials } from "./commissions";
@@ -438,7 +439,10 @@ function SectionUsers({ users }) {
             {/* Info */}
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-                <p style={{ fontWeight:700, fontSize:14, margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.name||"—"}</p>
+                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                  <p style={{ fontWeight:700, fontSize:14, margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.name||"—"}</p>
+                  {u.verified && <VerifiedBadge size={15} />}
+                </div>
                 <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:100, background:`${ROLE_COLORS[u.role]||"#6b7280"}15`, color:ROLE_COLORS[u.role]||"#6b7280" }}>
                   {ROLE_LABELS[u.role]||u.role}
                 </span>
@@ -467,10 +471,22 @@ function SectionUsers({ users }) {
                   </button>
                 </>
               ) : (
-                <button onClick={()=>{ setEditingId(u.id); setEditPlan(u.plan||"free"); }}
-                  style={{ background:"none", border:"1px solid rgba(0,0,0,.1)", borderRadius:100, padding:"6px 14px", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"inherit", color:"#6b6b73" }}>
-                  Modifica piano
-                </button>
+                <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                  {!u.verified && (u.role==="artist"||u.role==="organizer"||u.role==="promoter") && (
+                    <button onClick={async()=>{
+                      const res = await fetch("/api/admin/user-plan",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:u.id,verified:true})});
+                      if(res.ok) setMsg("✓ Utente verificato");
+                    }}
+                      style={{ background:"#1877F2", color:"white", border:"none", borderRadius:100, padding:"6px 14px", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"inherit", display:"flex", alignItems:"center", gap:5 }}>
+                      <VerifiedBadge size={13} /> Verifica
+                    </button>
+                  )}
+                  {u.verified && <VerifiedBadge size={18} />}
+                  <button onClick={()=>{ setEditingId(u.id); setEditPlan(u.plan||"free"); }}
+                    style={{ background:"none", border:"1px solid rgba(0,0,0,.1)", borderRadius:100, padding:"6px 14px", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"inherit", color:"#6b6b73" }}>
+                    Piano
+                  </button>
+                </div>
               )}
             </div>
           </div>
