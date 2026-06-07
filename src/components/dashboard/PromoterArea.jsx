@@ -1,4 +1,5 @@
 "use client";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 import { useMemo, useState, useEffect } from "react";
 
@@ -125,13 +126,26 @@ function TabOverview({ currentUser, bookings, portfolio, contactRequests, plan, 
               Gestisci il tuo roster, monitora le trattative e guadagna commissioni sui booking.
             </p>
           </div>
-          <div style={{ background: plan==="pro"?`${ORANGE}10`:"#fbfaf8", border:`1px solid ${plan==="pro"?`${ORANGE}25`:"rgba(0,0,0,.1)"}`, borderRadius:100, padding:"8px 16px", display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ fontSize:14 }}>{plan==="pro"?"⭐":"🆓"}</span>
-            <span style={{ fontSize:13, fontWeight:700, color:plan==="pro"?ORANGE:MUTED, fontFamily:"'Manrope',system-ui,sans-serif" }}>
-              Piano {plan==="pro"?"Pro":"Free"}
+          <a href="/pricing" style={{ textDecoration:"none", display:"flex", alignItems:"center", gap:10,
+            background: plan==="pro" ? `${ORANGE}10` : "white",
+            border: `1px solid ${plan==="pro" ? `${ORANGE}25` : "rgba(0,0,0,.1)"}`,
+            borderRadius:100, padding:"9px 18px", transition:"all .2s",
+            boxShadow:"0 1px 4px rgba(0,0,0,.06)"
+          }}>
+            <span style={{ width:8, height:8, borderRadius:"50%", background: plan==="pro" ? ORANGE : "#6b6b73", display:"inline-block", flexShrink:0 }} />
+            <span style={{ fontSize:13, fontWeight:700, color: plan==="pro" ? ORANGE : INK, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+              Piano {plan==="pro" ? "Pro" : "Free"}
             </span>
-            {plan==="free" && <span style={{ fontSize:11, fontWeight:800, color:ORANGE, marginLeft:4 }}>→ €19,90/mese</span>}
-          </div>
+            {plan==="free" && (
+              <span style={{ fontSize:12, fontWeight:700, color:ORANGE, display:"flex", alignItems:"center", gap:3 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                Upgrade
+              </span>
+            )}
+            {plan==="pro" && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            )}
+          </a>
         </div>
       </Card>
 
@@ -631,7 +645,7 @@ function TabAgenzia({ currentUser, portfolio, plan }) {
               <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:18, color:"white", margin:0 }}>{agencyName||"Nome agenzia"}</p>
               <p style={{ fontSize:12, color:"rgba(255,255,255,.45)", margin:"3px 0 0" }}>
                 {portfolioArtists.length} artisti · Promoter
-                {isPro && <span style={{ marginLeft:8, background:ORANGE, color:"white", borderRadius:100, padding:"1px 8px", fontSize:10, fontWeight:800 }}>✓ Verificato</span>}
+                {isPro && <VerifiedBadge size={16} style={{ marginLeft:8 }} />}
               </p>
             </div>
           </div>
