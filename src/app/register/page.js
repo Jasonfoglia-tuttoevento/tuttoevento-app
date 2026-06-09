@@ -81,6 +81,8 @@ function RegisterForm() {
   const [loading, setLoading]     = useState(false);
   const [step, setStep]           = useState(1);
   const [showPwd, setShowPwd]     = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState(false);
 
   // ── REFERRAL ──────────────────────────────────────────────
   const [referralCode, setReferralCode]   = useState("");
@@ -99,9 +101,10 @@ function RegisterForm() {
 
   async function handleRegister(e) {
     e.preventDefault();
-    if (!termsAccepted) { alert("Devi accettare i termini e condizioni"); return; }
-    const pwErrors = validatePassword(password);
-    if (pwErrors.length > 0) { alert("Password: " + pwErrors[0]); return; }
+    setFormError("");
+    if (!termsAccepted) { setFormError("Devi accettare i termini e condizioni."); return; }
+    const pwErrs = validatePassword(password);
+    if (pwErrs.length > 0) { setFormError("Password: " + pwErrs[0]); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/register", {
@@ -109,14 +112,14 @@ function RegisterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name, email, password, role, businessMode, termsAccepted,
-          referralCode: referralCode || undefined,  // ← REFERRAL
+          referralCode: referralCode || undefined,
         }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Errore registrazione"); return; }
-      alert("Registrazione completata! Controlla la tua email.");
-      router.push("/login");
-    } catch { alert("Errore tecnico"); }
+      if (!res.ok) { setFormError(data.error || "Errore durante la registrazione."); setLoading(false); return; }
+      setFormSuccess(true);
+      setTimeout(() => router.push("/login"), 2500);
+    } catch { setFormError("Errore di rete. Riprova."); }
     finally { setLoading(false); }
   }
 
@@ -270,7 +273,12 @@ function RegisterForm() {
                       </>
                     )}
                   </div>
-                  <button className="reg-btn-primary" disabled={!canGoStep2} onClick={() => setStep(2)}>
+                  {formError && step === 1 && (
+                    <div style={{ background:"rgba(220,38,38,.1)", border:"1px solid rgba(220,38,38,.25)", borderRadius:14, padding:"10px 14px", fontSize:13, color:"#fca5a5", fontWeight:600, marginBottom:4 }}>
+                      {formError}
+                    </div>
+                  )}
+                  <button className="reg-btn-primary" disabled={!canGoStep2} onClick={() => { setFormError(""); setStep(2); }}>
                     Continua →
                   </button>
                   <div className="reg-login-link">Hai già un account? <Link href="/login">Accedi</Link></div>
@@ -340,7 +348,17 @@ function RegisterForm() {
                       di TuttoEvento.
                     </label>
                   </div>
-                  <button type="submit" className="reg-btn-primary" disabled={loading||!termsAccepted}>
+                  {formError && (
+                    <div style={{ background:"rgba(220,38,38,.1)", border:"1px solid rgba(220,38,38,.25)", borderRadius:14, padding:"10px 14px", fontSize:13, color:"#fca5a5", fontWeight:600, marginBottom:4 }}>
+                      {formError}
+                    </div>
+                  )}
+                  {formSuccess && (
+                    <div style={{ background:"rgba(22,163,74,.1)", border:"1px solid rgba(22,163,74,.25)", borderRadius:14, padding:"10px 14px", fontSize:13, color:"#86efac", fontWeight:600, marginBottom:4 }}>
+                      ✓ Account creato! Reindirizzamento al login...
+                    </div>
+                  )}
+                  <button type="submit" className="reg-btn-primary" disabled={loading||!termsAccepted||formSuccess}>
                     {loading ? <><span className="reg-spinner"/>Creazione account...</> : "🎉 Crea account gratis"}
                   </button>
                   <button type="button" className="reg-btn-secondary" onClick={() => setStep(2)}>← Indietro</button>

@@ -27,6 +27,7 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
   const [loading, setLoad]    = useState(false);
   const [msg, setMsg]         = useState("");
   const [done, setDone]       = useState(false);
+  const [showPw, setShowPw]   = useState(false);
 
   function validatePassword(pw) {
     const errors = [];
@@ -131,12 +132,42 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
             onChange={e => setName(e.target.value)} onFocus={focusIn} onBlur={focusOut} />
           <input style={inp} type="email" placeholder="Email *" value={email}
             onChange={e => setEmail(e.target.value)} onFocus={focusIn} onBlur={focusOut} />
-          <input style={inp} type="password" placeholder="Password *" value={password}
-            onChange={e => setPass(e.target.value)} onFocus={focusIn} onBlur={focusOut} />
+          <div style={{ position:"relative" }}>
+            <input style={{ ...inp, paddingRight:44 }} type={showPw ? "text" : "password"}
+              placeholder="Password *" value={password}
+              onChange={e => setPass(e.target.value)} onFocus={focusIn} onBlur={focusOut} />
+            <button type="button" onClick={() => setShowPw(p=>!p)}
+              style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", fontSize:13, fontWeight:700, color:mutedC, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+              {showPw ? "Nascondi" : "Mostra"}
+            </button>
+          </div>
+          {password.length > 0 && (() => {
+            const errs = validatePassword(password);
+            const score = 4 - errs.length;
+            const colors = ["#dc2626","#f97316","#eab308","#16a34a"];
+            const labels = ["Troppo debole","Debole","Buona","Ottima"];
+            return (
+              <div style={{ marginTop:-4 }}>
+                <div style={{ display:"flex", gap:3, marginBottom:3 }}>
+                  {[0,1,2,3].map(i => (
+                    <div key={i} style={{ flex:1, height:3, borderRadius:2,
+                      background: i < score ? colors[score-1] : "rgba(255,255,255,.15)",
+                      transition:"background .2s" }} />
+                  ))}
+                </div>
+                <p style={{ fontSize:11, color: score>0 ? colors[score-1] : mutedC, fontWeight:700, margin:0 }}>
+                  {score > 0 ? labels[score-1] : ""}
+                  {errs.length > 0 && score < 4 && <span style={{ color:mutedC, fontWeight:400 }}> · {errs[0]}</span>}
+                </p>
+              </div>
+            );
+          })()}
 
           <button type="button"
             onClick={() => {
               if (!name || !email || !password) { setMsg("Compila tutti i campi obbligatori."); return; }
+              const pwErrs2 = validatePassword(password);
+              if (pwErrs2.length > 0) { setMsg("Password: " + pwErrs2[0]); return; }
               setMsg(""); setStep(2);
             }}
             style={{
