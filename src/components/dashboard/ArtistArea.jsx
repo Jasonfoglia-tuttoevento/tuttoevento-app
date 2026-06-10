@@ -1,6 +1,6 @@
 "use client";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 /* ─── Design tokens ──────────────────────────────────────────── */
 const O  = "#ff5a00";   // orange
@@ -266,6 +266,23 @@ function TabProfilo({
 
 /* ─── Tab: Cachet ────────────────────────────────────────────── */
 function TabCachet({ pricing={}, setPricing, eventTypes=[], saveArtistProfile, artistMessage }) {
+  const [approvalStatus, setApprovalStatus] = useState(null); // null | pending | approved | rejected
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [approvalMsg, setApprovalMsg]         = useState("");
+  const [publicPricing, setPublicPricing]     = useState(null);
+
+  // Carica stato approvazione
+  useEffect(() => {
+    fetch("/api/pricing-approval")
+      .then(r=>r.json())
+      .then(d=>{
+        if (!Array.isArray(d) || d.length===0) return;
+        const latest = d[0];
+        setApprovalStatus(latest.status);
+        if (latest.public_pricing) setPublicPricing(latest.public_pricing);
+      }).catch(()=>{});
+  }, []);
+
   const safeEvents = Array.isArray(eventTypes) && eventTypes.length > 0
     ? eventTypes
     : ["Serata in club","Concerto","Evento privato","Festival"];
@@ -273,45 +290,76 @@ function TabCachet({ pricing={}, setPricing, eventTypes=[], saveArtistProfile, a
   function getPrice(eventType, duration) {
     return (pricing?.[eventType]?.[duration]) || "";
   }
-
   function setPrice(eventType, duration, value) {
     setPricing(prev => ({
       ...prev,
-      [eventType]: {
-        ...(prev?.[eventType] || {}),
-        [duration]: value,
-      },
+      [eventType]: { ...(prev?.[eventType]||{}), [duration]: value },
     }));
   }
 
+  async function handleSaveAndRequest(e) {
+    e.preventDefault();
+    // Prima salva il profilo artista
+    await saveArtistProfile(e);
+    // Poi invia la richiesta di approvazione
+    setApprovalLoading(true);
+    setApprovalMsg("");
+    const res = await fetch("/api/pricing-approval", {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ pricing }),
+    });
+    const d = await res.json();
+    if (!res.ok) {
+      setApprovalMsg(d.error || "Errore invio");
+    } else {
+      setApprovalStatus("pending");
+      setApprovalMsg("✓ Richiesta inviata — in attesa di approvazione");
+    }
+    setApprovalLoading(false);
+  }
+
+  const STATUS_CONFIG = {
+    pending:  { label:"In attesa di approvazione", color:"#f59e0b", bg:"rgba(245,158,11,.1)", border:"rgba(245,158,11,.25)" },
+    approved: { label:"Prezzi approvati ✓",         color:"#4ade80", bg:"rgba(74,222,128,.1)", border:"rgba(74,222,128,.25)" },
+    rejected: { label:"Richiesta rifiutata",         color:"#f87171", bg:"rgba(248,113,113,.1)", border:"rgba(248,113,113,.25)" },
+  };
+  const sc = approvalStatus ? STATUS_CONFIG[approvalStatus] : null;
+
   return (
-    <form onSubmit={saveArtistProfile} style={{ display:"flex", flexDirection:"column", gap:14 }}>
+    <form onSubmit={handleSaveAndRequest} style={{ display:"flex", flexDirection:"column", gap:14 }}>
+
+      {/* Badge stato approvazione */}
+      {sc && (
+        <div style={{ background:sc.bg, border:`1px solid ${sc.border}`, borderRadius:14, padding:"12px 16px", display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:8, height:8, borderRadius:"50%", background:sc.color, flexShrink:0 }} />
+          <p style={{ fontSize:13, fontWeight:700, color:sc.color, margin:0 }}>{sc.label}</p>
+          {approvalStatus==="rejected" && (
+            <p style={{ fontSize:12, color:MUTED, margin:0, marginLeft:8 }}>Modifica i prezzi e invia di nuovo.</p>
+          )}
+        </div>
+      )}
 
       <DCard>
         <STitle sub="Imposta il tuo cachet netto per ogni combinazione evento × durata">
-          Listino prezzi
+          Listino prezzi (cachet netto)
         </STitle>
         <p style={{ fontSize:12, color:MUTED, margin:"0 0 18px", lineHeight:1.6 }}>
-          Lascia vuoto se non sei disponibile per quella combinazione. I prezzi non sono visibili ai locali — servono al team TuttoEvento per gestire le trattative.
+          I prezzi che inserisci sono il tuo <strong style={{color:W}}>cachet netto privato</strong> — non visibili ai locali. Il team TuttoEvento li usa per definire il prezzo pubblico nel marketplace. Una volta approvati, verranno pubblicati.
         </p>
 
-        {/* Tabella cachet */}
         <div style={{ overflowX:"auto" }}>
           <table style={{ width:"100%", borderCollapse:"separate", borderSpacing:"0 6px", fontSize:13 }}>
             <thead>
               <tr>
-                <th style={{ textAlign:"left", padding:"0 12px 8px 0", fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", whiteSpace:"nowrap" }}>
-                  Tipo evento
-                </th>
+                <th style={{ textAlign:"left", padding:"0 12px 8px 0", fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", whiteSpace:"nowrap" }}>Tipo evento</th>
                 {DURATIONS.map(d => (
-                  <th key={d.key} style={{ textAlign:"center", padding:"0 6px 8px", fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", whiteSpace:"nowrap" }}>
-                    {d.label}
-                  </th>
+                  <th key={d.key} style={{ textAlign:"center", padding:"0 6px 8px", fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", whiteSpace:"nowrap" }}>{d.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {safeEvents.map((ev, i) => (
+              {safeEvents.map(ev => (
                 <tr key={ev}>
                   <td style={{ padding:"6px 12px 6px 0", whiteSpace:"nowrap" }}>
                     <span style={{ fontSize:13, fontWeight:700, color:W }}>{ev}</span>
@@ -320,12 +368,10 @@ function TabCachet({ pricing={}, setPricing, eventTypes=[], saveArtistProfile, a
                     <td key={d.key} style={{ padding:"4px 6px" }}>
                       <div style={{ position:"relative" }}>
                         <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:13, color:MUTED, fontWeight:700, pointerEvents:"none" }}>€</span>
-                        <input
-                          type="number" min="0" placeholder="—"
+                        <input type="number" min="0" placeholder="—"
                           value={getPrice(ev, d.key)}
-                          onChange={e => setPrice(ev, d.key, e.target.value)}
-                          style={{ ...inp, paddingLeft:24, textAlign:"right", width:90 }}
-                        />
+                          onChange={e=>setPrice(ev, d.key, e.target.value)}
+                          style={{ ...inp, paddingLeft:24, textAlign:"right", width:90 }} />
                       </div>
                     </td>
                   ))}
@@ -335,17 +381,40 @@ function TabCachet({ pricing={}, setPricing, eventTypes=[], saveArtistProfile, a
           </table>
         </div>
 
-        {/* Nota */}
+        {/* Prezzi pubblici approvati */}
+        {approvalStatus==="approved" && publicPricing && (
+          <div style={{ marginTop:18, background:"rgba(74,222,128,.06)", border:"1px solid rgba(74,222,128,.2)", borderRadius:14, padding:"14px 16px" }}>
+            <p style={{ fontSize:12, fontWeight:700, color:"#4ade80", margin:"0 0 10px", textTransform:"uppercase", letterSpacing:".1em" }}>Prezzi pubblici approvati (visibili ai locali)</p>
+            {Object.entries(publicPricing).map(([ev, durations])=>(
+              <div key={ev} style={{ marginBottom:8 }}>
+                <p style={{ fontSize:12, fontWeight:700, color:W, margin:"0 0 4px" }}>{ev}</p>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                  {Object.entries(durations||{}).map(([dur,price])=>price?(
+                    <span key={dur} style={{ fontSize:12, color:"#4ade80", background:"rgba(74,222,128,.1)", borderRadius:8, padding:"3px 10px", fontWeight:700 }}>
+                      {DURATIONS.find(d=>d.key===dur)?.label||dur}: €{price}
+                    </span>
+                  ):null)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div style={{ marginTop:16, background:"rgba(255,255,255,.04)", borderRadius:12, padding:"10px 14px", fontSize:12, color:MUTED, lineHeight:1.6 }}>
-          💡 Puoi aggiungere più tipi di evento nella tab <strong style={{ color:W }}>Profilo</strong> — seleziona i tuoi tipi di evento e poi torna qui per impostare i prezzi.
+          💡 Aggiungi i tipi di evento nella tab <strong style={{ color:W }}>Profilo</strong> — i tipi selezionati appariranno qui.
         </div>
       </DCard>
 
-      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-        <button type="submit" style={{ background:O, color:W, border:"none", borderRadius:100, padding:"12px 28px", fontWeight:800, fontSize:14, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif", boxShadow:`0 8px 24px ${O}40` }}>
-          Salva listino
+      <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
+        <button type="submit" disabled={approvalLoading || approvalStatus==="pending"}
+          style={{ background: approvalStatus==="pending"?"rgba(255,255,255,.1)":O, color:W, border:"none", borderRadius:100, padding:"12px 28px", fontWeight:800, fontSize:14, cursor:approvalStatus==="pending"?"not-allowed":"pointer", fontFamily:"'Manrope',system-ui,sans-serif", boxShadow:approvalStatus==="pending"?"none":`0 8px 24px ${O}40`, opacity:approvalStatus==="pending"?.6:1, transition:"all .2s" }}>
+          {approvalLoading ? "Invio..." : approvalStatus==="pending" ? "⏳ In attesa di approvazione" : approvalStatus==="approved" ? "Aggiorna listino" : "Salva e invia per approvazione →"}
         </button>
-        {artistMessage && <p style={{ fontSize:13, fontWeight:700, color:artistMessage.includes("Errore")?"#f87171":"#4ade80", margin:0 }}>{artistMessage}</p>}
+        {(artistMessage||approvalMsg) && (
+          <p style={{ fontSize:13, fontWeight:700, color:(artistMessage||approvalMsg).includes("Errore")?"#f87171":"#4ade80", margin:0 }}>
+            {approvalMsg||artistMessage}
+          </p>
+        )}
       </div>
     </form>
   );

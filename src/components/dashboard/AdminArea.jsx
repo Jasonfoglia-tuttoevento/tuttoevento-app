@@ -1,4 +1,5 @@
 "use client";
+import AdminPricingApprovals from "@/components/dashboard/AdminPricingApprovals";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
 import { useMemo, useState, useEffect } from "react";
