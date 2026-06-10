@@ -327,6 +327,112 @@ function KpiCard({ label, value, accent=false, orange=false }) {
   );
 }
 
+
+/* ─────────────────────────────────────────────────────────────────
+   GENERE MULTISELECT — dropdown con checkbox, senza emoji
+───────────────────────────────────────────────────────────────── */
+function GenreMultiSelect({ selected=[], onToggle, isPro }) {
+  const [open, setOpen] = useState(false);
+  const safe = Array.isArray(selected) ? selected : [];
+  const maxReached = !isPro && safe.length >= 3;
+
+  return (
+    <div style={{ position:"relative" }}>
+      {/* Trigger */}
+      <button type="button" onClick={()=>setOpen(p=>!p)}
+        style={{
+          width:"100%", background:"#fbfaf8", border:`1px solid ${open?"rgba(255,90,0,.45)":"rgba(0,0,0,.1)"}`,
+          borderRadius:12, padding:"10px 14px", fontSize:13, color:INK,
+          fontFamily:"'Manrope',system-ui,sans-serif", cursor:"pointer", textAlign:"left",
+          display:"flex", alignItems:"center", justifyContent:"space-between", gap:8,
+          boxShadow: open?"0 0 0 3px rgba(255,90,0,.08)":"none", transition:"all .15s",
+        }}>
+        <span style={{ color: safe.length>0?INK:MUTED }}>
+          {safe.length===0 ? "Seleziona i tuoi generi..." :
+           safe.length===1 ? safe[0] :
+           `${safe[0]} +${safe.length-1} altri`}
+        </span>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {safe.length>0 && (
+            <span style={{ fontSize:11, fontWeight:700, color:"white", background:O, borderRadius:100, padding:"1px 8px", minWidth:20, textAlign:"center" }}>
+              {safe.length}
+            </span>
+          )}
+          <svg width="12" height="12" viewBox="0 0 12 12" style={{ transform:open?"rotate(180deg)":"none", transition:"transform .2s", flexShrink:0 }}>
+            <path d="M2 4l4 4 4-4" stroke={MUTED} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          </svg>
+        </div>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div style={{
+          position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:50,
+          background:"white", border:`1px solid rgba(0,0,0,.1)`, borderRadius:14,
+          boxShadow:"0 8px 24px rgba(0,0,0,.1)", maxHeight:280, overflowY:"auto",
+          animation:"te-slide-down .15s ease",
+        }}>
+          <style>{`@keyframes te-slide-down{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+          {MUSIC_GENRES.map(g => {
+            const isActive  = safe.includes(g);
+            const isDisabled = maxReached && !isActive;
+            return (
+              <button key={g} type="button"
+                onClick={()=>{ if(!isDisabled){ onToggle(g); } }}
+                style={{
+                  width:"100%", display:"flex", alignItems:"center", gap:10,
+                  padding:"9px 14px", background:"none", border:"none",
+                  cursor:isDisabled?"not-allowed":"pointer",
+                  borderBottom:"1px solid rgba(0,0,0,.04)",
+                  opacity:isDisabled?.4:1, transition:"background .1s",
+                  fontFamily:"'Manrope',system-ui,sans-serif",
+                }}>
+                {/* Checkbox custom */}
+                <div style={{
+                  width:16, height:16, borderRadius:4, flexShrink:0,
+                  border:`1.5px solid ${isActive?O:"rgba(0,0,0,.2)"}`,
+                  background:isActive?O:"white",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  transition:"all .15s",
+                }}>
+                  {isActive && (
+                    <svg width="9" height="9" viewBox="0 0 10 10">
+                      <polyline points="1,5 4,8 9,2" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontSize:13, fontWeight:isActive?700:400, color:isActive?INK:MUTED }}>
+                  {g}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Overlay per chiudere */}
+      {open && (
+        <div style={{ position:"fixed", inset:0, zIndex:49 }} onClick={()=>setOpen(false)} />
+      )}
+
+      {/* Tag selezionati sotto */}
+      {safe.length>0 && (
+        <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:8 }}>
+          {safe.map(g=>(
+            <span key={g} style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:12, fontWeight:700, color:O, background:`${O}10`, border:`1px solid ${O}25`, borderRadius:100, padding:"3px 10px" }}>
+              {g}
+              <button type="button" onClick={()=>onToggle(g)}
+                style={{ background:"none", border:"none", cursor:"pointer", color:O, fontSize:13, lineHeight:1, padding:0, display:"flex", alignItems:"center" }}>
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────────
    TAB: PROFILO
 ───────────────────────────────────────────────────────────────── */
@@ -383,24 +489,12 @@ function TabProfilo({
         </div>
       </SCard>
 
-      {/* Generi */}
+      {/* Generi — dropdown multiselect */}
       <SCard>
-        <STitle sub={isPro?"Seleziona tutti i generi":"Max 3 con Free — illimitati con PRO"}>
+        <STitle sub={isPro?"Tutti i generi che suoni":"Max 3 con Free — illimitati con PRO"}>
           Generi musicali {!isPro && <ProBadge />}
         </STitle>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:safeGenres.length>0?10:0 }}>
-          {MUSIC_GENRES.map(g=>(
-            <Chip key={g} label={g} active={safeGenres.includes(g)} onClick={()=>toggleGenre(g)} />
-          ))}
-        </div>
-        {safeGenres.length > 0 && (
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:10, paddingTop:10, borderTop:`1px solid ${BORDER}` }}>
-            <span style={{ fontSize:11, color:MUTED, fontWeight:600 }}>Selezionati:</span>
-            {safeGenres.map(g=>(
-              <span key={g} style={{ fontSize:11, fontWeight:700, color:O, background:`${O}10`, borderRadius:100, padding:"2px 10px" }}>{g}</span>
-            ))}
-          </div>
-        )}
+        <GenreMultiSelect selected={safeGenres} onToggle={toggleGenre} isPro={isPro} />
         {!isPro && safeGenres.length>=3 && <ProLock feature="Più di 3 generi" plan={plan} />}
       </SCard>
 
@@ -930,12 +1024,8 @@ const GLOBAL_CSS = `
     filter: brightness(1.08);
     transform: translateY(-1px);
   }
-  .artist-tab-btn:hover { background: rgba(0,0,0,.05) !important; }
-  .artist-tab-btn.active { background: #0a0a0b !important; color: white !important; }
   @media(max-width:600px) {
     #artist-area { gap: 10px !important; }
-    .artist-tabbar { gap: 4px !important; }
-    .artist-tab-btn { padding: 6px 12px !important; font-size: 12px !important; }
   }
 `;
 
@@ -1000,38 +1090,7 @@ export default function ArtistArea(props) {
     <div id="artist-area" style={{ fontFamily:"'Manrope',system-ui,sans-serif", color:INK, display:"flex", flexDirection:"column", gap:16, paddingBottom: onboardStep!==null ? 120 : 0 }}>
       <style>{GLOBAL_CSS}</style>
 
-      {/* Tab bar */}
-      <div className="artist-tabbar" style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:2, scrollbarWidth:"none", alignItems:"center" }}>
-        {TABS.map(t => (
-          <button key={t.key}
-            onClick={()=>handleTabChange(t.key)}
-            className={`artist-tab-btn${tab===t.key?" active":""}`}
-            style={{
-              padding:"8px 16px", borderRadius:100, fontWeight:700, fontSize:13,
-              cursor:"pointer", whiteSpace:"nowrap", fontFamily:"'Manrope',system-ui,sans-serif",
-              border:`1px solid ${BORDER}`,
-              background: tab===t.key ? INK : "white",
-              color: tab===t.key ? "white" : MUTED,
-              transition:"all .2s",
-              display:"flex", alignItems:"center", gap:5,
-              // Highlight se l'onboarding punta a questa tab
-              boxShadow: onboardStep!==null && ONBOARDING_STEPS_ARTIST[onboardStep]?.tabToPoint===t.key
-                ? `0 0 0 3px rgba(255,90,0,.35), 0 0 0 5px rgba(255,90,0,.1)`
-                : "none",
-            }}>
-            <span style={{ fontSize:14 }}>{t.icon}</span>{t.label}
-          </button>
-        ))}
-
-        <a href="/pricing" style={{
-          marginLeft:"auto", padding:"7px 14px", borderRadius:100, fontWeight:700, fontSize:12,
-          whiteSpace:"nowrap", fontFamily:"'Manrope',system-ui,sans-serif",
-          border:`1px solid rgba(255,90,0,.3)`, background:"rgba(255,90,0,.06)",
-          color:O, textDecoration:"none", display:"flex", alignItems:"center", gap:4, flexShrink:0,
-        }}>
-          {plan==="pro" ? "✓ Pro" : "Free →"}
-        </a>
-      </div>
+      {/* navigazione gestita dal DashboardShell */}
 
       {/* Contenuto tab */}
       {tab==="mediakit"   && <TabProfilo    plan={plan} highlightCard={highlightCard} stageName={p.stageName} setStageName={p.setStageName} artistType={p.artistType} setArtistType={p.setArtistType} bio={p.bio} setBio={p.setBio} city={p.city} setCity={p.setCity} musicGenres={p.musicGenres} setMusicGenres={p.setMusicGenres} eventTypes={p.eventTypes} setEventTypes={p.setEventTypes} photo={p.photo} setPhoto={p.setPhoto} instagram={p.instagram} setInstagram={p.setInstagram} spotify={p.spotify} setSpotify={p.setSpotify} youtube={p.youtube} setYoutube={p.setYoutube} soundcloud={p.soundcloud} setSoundcloud={p.setSoundcloud} tiktok={p.tiktok} setTiktok={p.setTiktok} rider={p.rider} setRider={p.setRider} saveArtistProfile={p.saveArtistProfile} artistMessage={p.artistMessage} />}
