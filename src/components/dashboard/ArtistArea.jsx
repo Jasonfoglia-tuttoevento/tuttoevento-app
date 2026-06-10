@@ -1,6 +1,6 @@
 "use client";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS — stile Spotify (bianco/grigio chiaro + arancione)
@@ -328,6 +328,284 @@ function KpiCard({ label, value, accent=false, orange=false }) {
 }
 
 
+
+/* ─────────────────────────────────────────────────────────────────
+   PHOTO UPLOADER — foto profilo con camera/galleria/PDF
+───────────────────────────────────────────────────────────────── */
+function PhotoUploader({ photo, onPhotoChange }) {
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+  const [preview, setPreview]   = useState(photo||"");
+  const fileRef                 = useRef(null);
+  const cameraRef               = useRef(null);
+
+  useEffect(() => { setPreview(photo||""); }, [photo]);
+
+  async function handleFile(file) {
+    if (!file) return;
+    setError(""); setLoading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/artist/upload-photo", { method:"POST", body:fd });
+      const d   = await res.json();
+      if (!res.ok) { setError(d.error||"Errore upload"); }
+      else { setPreview(d.url); onPhotoChange(d.url); }
+    } catch { setError("Errore di rete"); }
+    setLoading(false);
+  }
+
+  const initials = "?";
+
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
+      {/* Anteprima avatar */}
+      <div style={{ position:"relative", flexShrink:0 }}>
+        {preview ? (
+          <img src={preview} alt="Foto profilo"
+            style={{ width:80, height:80, borderRadius:16, objectFit:"cover", border:`2px solid ${BORDER}` }} />
+        ) : (
+          <div style={{ width:80, height:80, borderRadius:16, background:`${O}15`, border:`2px dashed ${O}40`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={O} strokeWidth="1.5" strokeLinecap="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+        )}
+        {loading && (
+          <div style={{ position:"absolute", inset:0, borderRadius:16, background:"rgba(255,255,255,.8)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <div style={{ width:20, height:20, border:`2px solid rgba(0,0,0,.1)`, borderTopColor:O, borderRadius:"50%", animation:"spin .7s linear infinite" }} />
+          </div>
+        )}
+      </div>
+
+      {/* Bottoni upload */}
+      <div style={{ display:"flex", flexDirection:"column", gap:8, flex:1 }}>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          {/* Scatta foto (camera — mobile) */}
+          <button type="button" onClick={()=>cameraRef.current?.click()}
+            style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 14px", borderRadius:100, background:"white", border:`1px solid ${BORDER}`, fontSize:12, fontWeight:700, color:INK, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Scatta foto
+          </button>
+          <input ref={cameraRef} type="file" accept="image/*" capture="user" style={{ display:"none" }}
+            onChange={e=>handleFile(e.target.files?.[0])} />
+
+          {/* Scegli dalla galleria / file */}
+          <button type="button" onClick={()=>fileRef.current?.click()}
+            style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 14px", borderRadius:100, background:"white", border:`1px solid ${BORDER}`, fontSize:12, fontWeight:700, color:INK, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9l4-4 4 4 4-4 4 4"/><path d="M3 15l4 4 4-4 4 4 4-4"/></svg>
+            Galleria / File
+          </button>
+          <input ref={fileRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+            style={{ display:"none" }} onChange={e=>handleFile(e.target.files?.[0])} />
+        </div>
+        <p style={{ fontSize:11, color:MUTED, margin:0 }}>JPG, PNG, WebP o PDF · max 10MB</p>
+        {error && <p style={{ fontSize:12, fontWeight:700, color:"#dc2626", margin:0 }}>{error}</p>}
+      </div>
+    </div>
+  );
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   VIDEO SHOWCASE — carica, mostra e rimuovi video MP4
+───────────────────────────────────────────────────────────────── */
+function VideoShowcase({ plan }) {
+  const isPro = plan === "pro";
+  const MAX_FREE = 2;
+
+  const [videos, setVideos]       = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress]   = useState(0);
+  const [error, setError]         = useState("");
+  const [title, setTitle]         = useState("");
+  const [playing, setPlaying]     = useState(null);
+  const fileRef                   = useRef(null);
+
+  useEffect(() => { loadVideos(); }, []);
+
+  async function loadVideos() {
+    setLoading(true);
+    const res = await fetch("/api/artist/upload-video");
+    const d   = await res.json();
+    setVideos(Array.isArray(d)?d:[]);
+    setLoading(false);
+  }
+
+  async function handleVideoFile(file) {
+    if (!file) return;
+    if (file.type !== "video/mp4") { setError("Solo file MP4 supportati."); return; }
+    if (file.size > 200*1024*1024) { setError("Video troppo grande. Massimo 200MB."); return; }
+    if (!isPro && videos.length >= MAX_FREE) {
+      setError(`Piano Free: massimo ${MAX_FREE} video.`); return;
+    }
+    setError(""); setUploading(true); setProgress(0);
+
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("title", title||file.name.replace(".mp4",""));
+
+    // Simulazione progresso (XHR per progresso reale)
+    const xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) setProgress(Math.round((e.loaded/e.total)*100));
+    };
+    xhr.onload = async () => {
+      setUploading(false); setProgress(0); setTitle("");
+      if (xhr.status === 200 || xhr.status === 201) {
+        await loadVideos();
+      } else {
+        try { const d = JSON.parse(xhr.responseText); setError(d.error||"Errore upload"); }
+        catch { setError("Errore upload"); }
+      }
+    };
+    xhr.onerror = () => { setUploading(false); setError("Errore di rete"); };
+    xhr.open("POST", "/api/artist/upload-video");
+    xhr.send(fd);
+  }
+
+  async function deleteVideo(id) {
+    if (!confirm("Eliminare questo video?")) return;
+    await fetch(`/api/artist/upload-video?id=${id}`, { method:"DELETE" });
+    setVideos(prev=>prev.filter(v=>v.id!==id));
+    if (playing===id) setPlaying(null);
+  }
+
+  function fmtSize(bytes) {
+    if (bytes > 1024*1024) return `${(bytes/1024/1024).toFixed(1)} MB`;
+    return `${Math.round(bytes/1024)} KB`;
+  }
+
+  const canUpload = isPro || videos.length < MAX_FREE;
+
+  return (
+    <SCard>
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:10, flexWrap:"wrap", marginBottom:16 }}>
+        <STitle sub={isPro?"Video illimitati":"Max 2 con Free — illimitati con PRO"}>
+          Video dimostrativi {!isPro && <ProBadge />}
+        </STitle>
+        {!isPro && (
+          <span style={{ fontSize:12, fontWeight:700, color:MUTED }}>
+            {videos.length}/{MAX_FREE}
+          </span>
+        )}
+      </div>
+
+      {/* Upload area */}
+      {canUpload && (
+        <div style={{ marginBottom:18 }}>
+          {/* Titolo video */}
+          <div style={{ marginBottom:8 }}>
+            <input type="text" value={title} onChange={e=>setTitle(e.target.value)}
+              placeholder="Titolo del video (opzionale)"
+              style={{ ...inp }} />
+          </div>
+
+          {/* Drop zone */}
+          <div
+            onClick={()=>!uploading&&fileRef.current?.click()}
+            style={{
+              border:`2px dashed ${uploading?"rgba(255,90,0,.4)":"rgba(0,0,0,.1)"}`,
+              borderRadius:16, padding:"24px 16px", textAlign:"center",
+              cursor:uploading?"not-allowed":"pointer", transition:"all .2s",
+              background:uploading?"rgba(255,90,0,.03)":"#fbfaf8",
+            }}>
+            <input ref={fileRef} type="file" accept="video/mp4" style={{ display:"none" }}
+              onChange={e=>handleVideoFile(e.target.files?.[0])} />
+
+            {uploading ? (
+              <div>
+                <div style={{ width:"100%", height:6, background:"rgba(0,0,0,.08)", borderRadius:3, overflow:"hidden", marginBottom:10 }}>
+                  <div style={{ width:`${progress}%`, height:"100%", background:O, borderRadius:3, transition:"width .3s" }} />
+                </div>
+                <p style={{ fontSize:13, fontWeight:700, color:O, margin:0 }}>Caricamento... {progress}%</p>
+                <p style={{ fontSize:11, color:MUTED, margin:"4px 0 0" }}>Non chiudere la pagina</p>
+              </div>
+            ) : (
+              <div>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="1.5" strokeLinecap="round" style={{ marginBottom:8 }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p style={{ fontSize:13, fontWeight:700, color:INK, margin:"0 0 4px" }}>Carica un video MP4</p>
+                <p style={{ fontSize:11, color:MUTED, margin:0 }}>Clicca o trascina · max 200MB · solo MP4</p>
+              </div>
+            )}
+          </div>
+
+          {error && <p style={{ fontSize:12, fontWeight:700, color:"#dc2626", margin:"8px 0 0" }}>{error}</p>}
+        </div>
+      )}
+
+      {!canUpload && !isPro && (
+        <ProLock feature={`Video illimitati (hai usato ${MAX_FREE}/${MAX_FREE} con Free)`} plan={plan} />
+      )}
+
+      {/* Lista video */}
+      {loading ? (
+        <p style={{ fontSize:13, color:MUTED }}>Caricamento...</p>
+      ) : videos.length===0 ? (
+        <div style={{ padding:"20px 0", textAlign:"center" }}>
+          <p style={{ fontSize:13, color:MUTED, margin:0 }}>Nessun video caricato.</p>
+          <p style={{ fontSize:12, color:"rgba(0,0,0,.25)", margin:"4px 0 0" }}>Carica un video per mostrare ai locali come suoni dal vivo.</p>
+        </div>
+      ) : (
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {videos.map(v=>(
+            <div key={v.id} style={{ background:"#fbfaf8", border:`1px solid ${BORDER}`, borderRadius:16, overflow:"hidden" }}>
+              {/* Player */}
+              {playing===v.id ? (
+                <video controls autoPlay style={{ width:"100%", display:"block", maxHeight:260, background:"#000" }}
+                  onEnded={()=>setPlaying(null)}>
+                  <source src={v.url} type="video/mp4" />
+                </video>
+              ) : (
+                <div style={{ position:"relative", background:"#0a0a0b", aspectRatio:"16/9", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}
+                  onClick={()=>setPlaying(v.id)}>
+                  {/* Thumbnail placeholder */}
+                  <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <div style={{ width:52, height:52, borderRadius:"50%", background:"rgba(255,255,255,.15)", display:"flex", alignItems:"center", justifyContent:"center", transition:"background .2s" }}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <span style={{ position:"absolute", bottom:8, right:10, fontSize:11, color:"rgba(255,255,255,.5)", fontWeight:600 }}>
+                    {fmtSize(v.size_bytes||0)}
+                  </span>
+                </div>
+              )}
+
+              {/* Info + azioni */}
+              <div style={{ padding:"10px 14px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+                <div style={{ minWidth:0 }}>
+                  <p style={{ fontWeight:700, fontSize:13, color:INK, margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v.title||"Video dimostrativo"}</p>
+                  <p style={{ fontSize:11, color:MUTED, margin:"2px 0 0" }}>
+                    {new Date(v.created_at).toLocaleDateString("it-IT",{day:"2-digit",month:"short",year:"numeric"})}
+                    {v.size_bytes ? ` · ${fmtSize(v.size_bytes)}` : ""}
+                  </p>
+                </div>
+                <div style={{ display:"flex", gap:6 }}>
+                  <button type="button" onClick={()=>setPlaying(playing===v.id?null:v.id)}
+                    style={{ padding:"6px 12px", borderRadius:100, border:`1px solid ${BORDER}`, background:"white", fontSize:12, fontWeight:700, color:INK, cursor:"pointer" }}>
+                    {playing===v.id ? "⏸ Pausa" : "▶ Play"}
+                  </button>
+                  <button type="button" onClick={()=>deleteVideo(v.id)}
+                    style={{ width:32, height:32, borderRadius:"50%", border:"1px solid rgba(220,38,38,.2)", background:"rgba(220,38,38,.06)", color:"#dc2626", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700 }}>
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </SCard>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────────
    GENERE MULTISELECT — dropdown con checkbox, senza emoji
 ───────────────────────────────────────────────────────────────── */
@@ -508,19 +786,10 @@ function TabProfilo({
         </div>
       </SCard>
 
-      {/* Foto */}
+      {/* Foto profilo — upload diretto */}
       <SCard>
-        <STitle sub="La prima cosa che i locali vedono nel marketplace">Foto profilo</STitle>
-        <Inp label="URL foto principale" value={photo} onChange={e=>setPhoto(e.target.value)} placeholder="https://..." />
-        {photo && (
-          <div style={{ marginTop:12, display:"flex", alignItems:"center", gap:12 }}>
-            <img src={photo} alt="Preview" style={{ width:72, height:72, borderRadius:12, objectFit:"cover", border:`1px solid ${BORDER}` }} />
-            <div>
-              <p style={{ fontSize:13, fontWeight:700, color:INK, margin:0 }}>Anteprima</p>
-              <p style={{ fontSize:11, color:MUTED, margin:"2px 0 0" }}>Questa è la foto che vedranno i locali</p>
-            </div>
-          </div>
-        )}
+        <STitle sub="Scatta, scegli dalla galleria o carica un PDF">Foto profilo</STitle>
+        <PhotoUploader photo={photo} onPhotoChange={setPhoto} />
       </SCard>
 
       {/* Social */}
@@ -1030,11 +1299,12 @@ const GLOBAL_CSS = `
 `;
 
 const TABS = [
-  { key:"mediakit",   label:"Profilo",    icon:"👤" },
-  { key:"cachet",     label:"Cachet",     icon:"💶" },
-  { key:"calendario", label:"Calendario", icon:"📅" },
-  { key:"analitiche", label:"Analitiche", icon:"📊" },
-  { key:"estratto",   label:"Guadagni",   icon:"💰" },
+  { key:"mediakit",   label:"Profilo"    },
+  { key:"video",      label:"Video"      },
+  { key:"cachet",     label:"Cachet"     },
+  { key:"calendario", label:"Calendario" },
+  { key:"analitiche", label:"Analitiche" },
+  { key:"estratto",   label:"Guadagni"   },
 ];
 
 /* ─────────────────────────────────────────────────────────────────
@@ -1093,6 +1363,7 @@ export default function ArtistArea(props) {
       {/* navigazione gestita dal DashboardShell */}
 
       {/* Contenuto tab */}
+      {tab==="video"      && <VideoShowcase plan={plan} />}
       {tab==="mediakit"   && <TabProfilo    plan={plan} highlightCard={highlightCard} stageName={p.stageName} setStageName={p.setStageName} artistType={p.artistType} setArtistType={p.setArtistType} bio={p.bio} setBio={p.setBio} city={p.city} setCity={p.setCity} musicGenres={p.musicGenres} setMusicGenres={p.setMusicGenres} eventTypes={p.eventTypes} setEventTypes={p.setEventTypes} photo={p.photo} setPhoto={p.setPhoto} instagram={p.instagram} setInstagram={p.setInstagram} spotify={p.spotify} setSpotify={p.setSpotify} youtube={p.youtube} setYoutube={p.setYoutube} soundcloud={p.soundcloud} setSoundcloud={p.setSoundcloud} tiktok={p.tiktok} setTiktok={p.setTiktok} rider={p.rider} setRider={p.setRider} saveArtistProfile={p.saveArtistProfile} artistMessage={p.artistMessage} />}
       {tab==="cachet"     && <TabCachet     pricing={p.pricing} setPricing={setPricing} eventTypes={p.eventTypes} saveArtistProfile={p.saveArtistProfile} artistMessage={p.artistMessage} />}
       {tab==="calendario" && <TabCalendario availableDates={p.availableDates||[]} setAvailableDates={p.setAvailableDates} bookedSlots={p.bookedSlots||[]} plan={plan} />}
