@@ -711,6 +711,94 @@ function GenreMultiSelect({ selected=[], onToggle, isPro }) {
   );
 }
 
+
+/* ─────────────────────────────────────────────────────────────────
+   EVENT TYPE MULTISELECT — identico al GenreMultiSelect
+───────────────────────────────────────────────────────────────── */
+function EventTypeMultiSelect({ selected=[], onToggle }) {
+  const [open, setOpen] = useState(false);
+  const safe = Array.isArray(selected) ? selected : [];
+
+  return (
+    <div style={{ position:"relative" }}>
+      <button type="button" onClick={()=>setOpen(p=>!p)}
+        style={{
+          width:"100%", background:"#fbfaf8", border:`1px solid ${open?"rgba(255,90,0,.45)":"rgba(0,0,0,.1)"}`,
+          borderRadius:12, padding:"10px 14px", fontSize:13, color:INK,
+          fontFamily:"'Manrope',system-ui,sans-serif", cursor:"pointer", textAlign:"left",
+          display:"flex", alignItems:"center", justifyContent:"space-between", gap:8,
+          boxShadow: open?"0 0 0 3px rgba(255,90,0,.08)":"none", transition:"all .15s",
+        }}>
+        <span style={{ color:safe.length>0?INK:MUTED }}>
+          {safe.length===0 ? "Seleziona i tipi di evento..." :
+           safe.length===1 ? safe[0] :
+           `${safe[0]} +${safe.length-1} altri`}
+        </span>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {safe.length>0 && (
+            <span style={{ fontSize:11, fontWeight:700, color:"white", background:O, borderRadius:100, padding:"1px 8px", minWidth:20, textAlign:"center" }}>
+              {safe.length}
+            </span>
+          )}
+          <svg width="12" height="12" viewBox="0 0 12 12" style={{ transform:open?"rotate(180deg)":"none", transition:"transform .2s", flexShrink:0 }}>
+            <path d="M2 4l4 4 4-4" stroke={MUTED} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          </svg>
+        </div>
+      </button>
+
+      {open && (
+        <div style={{
+          position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:50,
+          background:"white", border:"1px solid rgba(0,0,0,.1)", borderRadius:14,
+          boxShadow:"0 8px 24px rgba(0,0,0,.1)", overflow:"hidden",
+        }}>
+          {EVENT_TYPES.map(e => {
+            const isActive = safe.includes(e);
+            return (
+              <button key={e} type="button" onClick={()=>onToggle(e)}
+                style={{
+                  width:"100%", display:"flex", alignItems:"center", gap:10,
+                  padding:"10px 14px", background:"none", border:"none",
+                  cursor:"pointer", borderBottom:"1px solid rgba(0,0,0,.04)",
+                  transition:"background .1s", fontFamily:"'Manrope',system-ui,sans-serif",
+                }}>
+                <div style={{
+                  width:16, height:16, borderRadius:4, flexShrink:0,
+                  border:`1.5px solid ${isActive?O:"rgba(0,0,0,.2)"}`,
+                  background:isActive?O:"white",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  transition:"all .15s",
+                }}>
+                  {isActive && (
+                    <svg width="9" height="9" viewBox="0 0 10 10">
+                      <polyline points="1,5 4,8 9,2" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontSize:13, fontWeight:isActive?700:400, color:isActive?INK:MUTED }}>{e}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {open && <div style={{ position:"fixed", inset:0, zIndex:49 }} onClick={()=>setOpen(false)} />}
+
+      {safe.length>0 && (
+        <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:8 }}>
+          {safe.map(e=>(
+            <span key={e} style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:12, fontWeight:700, color:O, background:`${O}10`, border:`1px solid ${O}25`, borderRadius:100, padding:"3px 10px" }}>
+              {e}
+              <button type="button" onClick={()=>onToggle(e)}
+                style={{ background:"none", border:"none", cursor:"pointer", color:O, fontSize:13, lineHeight:1, padding:0 }}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────────
    TAB: PROFILO
 ───────────────────────────────────────────────────────────────── */
@@ -753,6 +841,12 @@ function TabProfilo({
         </div>
       </SCard>
 
+      {/* Foto profilo — upload diretto */}
+      <SCard>
+        <STitle sub="Scatta, scegli dalla galleria o carica un PDF">Foto profilo</STitle>
+        <PhotoUploader photo={photo} onPhotoChange={setPhoto} />
+      </SCard>
+
       {/* Bio */}
       <SCard>
         <STitle sub={isPro?"Racconta la tua storia senza limiti":"Max 150 caratteri · illimitata con PRO"}>
@@ -776,20 +870,10 @@ function TabProfilo({
         {!isPro && safeGenres.length>=3 && <ProLock feature="Più di 3 generi" plan={plan} />}
       </SCard>
 
-      {/* Tipi evento */}
+      {/* Tipi evento — dropdown multiselect */}
       <SCard>
-        <STitle sub="Specifica in quali contesti suoni — i locali ti trovano per tipo di evento">Tipi di evento</STitle>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-          {EVENT_TYPES.map(e=>(
-            <Chip key={e} label={e} active={safeEvents.includes(e)} onClick={()=>toggleEvent(e)} />
-          ))}
-        </div>
-      </SCard>
-
-      {/* Foto profilo — upload diretto */}
-      <SCard>
-        <STitle sub="Scatta, scegli dalla galleria o carica un PDF">Foto profilo</STitle>
-        <PhotoUploader photo={photo} onPhotoChange={setPhoto} />
+        <STitle sub="In quali contesti suoni — i locali ti trovano per tipo di evento">Tipi di evento</STitle>
+        <EventTypeMultiSelect selected={safeEvents} onToggle={toggleEvent} />
       </SCard>
 
       {/* Social */}
