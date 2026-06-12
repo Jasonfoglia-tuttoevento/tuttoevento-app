@@ -162,6 +162,7 @@ export default function DashboardPage() {
         case "finance":   return <AdminArea users={users} events={events} bookings={bookings} tab="finance"   />;
         case "crm":       return <AdminArea users={users} events={events} bookings={bookings} tab="crm"       />;
         case "requests":  return <AdminArea users={users} events={events} bookings={bookings} tab="requests"  />;
+        case "moderazione": return <AdminArea users={users} events={events} bookings={bookings} tab="moderazione" />;
         case "pricing":   return <AdminArea users={users} events={events} bookings={bookings} tab="pricing"   />;
         default: return null;
       }

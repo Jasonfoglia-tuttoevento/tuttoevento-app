@@ -1,4 +1,5 @@
 "use client";
+import AdminModerazione from "@/components/dashboard/AdminModerazione";
 import AdminPricingApprovals from "@/components/dashboard/AdminPricingApprovals";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
@@ -542,7 +543,9 @@ export default function AdminArea({ users=[], events=[], bookings=[], tab: initi
       {tab === "growth"    && <AdminGrowth users={users} bookings={bookings} events={events} />}
       {tab === "audit"     && <AdminAudit users={users} />}
       {tab === "artists"   && <SectionArtists users={users} bookings={bookings} />}
-      {tab === "requests"  && <SectionRequests requests={contactRequests} onUpdate={updateRequestStatus} />}
+      {tab === "requests"     && <SectionRequests requests={contactRequests} onUpdate={updateRequestStatus} />}
+      {tab === "moderazione"  && <AdminModerazione />}
+      {tab === "pricing"      && <AdminPricingApprovals />}
       {tab === "contacts"  && <SectionContacts contacts={contacts} setContacts={setContacts} />}
     </div>
   );

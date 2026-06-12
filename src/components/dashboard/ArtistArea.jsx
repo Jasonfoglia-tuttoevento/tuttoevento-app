@@ -347,7 +347,7 @@ function PhotoUploader({ photo, onPhotoChange }) {
     const fd = new FormData();
     fd.append("file", file);
     try {
-      const res = await fetch("/api/artist/upload-photo", { method:"POST", body:fd });
+      const res = await fetch("/api/artists/upload-photo", { method:"POST", body:fd }); // invia a photo_pending per moderazione
       const d   = await res.json();
       if (!res.ok) { setError(d.error||"Errore upload"); }
       else { setPreview(d.url); onPhotoChange(d.url); }
@@ -427,7 +427,7 @@ function VideoShowcase({ plan }) {
 
   async function loadVideos() {
     setLoading(true);
-    const res = await fetch("/api/artist/upload-video");
+    const res = await fetch("/api/artists/upload-video");
     const d   = await res.json();
     setVideos(Array.isArray(d)?d:[]);
     setLoading(false);
@@ -461,13 +461,13 @@ function VideoShowcase({ plan }) {
       }
     };
     xhr.onerror = () => { setUploading(false); setError("Errore di rete"); };
-    xhr.open("POST", "/api/artist/upload-video");
+    xhr.open("POST", "/api/artists/upload-video");
     xhr.send(fd);
   }
 
   async function deleteVideo(id) {
     if (!confirm("Eliminare questo video?")) return;
-    await fetch(`/api/artist/upload-video?id=${id}`, { method:"DELETE" });
+    await fetch(`/api/artists/upload-video?id=${id}`, { method:"DELETE" });
     setVideos(prev=>prev.filter(v=>v.id!==id));
     if (playing===id) setPlaying(null);
   }
@@ -1350,6 +1350,16 @@ function TabGuadagni({ bookings=[] }) {
                   style={{ background:INK, color:"white", border:"none", borderRadius:100, padding:"9px 18px", fontWeight:800, fontSize:13, cursor:"pointer", whiteSpace:"nowrap" }}>
                   ✓ Ho ricevuto il pagamento
                 </button>
+                <button
+                  onClick={async()=>{
+                    const reason = prompt("Motivo della contestazione (min 10 caratteri):");
+                    if (!reason||reason.trim().length<10) return;
+                    await fetch("/api/bookings",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:b.id,paymentDispute:true,disputeNote:reason})});
+                    window.location.reload();
+                  }}
+                  style={{ background:"transparent", border:"1px solid rgba(220,38,38,.3)", color:"#dc2626", borderRadius:100, padding:"9px 14px", fontWeight:700, fontSize:12, cursor:"pointer", whiteSpace:"nowrap" }}>
+                  ⚠️ Contesta
+                </button>
               </div>
             ))}
           </div>
@@ -1402,6 +1412,12 @@ export default function ArtistArea(props) {
   const [tab, setTab] = useState(initialTab);
   const [onboardStep, setOnboardStep] = useState(null);  // null = non attivo
   const [highlightCard, setHighlightCard] = useState(null);
+
+  // Sincronizza il tab con la prop esterna (quando si clicca nella sidebar)
+  useEffect(() => {
+    const mapped = tabMapA[props.tab] || props.tab || "mediakit";
+    setTab(mapped);
+  }, [props.tab]);
 
   // Controlla se primo accesso (nessun profilo salvato)
   useEffect(() => {

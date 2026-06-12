@@ -25,7 +25,8 @@ function statusLabel(s) {
     accepted:  { label:"Accettato",  color:"#16a34a", bg:"rgba(22,163,74,.1)"  },
     confirmed: { label:"Confermato", color:"#16a34a", bg:"rgba(22,163,74,.1)"  },
     rejected:  { label:"Rifiutato",  color:"#dc2626", bg:"rgba(220,38,38,.1)"  },
-    completed: { label:"Completato", color:"#16a34a", bg:"rgba(22,163,74,.1)"  },
+    completed:  { label:"Completato",  color:"#16a34a", bg:"rgba(22,163,74,.1)"  },
+    cancelled:  { label:"Cancellato",  color:"#6b6b73", bg:"rgba(0,0,0,.07)"       },
   };
   return map[s] || { label:s||"—", color:MUTED, bg:"rgba(0,0,0,.06)" };
 }
@@ -42,8 +43,11 @@ function Badge({ label, color, bg }) {
 export default function OrganizerBookings({ bookings = [], onRefresh }) {
   const [filter, setFilter]   = useState("all");
   const [page, setPage]       = useState(1);
-  const [loading, setLoading] = useState({});
-  const [msg, setMsg]         = useState("");
+  const [loading, setLoading]       = useState({});
+  const [msg, setMsg]               = useState("");
+  const [cancelModal, setCancelModal] = useState(null); // bookingId
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling]   = useState(false);
 
   function openChat(booking) {
     const uid = booking.artistId || booking.artistUserId || booking.artist_user_id;
@@ -67,19 +71,37 @@ export default function OrganizerBookings({ bookings = [], onRefresh }) {
     setLoading(p => ({ ...p, [bookingId]:false }));
   }
 
+  async function doCancel(bookingId) {
+    if (!cancelReason || cancelReason.trim().length < 10) {
+      setMsg("Inserisci una motivazione di almeno 10 caratteri"); return;
+    }
+    setCancelling(true);
+    const res = await fetch("/api/bookings", {
+      method: "PATCH",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ id: bookingId, cancelAction: true, cancelReason }),
+    });
+    const d = await res.json();
+    if (!res.ok) setMsg(d.error || "Errore cancellazione");
+    else { setMsg("✓ Booking cancellato"); setCancelModal(null); setCancelReason(""); onRefresh?.(); }
+    setCancelling(false);
+  }
+
   const FILTERS = [
-    { key:"all",       label:"Tutti"          },
-    { key:"pending",   label:"In attesa"      },
-    { key:"accepted",  label:"Accettati"      },
-    { key:"completed", label:"Completati"     },
-    { key:"payment",   label:"Da pagare"      },
+    { key:"all",        label:"Tutti"          },
+    { key:"pending",    label:"In attesa"      },
+    { key:"accepted",   label:"Accettati"      },
+    { key:"completed",  label:"Completati"     },
+    { key:"payment",    label:"Da pagare"      },
+    { key:"cancelled",  label:"Cancellati"     },
   ];
 
   const filtered = useMemo(() => {
     return bookings.filter(b => {
       if (filter === "all")      return true;
-      if (filter === "payment")  return ["accepted","confirmed"].includes(b.status) && b.paymentStatus === "pending";
+      if (filter === "payment")   return ["accepted","confirmed"].includes(b.status) && b.paymentStatus === "pending";
       if (filter === "completed") return b.paymentStatus === "completed";
+      if (filter === "cancelled") return b.status === "cancelled";
       return b.status === filter;
     });
   }, [bookings, filter]);
@@ -182,10 +204,61 @@ export default function OrganizerBookings({ bookings = [], onRefresh }) {
                 onMouseLeave={e=>e.target.style.borderColor="rgba(0,0,0,.1)"}>
                 Apri chat
               </button>
+              {/* Cancella — solo se non completato/già cancellato */}
+              {!["completed","cancelled"].includes(b.status) && (
+                <button onClick={()=>{ setCancelModal(b.id); setCancelReason(""); }}
+                  style={{ background:"none", border:"1px solid rgba(220,38,38,.25)", color:"#dc2626", borderRadius:100, padding:"8px 14px", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+                  Cancella
+                </button>
+              )}
+              {b.status === "cancelled" && b.cancelReason && (
+                <span style={{ fontSize:11, color:MUTED, fontStyle:"italic", padding:"8px 0" }}>
+                  Motivo: {b.cancelReason}
+                </span>
+              )}
             </div>
           </div>
         );
       })}
+
+      {/* Modal cancellazione */}
+      {cancelModal && (
+        <div style={{ position:"fixed", inset:0, zIndex:50, background:"rgba(0,0,0,.5)", backdropFilter:"blur(6px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
+          onClick={e=>{if(e.target===e.currentTarget){setCancelModal(null);setCancelReason("");}}}>
+          <div style={{ background:"white", borderRadius:24, padding:"24px", width:"100%", maxWidth:440 }}>
+            <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:18, color:INK, margin:"0 0 8px" }}>Cancella booking</h3>
+            <p style={{ fontSize:13, color:MUTED, margin:"0 0 16px", lineHeight:1.6 }}>
+              Questa azione è irreversibile. Il booking verrà segnalato come cancellato e l'artista verrà notificato.
+            </p>
+            <div style={{ marginBottom:12 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+                Motivazione *
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={e=>setCancelReason(e.target.value)}
+                rows={3}
+                placeholder="Es. Evento annullato per maltempo, cambio di data, problema tecnico..."
+                style={{ width:"100%", background:"#fbfaf8", border:"1px solid rgba(0,0,0,.1)", borderRadius:12, padding:"10px 14px", fontSize:13, color:INK, fontFamily:"'Manrope',system-ui,sans-serif", outline:"none", resize:"vertical", lineHeight:1.6, boxSizing:"border-box" }}
+              />
+              <p style={{ fontSize:11, color:cancelReason.length<10&&cancelReason.length>0?"#dc2626":MUTED, margin:"4px 0 0", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+                {cancelReason.length}/10 caratteri minimi
+              </p>
+            </div>
+            {msg && !msg.startsWith("✓") && <p style={{ fontSize:12, fontWeight:700, color:"#dc2626", margin:"0 0 10px" }}>{msg}</p>}
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={()=>doCancel(cancelModal)} disabled={cancelling || cancelReason.trim().length < 10}
+                style={{ flex:1, background:"#dc2626", color:"white", border:"none", borderRadius:100, padding:"11px", fontWeight:800, fontSize:14, cursor:cancelling||cancelReason.trim().length<10?"not-allowed":"pointer", fontFamily:"'Manrope',system-ui,sans-serif", opacity:cancelling||cancelReason.trim().length<10?.5:1 }}>
+                {cancelling ? "Cancellazione..." : "Conferma cancellazione"}
+              </button>
+              <button onClick={()=>{setCancelModal(null);setCancelReason("");}}
+                style={{ padding:"11px 20px", borderRadius:100, border:"1px solid rgba(0,0,0,.1)", background:"none", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif", color:MUTED }}>
+                Annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Paginazione */}
       {totalPages > 1 && (

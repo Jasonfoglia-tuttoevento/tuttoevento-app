@@ -41,19 +41,13 @@ export async function POST(request) {
       .from("artist-photos")
       .getPublicUrl(filename);
 
-    // Aggiorna photo nel profilo artista
+    // Salva su photo_pending — visibile solo dopo approvazione admin
     await supabaseAdmin
       .from("artist_profiles")
-      .upsert({ user_id: Number(user.id), photo: urlData.publicUrl, updated_at: new Date().toISOString() },
+      .upsert({ user_id: Number(user.id), photo_pending: urlData.publicUrl, photo_status: "pending", updated_at: new Date().toISOString() },
         { onConflict: "user_id" });
 
-    // Aggiorna anche nella tabella users
-    await supabaseAdmin
-      .from("users")
-      .update({ photo: urlData.publicUrl })
-      .eq("id", Number(user.id));
-
-    return NextResponse.json({ url: urlData.publicUrl });
+    return NextResponse.json({ url: urlData.publicUrl, pending: true, message: "Foto in attesa di approvazione" });
   } catch (e) {
     console.error("Upload photo:", e);
     return NextResponse.json({ error: e.message || "Errore upload" }, { status: 500 });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getSessionUser, unauthorized, forbidden } from "@/lib/auth";
 
-/* ─── Helpers invariati ──────────────────────────────────── */
+/* ─── Helpers ────────────────────────────────────────────── */
 function timeToMinutes(time) {
   if (!time) return null;
   const [hours, minutes] = time.split(":").map(Number);
@@ -49,7 +49,8 @@ function mapBookingToFrontend(booking) {
   };
 }
 
-async function artistHasOverlap({ artistId, eventDate, startTime, endTime, excludeBookingId = null }) {
+/* ─── Controlla overlap su booking esistenti ─────────────── */
+async function artistHasBookingOverlap({ artistId, eventDate, startTime, endTime, excludeBookingId = null }) {
   const { data: accepted, error } = await supabaseAdmin
     .from("bookings").select("*")
     .eq("artist_id", Number(artistId))
@@ -60,6 +61,64 @@ async function artistHasOverlap({ artistId, eventDate, startTime, endTime, exclu
     if (excludeBookingId && Number(b.id) === Number(excludeBookingId)) return false;
     return rangesOverlap(startTime, endTime, b.start_time, b.end_time);
   });
+}
+
+/* ─── Controlla disponibilità nel calendario artista ────── */
+async function artistIsUnavailableOnDate(artistId, eventDate) {
+  const { data: profile } = await supabaseAdmin
+    .from("artist_profiles")
+    .select("available_dates, booked_dates")
+    .eq("user_id", Number(artistId))
+    .maybeSingle();
+
+  if (!profile) return { unavailable: false };
+
+  // Controlla se la data è nelle booked_dates (già occupato)
+  let bookedDates = [];
+  try { bookedDates = JSON.parse(profile.booked_dates || "[]"); } catch {}
+  if (bookedDates.includes(eventDate)) {
+    return {
+      unavailable: true,
+      reason: "calendar_busy",
+      message: `L'artista ha già una serata confermata il ${eventDate}. Scegli un'altra data.`,
+    };
+  }
+
+  // Controlla se l'artista ha indicato disponibilità e questa data NON c'è
+  let availableDates = [];
+  try { availableDates = JSON.parse(profile.available_dates || "[]"); } catch {}
+
+  // Solo se l'artista ha impostato date disponibili e questa non è tra quelle
+  if (availableDates.length > 0 && !availableDates.includes(eventDate)) {
+    return {
+      unavailable: true,
+      reason: "not_available",
+      message: `L'artista non ha indicato disponibilità per il ${eventDate}. Controlla le date disponibili prima di inviare la richiesta.`,
+    };
+  }
+
+  return { unavailable: false };
+}
+
+/* ─── Funzione unificata di controllo disponibilità ─────── */
+async function checkArtistAvailability({ artistId, eventDate, startTime, endTime, excludeBookingId = null }) {
+  // 1. Controlla calendario (date bloccate / non disponibili)
+  const calendarCheck = await artistIsUnavailableOnDate(artistId, eventDate);
+  if (calendarCheck.unavailable) {
+    return { available: false, ...calendarCheck };
+  }
+
+  // 2. Controlla overlap con booking esistenti
+  const hasOverlap = await artistHasBookingOverlap({ artistId, eventDate, startTime, endTime, excludeBookingId });
+  if (hasOverlap) {
+    return {
+      available: false,
+      reason: "booking_overlap",
+      message: `L'artista ha già un booking confermato in questa fascia oraria (${startTime}–${endTime}). Scegli un orario diverso.`,
+    };
+  }
+
+  return { available: true };
 }
 
 async function updateEventStatus(eventId, status) {
@@ -97,6 +156,23 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const artistId    = searchParams.get("artistId");
     const organizerId = searchParams.get("organizerId");
+
+    // Endpoint speciale: controlla disponibilità artista prima di inviare richiesta
+    const checkDate      = searchParams.get("checkDate");
+    const checkArtistId  = searchParams.get("checkArtistId");
+    const checkStartTime = searchParams.get("checkStartTime");
+    const checkEndTime   = searchParams.get("checkEndTime");
+
+    if (checkDate && checkArtistId) {
+      const result = await checkArtistAvailability({
+        artistId:  checkArtistId,
+        eventDate: checkDate,
+        startTime: checkStartTime || "00:00",
+        endTime:   checkEndTime   || "23:59",
+      });
+      return NextResponse.json(result);
+    }
+
     let query = supabaseAdmin.from("bookings").select("*").order("id", { ascending: false });
     if (user.role === "admin" || user.role === "referent") {
       if (artistId)    query = query.eq("artist_id",    Number(artistId));
@@ -130,11 +206,21 @@ export async function POST(request) {
       return NextResponse.json({ error: "Data, ora inizio e ora fine sono obbligatorie" }, { status: 400 });
     if (timeToMinutes(body.startTime) >= timeToMinutes(body.endTime))
       return NextResponse.json({ error: "L'ora fine deve essere successiva all'ora inizio" }, { status: 400 });
-    const overlap = await artistHasOverlap({
-      artistId: body.artistId, eventDate: body.eventDate,
-      startTime: body.startTime, endTime: body.endTime,
+
+    // Controllo disponibilità completo (calendario + booking esistenti)
+    const availability = await checkArtistAvailability({
+      artistId:  body.artistId,
+      eventDate: body.eventDate,
+      startTime: body.startTime,
+      endTime:   body.endTime,
     });
-    if (overlap) return NextResponse.json({ error: "Artista già occupato in questa fascia oraria" }, { status: 409 });
+    if (!availability.available) {
+      return NextResponse.json(
+        { error: availability.message, reason: availability.reason },
+        { status: 409 }
+      );
+    }
+
     const { data: booking, error } = await supabaseAdmin
       .from("bookings").insert({
         organizer_id:   Number(body.organizerId),
@@ -180,10 +266,6 @@ export async function PATCH(request) {
     const now = new Date().toISOString();
     let updates = { updated_at: now };
 
-    /* ══════════════════════════════════════════════════════
-       CASO 1 — cambio status normale (accepted/rejected)
-       compatibile con il vecchio frontend
-    ══════════════════════════════════════════════════════ */
     if (body.status && !body.paymentAction) {
       if (user.role !== "admin") {
         const isArtist    = user.role === "artist"    && Number(current.artist_id)    === Number(user.id);
@@ -191,43 +273,56 @@ export async function PATCH(request) {
         if (!isArtist && !isOrganizer) return forbidden();
       }
       if (body.status === "accepted") {
-        const overlap = await artistHasOverlap({
-          artistId: current.artist_id, eventDate: current.event_date,
-          startTime: current.start_time, endTime: current.end_time,
+        const availability = await checkArtistAvailability({
+          artistId:        current.artist_id,
+          eventDate:       current.event_date,
+          startTime:       current.start_time,
+          endTime:         current.end_time,
           excludeBookingId: current.id,
         });
-        if (overlap) return NextResponse.json({ error: "Artista già occupato" }, { status: 409 });
+        if (!availability.available) {
+          return NextResponse.json({ error: availability.message }, { status: 409 });
+        }
       }
       updates.status = body.status;
     }
 
+
     /* ══════════════════════════════════════════════════════
-       CASO 2 — azioni pagamento
-       
-       venue_paid      → locale dichiara di aver pagato TE
-       artist_confirm  → artista conferma ricezione
-       promoter_confirm→ promoter conferma ricezione
-       admin_confirm_venue → admin forza paid_by_venue
+       CASO 3 — cancellazione booking
     ══════════════════════════════════════════════════════ */
+    if (body.cancelAction) {
+      const isArtist    = user.role === "artist"    && Number(current.artist_id)    === Number(user.id);
+      const isOrganizer = user.role === "organizer" && Number(current.organizer_id) === Number(user.id);
+      const isAdmin     = user.role === "admin";
+
+      if (!isArtist && !isOrganizer && !isAdmin) return forbidden();
+
+      if (current.payment_status === "completed")
+        return NextResponse.json({ error: "Non puoi cancellare un booking già completato" }, { status: 400 });
+
+      if (!body.cancelReason || body.cancelReason.trim().length < 10)
+        return NextResponse.json({ error: "Inserisci una motivazione di almeno 10 caratteri" }, { status: 400 });
+
+      updates.status               = "cancelled";
+      updates.cancelled_at         = now;
+      updates.cancelled_by         = Number(user.id);
+      updates.cancel_reason        = body.cancelReason.trim();
+      updates.cancel_initiated_by  = isAdmin ? "admin" : isArtist ? "artist" : "organizer";
+    }
+
     if (body.paymentAction) {
       const action = body.paymentAction;
-
-      /* ── venue_paid: solo il locale proprietario ── */
       if (action === "venue_paid") {
-        if (user.role !== "organizer" || Number(current.organizer_id) !== Number(user.id))
-          return forbidden();
+        if (user.role !== "organizer" || Number(current.organizer_id) !== Number(user.id)) return forbidden();
         if (!["accepted","confirmed"].includes(current.status))
           return NextResponse.json({ error: "Il booking deve essere accettato prima di confermare il pagamento" }, { status: 400 });
         if (current.payment_status !== "pending")
           return NextResponse.json({ error: "Pagamento già registrato" }, { status: 400 });
         updates.payment_status = "paid_by_venue";
         updates.paid_venue_at  = now;
-      }
-
-      /* ── artist_confirm: solo l'artista del booking ── */
-      else if (action === "artist_confirm") {
-        if (user.role !== "artist" || Number(current.artist_id) !== Number(user.id))
-          return forbidden();
+      } else if (action === "artist_confirm") {
+        if (user.role !== "artist" || Number(current.artist_id) !== Number(user.id)) return forbidden();
         if (!["paid_by_venue","paid_to_promoter"].includes(current.payment_status))
           return NextResponse.json({ error: "Il locale non ha ancora confermato il pagamento" }, { status: 400 });
         updates.paid_artist_at = now;
@@ -237,12 +332,8 @@ export async function PATCH(request) {
         } else {
           updates.payment_status = "paid_to_artist";
         }
-      }
-
-      /* ── promoter_confirm: solo il promoter del booking ── */
-      else if (action === "promoter_confirm") {
-        if (user.role !== "promoter" || Number(current.promoter_id) !== Number(user.id))
-          return forbidden();
+      } else if (action === "promoter_confirm") {
+        if (user.role !== "promoter" || Number(current.promoter_id) !== Number(user.id)) return forbidden();
         if (!["paid_by_venue","paid_to_artist"].includes(current.payment_status))
           return NextResponse.json({ error: "Il locale non ha ancora confermato il pagamento" }, { status: 400 });
         updates.paid_promoter_at = now;
@@ -251,16 +342,11 @@ export async function PATCH(request) {
         } else {
           updates.payment_status = "paid_to_promoter";
         }
-      }
-
-      /* ── admin_confirm_venue: solo admin ── */
-      else if (action === "admin_confirm_venue") {
+      } else if (action === "admin_confirm_venue") {
         if (user.role !== "admin") return forbidden();
         updates.payment_status = "paid_by_venue";
         updates.paid_venue_at  = now;
-      }
-
-      else {
+      } else {
         return NextResponse.json({ error: "paymentAction non riconosciuta" }, { status: 400 });
       }
     }
