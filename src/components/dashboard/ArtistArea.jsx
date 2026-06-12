@@ -643,7 +643,12 @@ function GenreMultiSelect({ selected=[], onToggle, isPro }) {
         </div>
       </button>
 
-      {/* Dropdown */}
+      {/* Overlay per chiudere — PRIMA del dropdown nel DOM così z-index funziona correttamente */}
+      {open && (
+        <div style={{ position:"fixed", inset:0, zIndex:49 }} onMouseDown={()=>setOpen(false)} />
+      )}
+
+      {/* Dropdown — z-index 50, sopra l'overlay */}
       {open && (
         <div style={{
           position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:50,
@@ -653,45 +658,41 @@ function GenreMultiSelect({ selected=[], onToggle, isPro }) {
         }}>
           <style>{`@keyframes te-slide-down{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
           {MUSIC_GENRES.map(g => {
-            const isActive  = safe.includes(g);
+            const isActive   = safe.includes(g);
             const isDisabled = maxReached && !isActive;
             return (
               <button key={g} type="button"
-                onClick={()=>{ if(!isDisabled){ onToggle(g); } }}
+                onMouseDown={e=>{ e.preventDefault(); e.stopPropagation(); if(!isDisabled) onToggle(g); }}
+                onClick={e=>{ e.preventDefault(); e.stopPropagation(); if(!isDisabled) onToggle(g); }}
                 style={{
                   width:"100%", display:"flex", alignItems:"center", gap:10,
-                  padding:"9px 14px", background:"none", border:"none",
+                  padding:"10px 14px", background:"none", border:"none",
                   cursor:isDisabled?"not-allowed":"pointer",
                   borderBottom:"1px solid rgba(0,0,0,.04)",
                   opacity:isDisabled?.4:1, transition:"background .1s",
                   fontFamily:"'Manrope',system-ui,sans-serif",
+                  WebkitTapHighlightColor:"transparent",
                 }}>
-                {/* Checkbox custom */}
                 <div style={{
-                  width:16, height:16, borderRadius:4, flexShrink:0,
+                  width:18, height:18, borderRadius:5, flexShrink:0,
                   border:`1.5px solid ${isActive?O:"rgba(0,0,0,.2)"}`,
                   background:isActive?O:"white",
                   display:"flex", alignItems:"center", justifyContent:"center",
-                  transition:"all .15s",
+                  transition:"all .15s", pointerEvents:"none",
                 }}>
                   {isActive && (
-                    <svg width="9" height="9" viewBox="0 0 10 10">
-                      <polyline points="1,5 4,8 9,2" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+                    <svg width="10" height="10" viewBox="0 0 10 10">
+                      <polyline points="1,5 4,8 9,2" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
                     </svg>
                   )}
                 </div>
-                <span style={{ fontSize:13, fontWeight:isActive?700:400, color:isActive?INK:MUTED }}>
+                <span style={{ fontSize:13, fontWeight:isActive?700:500, color:isActive?INK:MUTED, pointerEvents:"none" }}>
                   {g}
                 </span>
               </button>
             );
           })}
         </div>
-      )}
-
-      {/* Overlay per chiudere */}
-      {open && (
-        <div style={{ position:"fixed", inset:0, zIndex:49 }} onClick={()=>setOpen(false)} />
       )}
 
       {/* Tag selezionati sotto */}
@@ -747,6 +748,9 @@ function EventTypeMultiSelect({ selected=[], onToggle }) {
         </div>
       </button>
 
+      {/* Overlay PRIMA del dropdown */}
+      {open && <div style={{ position:"fixed", inset:0, zIndex:49 }} onMouseDown={()=>setOpen(false)} />}
+
       {open && (
         <div style={{
           position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:50,
@@ -756,34 +760,35 @@ function EventTypeMultiSelect({ selected=[], onToggle }) {
           {EVENT_TYPES.map(e => {
             const isActive = safe.includes(e);
             return (
-              <button key={e} type="button" onClick={()=>onToggle(e)}
+              <button key={e} type="button"
+                onMouseDown={ev=>{ ev.preventDefault(); ev.stopPropagation(); onToggle(e); }}
+                onClick={ev=>{ ev.preventDefault(); ev.stopPropagation(); onToggle(e); }}
                 style={{
                   width:"100%", display:"flex", alignItems:"center", gap:10,
                   padding:"10px 14px", background:"none", border:"none",
                   cursor:"pointer", borderBottom:"1px solid rgba(0,0,0,.04)",
                   transition:"background .1s", fontFamily:"'Manrope',system-ui,sans-serif",
+                  WebkitTapHighlightColor:"transparent",
                 }}>
                 <div style={{
-                  width:16, height:16, borderRadius:4, flexShrink:0,
+                  width:18, height:18, borderRadius:5, flexShrink:0,
                   border:`1.5px solid ${isActive?O:"rgba(0,0,0,.2)"}`,
                   background:isActive?O:"white",
                   display:"flex", alignItems:"center", justifyContent:"center",
-                  transition:"all .15s",
+                  transition:"all .15s", pointerEvents:"none",
                 }}>
                   {isActive && (
-                    <svg width="9" height="9" viewBox="0 0 10 10">
-                      <polyline points="1,5 4,8 9,2" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+                    <svg width="10" height="10" viewBox="0 0 10 10">
+                      <polyline points="1,5 4,8 9,2" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
                     </svg>
                   )}
                 </div>
-                <span style={{ fontSize:13, fontWeight:isActive?700:400, color:isActive?INK:MUTED }}>{e}</span>
+                <span style={{ fontSize:13, fontWeight:isActive?700:500, color:isActive?INK:MUTED, pointerEvents:"none" }}>{e}</span>
               </button>
             );
           })}
         </div>
       )}
-
-      {open && <div style={{ position:"fixed", inset:0, zIndex:49 }} onClick={()=>setOpen(false)} />}
 
       {safe.length>0 && (
         <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:8 }}>
@@ -1044,7 +1049,7 @@ function TabCachet({ pricing={}, setPricing, eventTypes=[], saveArtistProfile, a
         )}
 
         <div style={{ marginTop:16, background:"rgba(0,0,0,.03)", borderRadius:12, padding:"10px 14px", fontSize:12, color:MUTED, lineHeight:1.6 }}>
-          💡 Aggiungi i tipi di evento nella tab <strong style={{color:INK}}>Profilo</strong> — qui appariranno automaticamente.
+          💡 Aggiungi i tipi di evento nella tab <strong style={{color:INK}}>Profilo</strong> — qui appariranno automaticamente. Se non ne hai ancora, vengono usati 4 tipi di default.
         </div>
       </SCard>
 
