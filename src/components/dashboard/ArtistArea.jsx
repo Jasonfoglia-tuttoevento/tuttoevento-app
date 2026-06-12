@@ -1,5 +1,6 @@
 "use client";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import AnalyticsWidget from "@/components/dashboard/AnalyticsWidget";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 /* ─────────────────────────────────────────────────────────────────
@@ -1467,7 +1468,7 @@ export default function ArtistArea(props) {
       {tab==="mediakit"   && <TabProfilo    plan={plan} highlightCard={highlightCard} stageName={p.stageName} setStageName={p.setStageName} artistType={p.artistType} setArtistType={p.setArtistType} bio={p.bio} setBio={p.setBio} city={p.city} setCity={p.setCity} musicGenres={p.musicGenres} setMusicGenres={p.setMusicGenres} eventTypes={p.eventTypes} setEventTypes={p.setEventTypes} photo={p.photo} setPhoto={p.setPhoto} instagram={p.instagram} setInstagram={p.setInstagram} spotify={p.spotify} setSpotify={p.setSpotify} youtube={p.youtube} setYoutube={p.setYoutube} soundcloud={p.soundcloud} setSoundcloud={p.setSoundcloud} tiktok={p.tiktok} setTiktok={p.setTiktok} rider={p.rider} setRider={p.setRider} saveArtistProfile={p.saveArtistProfile} artistMessage={p.artistMessage} />}
       {tab==="cachet"     && <TabCachet     pricing={p.pricing} setPricing={setPricing} eventTypes={p.eventTypes} saveArtistProfile={p.saveArtistProfile} artistMessage={p.artistMessage} />}
       {tab==="calendario" && <TabCalendario availableDates={p.availableDates||[]} setAvailableDates={p.setAvailableDates} bookedSlots={p.bookedSlots||[]} plan={plan} />}
-      {tab==="analitiche" && <TabAnalitiche bookings={p.bookings||[]} plan={plan} />}
+      {tab==="analitiche" && <AnalyticsWidget role="artist" userId={props.currentUser?.id} />}
       {tab==="estratto"   && <TabGuadagni   bookings={p.bookings||[]} />}
 
       {/* Onboarding toast — solo se attivo */}

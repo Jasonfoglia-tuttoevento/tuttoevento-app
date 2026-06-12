@@ -1,4 +1,5 @@
 "use client";
+import AnalyticsWidget from "@/components/dashboard/AnalyticsWidget";
 import AdminModerazione from "@/components/dashboard/AdminModerazione";
 import AdminPricingApprovals from "@/components/dashboard/AdminPricingApprovals";
 import VerifiedBadge from "@/components/VerifiedBadge";

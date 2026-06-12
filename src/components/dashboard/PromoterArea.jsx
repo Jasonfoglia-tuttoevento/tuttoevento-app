@@ -1,4 +1,5 @@
 "use client";
+import AnalyticsWidget from "@/components/dashboard/AnalyticsWidget";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
 import { useMemo, useState, useEffect } from "react";
@@ -772,6 +773,7 @@ export default function PromoterArea({ currentUser, events=[], bookings=[], user
   return (
     <div id="promoter-area" style={{ fontFamily:"'Manrope',system-ui,sans-serif", color:INK, display:"flex", flexDirection:"column", gap:16 }}>
       {tab==="overview"    && <TabOverview currentUser={currentUser} bookings={bookings} portfolio={portfolio} contactRequests={contactRequests} plan={plan} commissions={commissions} />}
+      {tab==="analitiche"  && <AnalyticsWidget role="promoter" userId={currentUser?.id} />}
       {(tab==="roster") && <TabRoster portfolio={portfolio} users={[...users,...artists]} plan={plan} onAdd={handleAdd} onRemove={handleRemove} addingEntry={addingEntry} addMsg={addMsg} />}
       {(tab==="trattative"||tab==="deals") && <TabTrattative contactRequests={contactRequests} portfolio={portfolio} plan={plan} onUpdateStatus={handleUpdateStatus} />}
       {(tab==="commissioni"||tab==="commissions") && <TabCommissioni commissions={commissions} bookings={bookings} portfolio={portfolio} plan={plan} />}

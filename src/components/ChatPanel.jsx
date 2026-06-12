@@ -256,54 +256,96 @@ export default function ChatPanel({ user }) {
     loadConversations();
   }, [loadConversations]);
 
-  /* ── Realtime ── */
+  /* ── Realtime + fallback iOS background ── */
   useEffect(() => {
     if (!user?.id) return;
     const supabase = createSupabaseBrowserClient();
     supabaseRef.current = supabase;
+    let channel = null;
+    let pollTimer = null;
 
-    const channel = supabase
-      .channel(`chat-realtime-${user.id}`)
-      .on("postgres_changes", { event:"INSERT", schema:"public", table:"chat_messages" }, (payload) => {
-        const m = payload.new;
-        if (Number(m.conversation_id) === Number(selectedConvId)) {
-          setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, {
-            id:m.id, conversationId:m.conversation_id, senderId:m.sender_id,
-            body:m.body, createdAt:m.created_at, senderName:"", senderRole:"",
-          }]);
-          if (isOpen) markAsRead(m.conversation_id);
-        }
-        loadConversations();
-        // Rimuovi typing indicator di chi ha mandato il messaggio
-        if (m.sender_id !== user.id) {
+    function buildChannel() {
+      // Rimuovi canale precedente se esiste
+      if (channel) { try { supabase.removeChannel(channel); } catch {} }
+
+      channel = supabase
+        .channel(`chat-realtime-${user.id}-${Date.now()}`)
+        .on("postgres_changes", { event:"INSERT", schema:"public", table:"chat_messages" }, (payload) => {
+          const m = payload.new;
+          if (Number(m.conversation_id) === Number(selectedConvId)) {
+            setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, {
+              id:m.id, conversationId:m.conversation_id, senderId:m.sender_id,
+              body:m.body, createdAt:m.created_at, senderName:"", senderRole:"",
+            }]);
+            if (isOpen) markAsRead(m.conversation_id);
+          }
+          loadConversations();
+          if (m.sender_id !== user.id) {
+            setTypingUsers(prev => {
+              const next = { ...prev };
+              if (next[m.conversation_id]) delete next[m.conversation_id][m.sender_id];
+              return next;
+            });
+          }
+        })
+        .on("broadcast", { event:"typing" }, (payload) => {
+          const { userId, convId, isTyping } = payload.payload || {};
+          if (userId === user.id) return;
           setTypingUsers(prev => {
             const next = { ...prev };
-            if (next[m.conversation_id]) {
-              delete next[m.conversation_id][m.sender_id];
-            }
+            if (!next[convId]) next[convId] = {};
+            if (isTyping) { next[convId][userId] = Date.now(); }
+            else { delete next[convId][userId]; }
             return next;
           });
-        }
-      })
-      // Typing indicator via Realtime Broadcast
-      .on("broadcast", { event:"typing" }, (payload) => {
-        const { userId, convId, isTyping } = payload.payload || {};
-        if (userId === user.id) return; // ignora il mio stesso typing
-        setTypingUsers(prev => {
-          const next = { ...prev };
-          if (!next[convId]) next[convId] = {};
-          if (isTyping) {
-            next[convId][userId] = Date.now();
+        })
+        .subscribe((status) => {
+          // Se la subscription fallisce, avvia polling di fallback
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            startPolling();
           } else {
-            delete next[convId][userId];
+            stopPolling();
           }
-          return next;
         });
-      })
-      .subscribe();
+    }
 
-    return () => { supabase.removeChannel(channel); };
-  }, [user?.id, selectedConvId, isOpen, loadConversations, markAsRead]);
+    /* ── Polling fallback (iOS background / Safari) ── */
+    function startPolling() {
+      if (pollTimer) return; // già attivo
+      pollTimer = setInterval(() => {
+        loadConversations();
+        if (selectedConvId) loadMessages(selectedConvId);
+      }, 15000); // ogni 15 secondi
+    }
+
+    function stopPolling() {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    /* ── visibilitychange: riconnette quando l'app torna in foreground ── */
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        // Ricarica dati freschi
+        loadConversations();
+        if (selectedConvId) loadMessages(selectedConvId);
+        // Ricostruisce il canale Realtime (era caduto in background su iOS)
+        buildChannel();
+        stopPolling();
+      } else {
+        // App in background → avvia polling leggero come fallback
+        startPolling();
+      }
+    }
+
+    buildChannel();
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      stopPolling();
+      if (channel) { try { supabase.removeChannel(channel); } catch {} }
+    };
+  }, [user?.id, selectedConvId, isOpen, loadConversations, markAsRead, loadMessages]);
 
   /* ── Init ── */
   useEffect(() => {

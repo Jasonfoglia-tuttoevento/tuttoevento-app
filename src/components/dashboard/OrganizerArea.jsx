@@ -1,7 +1,8 @@
 "use client";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import AnalyticsWidget from "@/components/dashboard/AnalyticsWidget";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 function ProLock({ feature = "questa funzionalità", children, plan }) {
   const isPro = plan === "pro";
@@ -52,6 +53,98 @@ function Inp({ label, value, onChange, placeholder, type = "text" }) {
       <label style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: ".1em", fontFamily: "'Manrope',system-ui,sans-serif" }}>{label}</label>
       <input type={type} value={value} onChange={onChange} placeholder={placeholder}
         style={{ background: "#fbfaf8", border: "1px solid rgba(0,0,0,.1)", borderRadius: 12, padding: "10px 13px", fontSize: 13, fontFamily: "'Manrope',system-ui,sans-serif", outline: "none", width: "100%" }} />
+    </div>
+  );
+}
+
+
+/* ─── VenuePhotoUploader ─────────────────────────────────────── */
+function VenuePhotoUploader({ photo, onPhotoChange }) {
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState("");
+  const [preview, setPreview] = useState(photo || "");
+  const fileRef   = useRef(null);
+  const cameraRef = useRef(null);
+
+  useEffect(() => { setPreview(photo || ""); }, [photo]);
+
+  async function handleFile(file) {
+    if (!file) return;
+    const allowed = ["image/jpeg","image/jpg","image/png","image/webp","application/pdf"];
+    if (!allowed.includes(file.type)) {
+      setError("Formato non supportato. Usa JPG, PNG, WebP o PDF."); return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File troppo grande. Massimo 10MB."); return;
+    }
+    setError(""); setLoading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("type", "venue");
+    try {
+      const res = await fetch("/api/venue-profile/upload-photo", { method:"POST", body:fd });
+      const d   = await res.json();
+      if (!res.ok) { setError(d.error || "Errore upload"); }
+      else { setPreview(d.url); onPhotoChange(d.url); }
+    } catch { setError("Errore di rete"); }
+    setLoading(false);
+  }
+
+  return (
+    <div>
+      <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:8, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+        Foto locale
+      </label>
+      <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
+        {/* Anteprima */}
+        <div style={{ position:"relative", flexShrink:0 }}>
+          {preview ? (
+            <img src={preview} alt="Foto locale"
+              style={{ width:72, height:72, borderRadius:14, objectFit:"cover", border:"1px solid rgba(0,0,0,.1)" }} />
+          ) : (
+            <div style={{ width:72, height:72, borderRadius:14, background:"rgba(255,90,0,.08)", border:"1.5px dashed rgba(255,90,0,.3)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="1.5" strokeLinecap="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
+          )}
+          {loading && (
+            <div style={{ position:"absolute", inset:0, borderRadius:14, background:"rgba(255,255,255,.8)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <div style={{ width:18, height:18, border:"2px solid rgba(0,0,0,.1)", borderTopColor:ORANGE, borderRadius:"50%", animation:"spin .7s linear infinite" }} />
+            </div>
+          )}
+        </div>
+
+        {/* Bottoni */}
+        <div style={{ display:"flex", flexDirection:"column", gap:7, flex:1 }}>
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+            <button type="button" onClick={()=>cameraRef.current?.click()}
+              style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 13px", borderRadius:100, background:"white", border:"1px solid rgba(0,0,0,.1)", fontSize:12, fontWeight:700, color:INK, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              Scatta foto
+            </button>
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment"
+              style={{ display:"none" }} onChange={e=>handleFile(e.target.files?.[0])} />
+
+            <button type="button" onClick={()=>fileRef.current?.click()}
+              style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 13px", borderRadius:100, background:"white", border:"1px solid rgba(0,0,0,.1)", fontSize:12, fontWeight:700, color:INK, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Galleria / File
+            </button>
+            <input ref={fileRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+              style={{ display:"none" }} onChange={e=>handleFile(e.target.files?.[0])} />
+          </div>
+          <p style={{ fontSize:11, color:MUTED, margin:0, fontFamily:"'Manrope',system-ui,sans-serif" }}>JPG, PNG, WebP o PDF · max 10MB</p>
+          {error && <p style={{ fontSize:11, fontWeight:700, color:"#dc2626", margin:0 }}>{error}</p>}
+        </div>
+      </div>
     </div>
   );
 }
@@ -375,13 +468,15 @@ export default function OrganizerArea({ currentUser, events = [], artists = [], 
 
           <Card>
             <SectionTitle>Profilo locale</SectionTitle>
-            <form onSubmit={saveVenueProfile} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
-              <Inp label="Nome locale" value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="Es. Club Aurora" />
-              <Inp label="Città" value={venueCity} onChange={e => setVenueCity(e.target.value)} placeholder="Es. Napoli" />
-              <Inp label="Tipo locale" value={venueType} onChange={e => setVenueType(e.target.value)} placeholder="Es. Disco, Bar, Ristorante" />
-              <Inp label="Foto principale (URL)" value={venuePhoto} onChange={e => setVenuePhoto(e.target.value)} placeholder="https://..." />
-              {saveMsg && <p style={{ gridColumn: "1/-1", fontSize: 13, fontWeight: 700, color: saveMsg.includes("✓") ? "#16a34a" : "#dc2626" }}>{saveMsg}</p>}
-              <button type="submit" style={{ gridColumn: "1/-1", alignSelf: "flex-start", background: INK, color: "white", border: "none", borderRadius: 100, padding: "11px 28px", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "'Manrope',system-ui,sans-serif", width: "fit-content" }}>
+            <form onSubmit={saveVenueProfile} style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:12 }}>
+                <Inp label="Nome locale" value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="Es. Club Aurora" />
+                <Inp label="Città" value={venueCity} onChange={e => setVenueCity(e.target.value)} placeholder="Es. Napoli" />
+                <Inp label="Tipo locale" value={venueType} onChange={e => setVenueType(e.target.value)} placeholder="Es. Disco, Bar, Ristorante" />
+              </div>
+              <VenuePhotoUploader photo={venuePhoto} onPhotoChange={setVenuePhoto} />
+              {saveMsg && <p style={{ fontSize:13, fontWeight:700, color:saveMsg.includes("✓")?"#16a34a":"#dc2626", margin:0 }}>{saveMsg}</p>}
+              <button type="submit" style={{ alignSelf:"flex-start", background:INK, color:"white", border:"none", borderRadius:100, padding:"11px 28px", fontWeight:800, fontSize:13, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
                 Salva profilo
               </button>
             </form>
@@ -402,7 +497,7 @@ export default function OrganizerArea({ currentUser, events = [], artists = [], 
 
       {tab === "marketplace" && <TabMarketplace artists={artists} plan={plan} />}
       {tab === "crm"         && <TabCRM bookings={bookings} plan={plan} />}
-      {tab === "analitiche"  && <TabAnalitiche bookings={bookings} plan={plan} />}
+      {tab === "analitiche"  && <AnalyticsWidget role="organizer" userId={currentUser?.id} />}
       {tab === "estratto"    && <TabEstratto bookings={bookings} />}
     </div>
   );
