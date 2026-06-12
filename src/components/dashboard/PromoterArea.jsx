@@ -1,4 +1,5 @@
 "use client";
+import PromoterNetwork from "@/components/dashboard/PromoterNetwork";
 import AnalyticsWidget from "@/components/dashboard/AnalyticsWidget";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
@@ -405,7 +406,7 @@ function TabCommissioni({ commissions, bookings, portfolio, plan }) {
 
   const rows = myBookings.map(b => {
     const public_price = Number(b.publicPrice||b.public_price||b.cachet||0);
-    const artist_cachet = Number(b.artistCachet||b.artist_cachet||b.cachet||0);
+    const artist_cachet = Number(undefined /* cachet nascosto */||undefined /* cachet nascosto */||b.cachet||0);
     const te_margin = public_price - artist_cachet;
     const promoter_share = te_margin * (SHARE_PCT/100);
     return { ...b, public_price, artist_cachet, te_margin, promoter_share };
@@ -773,6 +774,7 @@ export default function PromoterArea({ currentUser, events=[], bookings=[], user
   return (
     <div id="promoter-area" style={{ fontFamily:"'Manrope',system-ui,sans-serif", color:INK, display:"flex", flexDirection:"column", gap:16 }}>
       {tab==="overview"    && <TabOverview currentUser={currentUser} bookings={bookings} portfolio={portfolio} contactRequests={contactRequests} plan={plan} commissions={commissions} />}
+      {tab==="network"     && <PromoterNetwork currentUser={currentUser} />}
       {tab==="analitiche"  && <AnalyticsWidget role="promoter" userId={currentUser?.id} />}
       {(tab==="roster") && <TabRoster portfolio={portfolio} users={[...users,...artists]} plan={plan} onAdd={handleAdd} onRemove={handleRemove} addingEntry={addingEntry} addMsg={addMsg} />}
       {(tab==="trattative"||tab==="deals") && <TabTrattative contactRequests={contactRequests} portfolio={portfolio} plan={plan} onUpdateStatus={handleUpdateStatus} />}

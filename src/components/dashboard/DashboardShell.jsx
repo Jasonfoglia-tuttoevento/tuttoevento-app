@@ -54,6 +54,7 @@ function getNavItems(role) {
   if (role === "promoter") return [
     { id: "overview",    label: "Dashboard",      icon: Icons.dashboard  },
     { id: "roster",      label: "Roster",         icon: Icons.users      },
+    { id: "network",     label: "La mia rete",    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M5 17l5.5-4M19 17l-5.5-4"/></svg> },
     { id: "deals",       label: "Trattative",     icon: Icons.briefcase  },
     { id: "commissions", label: "Commissioni",    icon: Icons.wallet     },
     { id: "agency",      label: "Agenzia",        icon: Icons.link       },

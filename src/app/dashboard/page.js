@@ -191,6 +191,7 @@ export default function DashboardPage() {
     if(role==="promoter"){
       switch(activeTab){
         case "overview":    return <PromoterArea currentUser={user} tab="overview"    events={events} artists={artists} bookings={bookings} users={users} />;
+        case "network":     return <PromoterArea currentUser={user} tab="network"    events={events} artists={artists} bookings={bookings} users={users} />;
         case "roster":      return <PromoterArea currentUser={user} tab="roster"      events={events} artists={artists} bookings={bookings} users={users} />;
         case "deals":       return <PromoterArea currentUser={user} tab="trattative"  events={events} artists={artists} bookings={bookings} users={users} />;
         case "commissions": return <PromoterCommissions bookings={bookings} onRefresh={()=>loadBookings()} />;

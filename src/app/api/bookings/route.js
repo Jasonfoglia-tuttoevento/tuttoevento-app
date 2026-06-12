@@ -221,28 +221,80 @@ export async function POST(request) {
       );
     }
 
+    // ── Calcolo commissioni ──────────────────────────────────────
+    const publicPrice = Number(body.publicPrice) || Number(body.cachet) || 0;
+    let platformFee     = 0;
+    let promoterFee     = 0;
+    let subPromoterFee  = 0;
+    let promoterParentId = null;
+
+    if (publicPrice > 0 && body.promoterId) {
+      // Controlla se il promoter ha un padre (sub-promoter)
+      const { data: promoterData } = await supabaseAdmin
+        .from("users")
+        .select("promoter_parent_id")
+        .eq("id", Number(body.promoterId))
+        .maybeSingle();
+
+      promoterParentId = promoterData?.promoter_parent_id || null;
+
+      if (promoterParentId) {
+        // Struttura a 2 livelli: TE 20% + P_figlio 10% + P_padre 10%
+        platformFee    = Math.round(publicPrice * 0.20 * 100) / 100;
+        promoterFee    = Math.round(publicPrice * 0.10 * 100) / 100; // promoter diretto
+        subPromoterFee = Math.round(publicPrice * 0.10 * 100) / 100; // va al padre
+      } else {
+        // Struttura a 1 livello: TE 20% + P 20%
+        platformFee = Math.round(publicPrice * 0.20 * 100) / 100;
+        promoterFee = Math.round(publicPrice * 0.20 * 100) / 100;
+      }
+    } else if (publicPrice > 0) {
+      // Nessun promoter: TE 40%
+      platformFee = Math.round(publicPrice * 0.40 * 100) / 100;
+    }
+
     const { data: booking, error } = await supabaseAdmin
       .from("bookings").insert({
-        organizer_id:   Number(body.organizerId),
-        organizer_name: body.organizerName  || "",
-        artist_id:      Number(body.artistId),
-        artist_name:    body.artistName     || "",
-        artist_cachet:  body.artistCachet   || body.cachet || "",
-        cachet:         body.cachet         || body.artistCachet || "",
-        public_price:   body.publicPrice    || null,
-        promoter_id:    body.promoterId     || null,
-        promoter_name:  body.promoterName   || "",
-        event_id:       body.eventId        || null,
-        event_title:    body.eventTitle     || "",
-        event_date:     body.eventDate      || "",
-        start_time:     body.startTime      || "",
-        end_time:       body.endTime        || "",
-        message:        body.message        || "",
-        status:         "pending",
-        payment_status: "pending",
-        updated_at:     new Date().toISOString(),
+        organizer_id:      Number(body.organizerId),
+        organizer_name:    body.organizerName  || "",
+        artist_id:         Number(body.artistId),
+        artist_name:       body.artistName     || "",
+        artist_cachet:     body.artistCachet   || body.cachet || "",
+        cachet:            body.cachet         || body.artistCachet || "",
+        public_price:      body.publicPrice    || null,
+        promoter_id:       body.promoterId     || null,
+        promoter_name:     body.promoterName   || "",
+        promoter_parent_id: promoterParentId,
+        event_id:          body.eventId        || null,
+        event_title:       body.eventTitle     || "",
+        event_date:        body.eventDate      || "",
+        start_time:        body.startTime      || "",
+        end_time:          body.endTime        || "",
+        message:           body.message        || "",
+        platform_fee:      platformFee   || null,
+        promoter_fee:      promoterFee   || null,
+        sub_promoter_fee:  subPromoterFee || null,
+        status:            "pending",
+        payment_status:    "pending",
+        updated_at:        new Date().toISOString(),
       }).select("*").single();
     if (error) return NextResponse.json({ error: "Errore creazione booking" }, { status: 500 });
+
+    // Salva dettaglio commissioni in booking_commissions
+    if (publicPrice > 0) {
+      const commissions = [];
+      commissions.push({ booking_id:booking.id, recipient_id:1, recipient_role:"platform", amount:platformFee, percentage:promoterParentId?20:40 }); // ID 1 = TuttoEvento/Jason
+      if (body.promoterId && promoterFee > 0) {
+        commissions.push({ booking_id:booking.id, recipient_id:Number(body.promoterId), recipient_role:"promoter", amount:promoterFee, percentage:10 });
+      }
+      if (promoterParentId && subPromoterFee > 0) {
+        commissions.push({ booking_id:booking.id, recipient_id:Number(promoterParentId), recipient_role:"sub_promoter", amount:subPromoterFee, percentage:10 });
+      }
+      if (commissions.length > 0) {
+        await supabaseAdmin.from("booking_commissions").insert(commissions).catch(()=>{});
+      }
+    }
+
     await updateEventStatus(body.eventId, "pending");
     return NextResponse.json(mapBookingToFrontend(booking));
   } catch (e) {
