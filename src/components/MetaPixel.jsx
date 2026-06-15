@@ -16,7 +16,10 @@ export default function MetaPixel() {
     return () => window.removeEventListener("te:cookie-consent", check);
   }, []);
 
-  if (!consented) return null;
+  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+
+  // Non caricare se non c'è consenso O se il Pixel ID non è configurato
+  if (!consented || !pixelId) return null;
 
   return (
     <>
@@ -29,7 +32,7 @@ export default function MetaPixel() {
           t.src=v;s=b.getElementsByTagName(e)[0];
           s.parentNode.insertBefore(t,s)
         }(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init','${process.env.NEXT_PUBLIC_META_PIXEL_ID||""}');
+        fbq('init','${pixelId}');
         fbq('track','PageView');
       `}</Script>
     </>

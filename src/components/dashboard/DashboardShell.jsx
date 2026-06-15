@@ -473,7 +473,7 @@ export default function DashboardShell({ user, activeTab, onTabChange, children 
         {/* ══ BOTTOM NAV MOBILE ══ */}
         <div className="ds-mobile-bottom">
           <div className="ds-mobile-nav">
-            {navItems.filter((_, i) => i < 4).map(item => (
+            {navItems.filter(i => i.id !== "settings").slice(0, 4).map(item => (
               <button key={item.id}
                 className={`ds-mobile-nav-item${activeTab === item.id ? " active" : ""}`}
                 onClick={() => onTabChange(item.id)}>
@@ -481,10 +481,11 @@ export default function DashboardShell({ user, activeTab, onTabChange, children 
                 <span>{item.label}</span>
               </button>
             ))}
+            {/* "Altro" apre il menu completo — dà accesso a TUTTE le voci, incluse quelle oltre la 4a */}
             <button
-              className={`ds-mobile-nav-item${activeTab === "settings" ? " active" : ""}`}
-              onClick={() => onTabChange("settings")}>
-              {Icons.settings}
+              className={`ds-mobile-nav-item${mobileMenuOpen ? " active" : ""}`}
+              onClick={() => setMobileMenuOpen(true)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               <span>Altro</span>
             </button>
           </div>
