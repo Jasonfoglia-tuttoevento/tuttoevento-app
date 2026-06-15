@@ -172,6 +172,8 @@ export default function DashboardPage() {
         case "overview":   return <ArtistArea {...commonArtistProps} tab="mediakit"   />;
         case "profile":    return <ArtistArea {...commonArtistProps} tab="mediakit"   />;
         case "cachet":     return <ArtistArea {...commonArtistProps} tab="cachet"     />;
+        case "richieste":  return <ArtistArea {...commonArtistProps} tab="richieste"  />;
+        case "richieste":  return <ArtistArea {...commonArtistProps} tab="richieste"  />;
         case "video":      return <ArtistArea {...commonArtistProps} tab="video"      />;
         case "calendar":   return <ArtistArea {...commonArtistProps} tab="calendario" />;
         case "analytics":  return <ArtistArea {...commonArtistProps} tab="analitiche" />;
@@ -184,6 +186,7 @@ export default function DashboardPage() {
       switch(activeTab){
         case "overview":    return <OrganizerArea currentUser={user} tab="overview"    events={events} artists={artists} bookings={bookings} />;
         case "marketplace": return <OrganizerArea currentUser={user} tab="marketplace" events={events} artists={artists} bookings={bookings} />;
+        case "richieste":   return <OrganizerArea currentUser={user} tab="crm"         events={events} artists={artists} bookings={bookings} />;
         case "bookings":    return <OrganizerBookings bookings={bookings} onRefresh={()=>loadBookings(`?organizerId=${user.id}`)} />;
         case "analytics":   return <OrganizerArea currentUser={user} tab="analitiche"  events={events} artists={artists} bookings={bookings} />;
         case "earnings":    return <OrganizerArea currentUser={user} tab="estratto"    events={events} artists={artists} bookings={bookings} />;

@@ -36,6 +36,7 @@ function getNavItems(role) {
     { id: "overview",    label: "Dashboard",      icon: Icons.dashboard },
     { id: "profile",     label: "Profilo",         icon: Icons.mic       },
     { id: "cachet",      label: "Cachet",           icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9h4.5a1.5 1.5 0 010 3H10.5a1.5 1.5 0 000 3H15"/></svg> },
+    { id: "richieste",   label: "Richieste",        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> },
     { id: "video",       label: "Video",            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> },
     { id: "calendar",    label: "Calendario",      icon: Icons.calendar  },
     { id: "analytics",   label: "Analitiche",      icon: Icons.chart     },
@@ -46,6 +47,7 @@ function getNavItems(role) {
   if (role === "organizer") return [
     { id: "overview",    label: "Dashboard",      icon: Icons.dashboard },
     { id: "marketplace", label: "Trova artisti",  icon: Icons.search    },
+    { id: "richieste",   label: "Richieste",      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
     { id: "bookings",    label: "Booking",        icon: Icons.calendar  },
     { id: "analytics",   label: "Analitiche",     icon: Icons.chart     },
     { id: "earnings",    label: "Estratto conto", icon: Icons.wallet    },
