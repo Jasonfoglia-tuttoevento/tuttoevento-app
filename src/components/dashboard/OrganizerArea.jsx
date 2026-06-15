@@ -197,7 +197,9 @@ function TabMarketplace({ artists, plan, onContact }) {
 
   const filtered = artists.filter(a => {
     const name = (a.stageName || a.name || "").toLowerCase();
-    const genre = (a.musicGenres || a.genres || "").toLowerCase();
+    // musicGenres è un array — uniscilo in stringa prima di confrontare
+    const genresArr = Array.isArray(a.musicGenres) ? a.musicGenres : (Array.isArray(a.genres) ? a.genres : []);
+    const genre = genresArr.join(" ").toLowerCase();
     const matchSearch = !search || name.includes(search.toLowerCase());
     const matchGenre  = !genreFilter || genre.includes(genreFilter.toLowerCase());
     return matchSearch && matchGenre;
@@ -245,7 +247,7 @@ function TabMarketplace({ artists, plan, onContact }) {
                 {a.verified && <VerifiedBadge size={15} />}
               </div>
                 </div>
-                <p style={{ fontSize: 12, color: ORANGE, fontWeight: 700, margin: "0 0 4px" }}>{a.musicGenres || a.genres || "—"}</p>
+                <p style={{ fontSize: 12, color: ORANGE, fontWeight: 700, margin: "0 0 4px" }}>{(Array.isArray(a.musicGenres) && a.musicGenres.length) ? a.musicGenres.join(", ") : (Array.isArray(a.genres) && a.genres.length) ? a.genres.join(", ") : "—"}</p>
                 <p style={{ fontSize: 12, color: MUTED, margin: "0 0 12px" }}>📍 {a.city || "Italia"}</p>
                 <button type="button" onClick={() => onContact && onContact(a)}
                   style={{ width: "100%", background: INK, color: "white", border: "none", borderRadius: 12, padding: "10px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Manrope',system-ui,sans-serif" }}>
