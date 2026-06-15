@@ -39,26 +39,28 @@ export default function DashboardPage() {
 
   // ── Setter stabili — definiti una volta, non cambiano mai ──────
   // Ognuno aggiorna un campo specifico di artistProfile
-  const setStageName     = useCallback(v => setArtistProfile(p=>({...p, stageName:     v})), []);
-  const setArtistType    = useCallback(v => setArtistProfile(p=>({...p, artistType:    v})), []);
-  const setMembersCount  = useCallback(v => setArtistProfile(p=>({...p, membersCount:  v})), []);
-  const setBio           = useCallback(v => setArtistProfile(p=>({...p, bio:           v})), []);
-  const setCity          = useCallback(v => setArtistProfile(p=>({...p, city:          v})), []);
-  const setPhoto         = useCallback(v => setArtistProfile(p=>({...p, photo:         v})), []);
-  const setInstagram     = useCallback(v => setArtistProfile(p=>({...p, instagram:     v})), []);
-  const setSpotify       = useCallback(v => setArtistProfile(p=>({...p, spotify:       v})), []);
-  const setYoutube       = useCallback(v => setArtistProfile(p=>({...p, youtube:       v})), []);
-  const setSoundcloud    = useCallback(v => setArtistProfile(p=>({...p, soundcloud:    v})), []);
-  const setTiktok        = useCallback(v => setArtistProfile(p=>({...p, tiktok:        v})), []);
-  const setRider         = useCallback(v => setArtistProfile(p=>({...p, rider:         v})), []);
-  const setAvailability  = useCallback(v => setArtistProfile(p=>({...p, availability:  v})), []);
-  const setCachet        = useCallback(v => setArtistProfile(p=>({...p, cachet:        v})), []);
-  const setMusicGenres   = useCallback(v => setArtistProfile(p=>({...p, musicGenres:   v})), []);
-  const setEventTypes    = useCallback(v => setArtistProfile(p=>({...p, eventTypes:    v})), []);
-  const setPricing       = useCallback(v => setArtistProfile(p=>({...p, pricing:       v})), []);
-  const setAvailableDates= useCallback(v => setArtistProfile(p=>({...p, availableDates:v})), []);
-  const setBookedDates   = useCallback(v => setArtistProfile(p=>({...p, bookedDates:   v})), []);
-  const setBookedSlots   = useCallback(v => setArtistProfile(p=>({...p, bookedSlots:   v})), []);
+  // Helper: crea un setter stabile che accetta sia un valore sia una funzione updater
+  const upd = (key, v) => setArtistProfile(p => ({ ...p, [key]: typeof v === "function" ? v(p[key]) : v }));
+  const setStageName     = useCallback(v => upd("stageName",     v), []);
+  const setArtistType    = useCallback(v => upd("artistType",    v), []);
+  const setMembersCount  = useCallback(v => upd("membersCount",  v), []);
+  const setBio           = useCallback(v => upd("bio",           v), []);
+  const setCity          = useCallback(v => upd("city",          v), []);
+  const setPhoto         = useCallback(v => upd("photo",         v), []);
+  const setInstagram     = useCallback(v => upd("instagram",     v), []);
+  const setSpotify       = useCallback(v => upd("spotify",       v), []);
+  const setYoutube       = useCallback(v => upd("youtube",       v), []);
+  const setSoundcloud    = useCallback(v => upd("soundcloud",    v), []);
+  const setTiktok        = useCallback(v => upd("tiktok",        v), []);
+  const setRider         = useCallback(v => upd("rider",         v), []);
+  const setAvailability  = useCallback(v => upd("availability",  v), []);
+  const setCachet        = useCallback(v => upd("cachet",        v), []);
+  const setMusicGenres   = useCallback(v => upd("musicGenres",    v), []);
+  const setEventTypes    = useCallback(v => upd("eventTypes",     v), []);
+  const setPricing       = useCallback(v => upd("pricing",        v), []);
+  const setAvailableDates= useCallback(v => upd("availableDates", v), []);
+  const setBookedDates   = useCallback(v => upd("bookedDates",    v), []);
+  const setBookedSlots   = useCallback(v => upd("bookedSlots",    v), []);
 
   // ── Caricamento dati ──────────────────────────────────────────
   const loadUsers    = useCallback(async()=>{ try{const r=await fetch("/api/users");  const d=await r.json();setUsers(Array.isArray(d)?d:[]);}catch{} },[]);
