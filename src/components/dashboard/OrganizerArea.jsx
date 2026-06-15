@@ -4,11 +4,29 @@ import AnalyticsWidget from "@/components/dashboard/AnalyticsWidget";
 
 import { useState, useEffect, useRef } from "react";
 
-function ProLock({ feature = "questa funzionalità", children, plan }) {
+function ProLock({ feature = "questa funzionalità", children, plan, collapsedLabel }) {
   const isPro = plan === "pro";
+  const [open, setOpen] = useState(false);
   if (isPro) return children ?? null;
+
+  // Versione collassata: piccolo banner cliccabile, non occupa spazio in prima vista
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)}
+        style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,90,0,.04)", border:"1px dashed rgba(255,90,0,.25)", borderRadius:100, padding:"8px 16px", cursor:"pointer", width:"fit-content", fontFamily:"Manrope,system-ui,sans-serif" }}>
+        <span style={{ fontSize:13 }}>🔒</span>
+        <span style={{ fontSize:12, fontWeight:700, color:"#ff5a00" }}>{collapsedLabel || "Filtri avanzati + AI matching"}</span>
+        <ProBadge />
+      </button>
+    );
+  }
+
   return (
-    <div style={{ background:"rgba(255,90,0,.04)", border:"1px dashed rgba(255,90,0,.25)", borderRadius:18, padding:"20px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:12 }}>
+    <div style={{ background:"rgba(255,90,0,.04)", border:"1px dashed rgba(255,90,0,.25)", borderRadius:18, padding:"20px", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:12, position:"relative" }}>
+      <button type="button" onClick={() => setOpen(false)}
+        style={{ position:"absolute", top:10, right:10, background:"none", border:"none", cursor:"pointer", color:"#6b6b73", fontSize:16, lineHeight:1, padding:4 }}>
+        ×
+      </button>
       <div style={{ width:36, height:36, borderRadius:10, background:"#0a0a0b", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
         <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="1" y="7" width="12" height="9" rx="2" fill="white"/>
@@ -191,9 +209,93 @@ function TabOverview({ currentUser, bookings, plan }) {
 }
 
 // ── Tab: Marketplace ───────────────────────────────────────────
-function TabMarketplace({ artists, plan, onContact }) {
+function ContactRequestModal({ artist, onClose }) {
+  const [eventDate, setEventDate] = useState("");
+  const [eventType, setEventType] = useState("");
+  const [budget, setBudget]       = useState("");
+  const [notes, setNotes]         = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState("");
+  const [done, setDone]           = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true); setError("");
+    try {
+      const res = await fetch("/api/contact-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          artistId: artist.id,
+          eventDate, eventType,
+          budget: budget || undefined,
+          notes,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setError(d.error || "Errore invio richiesta"); setLoading(false); return; }
+      setDone(true);
+    } catch {
+      setError("Errore di rete. Riprova.");
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,.5)" }} onClick={onClose} />
+      <div style={{ position:"relative", background:"white", borderRadius:20, padding:24, maxWidth:420, width:"100%", maxHeight:"90vh", overflowY:"auto" }}>
+        <button type="button" onClick={onClose}
+          style={{ position:"absolute", top:14, right:14, background:"rgba(0,0,0,.05)", border:"none", borderRadius:100, width:28, height:28, cursor:"pointer", fontSize:15, color:"#6b6b73" }}>
+          ×
+        </button>
+
+        {done ? (
+          <div style={{ textAlign:"center", padding:"12px 0" }}>
+            <div style={{ width:54, height:54, borderRadius:"50%", background:"rgba(22,163,74,.1)", border:"2px solid rgba(22,163,74,.2)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:17, margin:"0 0 8px" }}>Richiesta inviata!</p>
+            <p style={{ fontSize:13, color:"#6b6b73", margin:"0 0 20px", lineHeight:1.6 }}>
+              Il team TuttoEvento ti contatterà a breve per i dettagli su {artist.stageName || artist.name}.
+            </p>
+            <button type="button" onClick={onClose}
+              style={{ background:INK, color:"white", border:"none", borderRadius:100, padding:"11px 28px", fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+              Chiudi
+            </button>
+          </div>
+        ) : (
+          <>
+            <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:17, margin:"0 0 4px" }}>Richiedi contatto</p>
+            <p style={{ fontSize:13, color:"#6b6b73", margin:"0 0 18px" }}>
+              Per <strong style={{color:INK}}>{artist.stageName || artist.name}</strong> — il team TuttoEvento ti aiuterà a definire i dettagli.
+            </p>
+            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              <Inp label="Data evento" type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)} />
+              <Inp label="Tipo evento" value={eventType} onChange={e=>setEventType(e.target.value)} placeholder="Es. Serata in club, Evento privato..." />
+              <Inp label="Budget indicativo (€)" type="number" value={budget} onChange={e=>setBudget(e.target.value)} placeholder="Es. 500" />
+              <div>
+                <label style={{ fontSize:11, fontWeight:700, color:"#6b6b73", textTransform:"uppercase", letterSpacing:".08em", display:"block", marginBottom:6 }}>Note</label>
+                <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3} placeholder="Dettagli aggiuntivi sull'evento..."
+                  style={{ width:"100%", background:"#fbfaf8", border:"1px solid rgba(0,0,0,.1)", borderRadius:12, padding:"11px 14px", fontSize:14, fontFamily:"'Manrope',system-ui,sans-serif", resize:"vertical", boxSizing:"border-box" }} />
+              </div>
+              {error && <p style={{ fontSize:12, color:"#dc2626", fontWeight:600, margin:0 }}>{error}</p>}
+              <button type="submit" disabled={loading}
+                style={{ background:INK, color:"white", border:"none", borderRadius:100, padding:"12px", fontWeight:800, fontSize:14, cursor:loading?"not-allowed":"pointer", fontFamily:"'Manrope',system-ui,sans-serif", opacity:loading?.6:1 }}>
+                {loading ? "Invio..." : "Invia richiesta →"}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TabMarketplace({ artists, plan }) {
   const [search, setSearch]     = useState("");
   const [genreFilter, setGenre] = useState("");
+  const [contactArtist, setContactArtist] = useState(null);
 
   const filtered = artists.filter(a => {
     const name = (a.stageName || a.name || "").toLowerCase();
@@ -217,8 +319,8 @@ function TabMarketplace({ artists, plan, onContact }) {
         </div>
       </Card>
 
-      {/* Filtri avanzati + AI matching — solo PRO */}
-      <ProLock feature="I filtri avanzati e l'AI matching" plan={plan}>
+      {/* Filtri avanzati + AI matching — solo PRO, collassato di default */}
+      <ProLock feature="I filtri avanzati e l'AI matching" plan={plan} collapsedLabel="Filtri avanzati + AI matching">
         <Card>
           <SectionTitle>Filtri avanzati + AI matching <ProBadge /></SectionTitle>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 10 }}>
@@ -249,7 +351,7 @@ function TabMarketplace({ artists, plan, onContact }) {
                 </div>
                 <p style={{ fontSize: 12, color: ORANGE, fontWeight: 700, margin: "0 0 4px" }}>{(Array.isArray(a.musicGenres) && a.musicGenres.length) ? a.musicGenres.join(", ") : (Array.isArray(a.genres) && a.genres.length) ? a.genres.join(", ") : "—"}</p>
                 <p style={{ fontSize: 12, color: MUTED, margin: "0 0 12px" }}>📍 {a.city || "Italia"}</p>
-                <button type="button" onClick={() => onContact && onContact(a)}
+                <button type="button" onClick={() => setContactArtist(a)}
                   style={{ width: "100%", background: INK, color: "white", border: "none", borderRadius: 12, padding: "10px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Manrope',system-ui,sans-serif" }}>
                   Richiedi contatto
                 </button>
@@ -258,6 +360,8 @@ function TabMarketplace({ artists, plan, onContact }) {
           ))}
         </div>
       )}
+
+      {contactArtist && <ContactRequestModal artist={contactArtist} onClose={() => setContactArtist(null)} />}
     </div>
   );
 }
