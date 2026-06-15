@@ -612,13 +612,33 @@ function VideoShowcase({ plan }) {
 ───────────────────────────────────────────────────────────────── */
 function GenreMultiSelect({ selected=[], onToggle, isPro }) {
   const [open, setOpen] = useState(false);
+  const [rect,  setRect]  = useState(null);
+  const triggerRef = useRef(null);
   const safe = Array.isArray(selected) ? selected : [];
   const maxReached = !isPro && safe.length >= 3;
+
+  useEffect(() => {
+    if (!open) return;
+    function close() { setOpen(false); setRect(null); }
+    window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [open]);
+
+  function handleOpen() {
+    if (!open && triggerRef.current) {
+      setRect(triggerRef.current.getBoundingClientRect());
+    }
+    setOpen(p => !p);
+  }
 
   return (
     <div style={{ position:"relative" }}>
       {/* Trigger */}
-      <button type="button" onClick={()=>setOpen(p=>!p)}
+      <button ref={triggerRef} type="button" onClick={handleOpen}
         style={{
           width:"100%", background:"#fbfaf8", border:`1px solid ${open?"rgba(255,90,0,.45)":"rgba(0,0,0,.1)"}`,
           borderRadius:12, padding:"10px 14px", fontSize:13, color:INK,
@@ -643,17 +663,21 @@ function GenreMultiSelect({ selected=[], onToggle, isPro }) {
         </div>
       </button>
 
-      {/* Overlay per chiudere — PRIMA del dropdown nel DOM così z-index funziona correttamente */}
+      {/* Overlay per chiudere */}
       {open && (
-        <div style={{ position:"fixed", inset:0, zIndex:49 }} onMouseDown={()=>setOpen(false)} />
+        <div style={{ position:"fixed", inset:0, zIndex:9998 }} onMouseDown={()=>{ setOpen(false); setRect(null); }} />
       )}
 
-      {/* Dropdown — z-index 50, sopra l'overlay */}
-      {open && (
+      {/* Dropdown — position:fixed per bucare overflow:hidden delle card padre */}
+      {open && rect && (
         <div style={{
-          position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:50,
-          background:"white", border:`1px solid rgba(0,0,0,.1)`, borderRadius:14,
-          boxShadow:"0 8px 24px rgba(0,0,0,.1)", maxHeight:280, overflowY:"auto",
+          position:"fixed",
+          top: rect.bottom + 6,
+          left: rect.left,
+          width: rect.width,
+          zIndex:9999,
+          background:"white", border:"1px solid rgba(0,0,0,.1)", borderRadius:14,
+          boxShadow:"0 8px 32px rgba(0,0,0,.15)", maxHeight:260, overflowY:"auto",
           animation:"te-slide-down .15s ease",
         }}>
           <style>{`@keyframes te-slide-down{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
@@ -719,11 +743,31 @@ function GenreMultiSelect({ selected=[], onToggle, isPro }) {
 ───────────────────────────────────────────────────────────────── */
 function EventTypeMultiSelect({ selected=[], onToggle }) {
   const [open, setOpen] = useState(false);
+  const [rect, setRect]  = useState(null);
+  const triggerRef2 = useRef(null);
   const safe = Array.isArray(selected) ? selected : [];
+
+  useEffect(() => {
+    if (!open) return;
+    function close() { setOpen(false); setRect(null); }
+    window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [open]);
+
+  function handleOpen2() {
+    if (!open && triggerRef2.current) {
+      setRect(triggerRef2.current.getBoundingClientRect());
+    }
+    setOpen(p => !p);
+  }
 
   return (
     <div style={{ position:"relative" }}>
-      <button type="button" onClick={()=>setOpen(p=>!p)}
+      <button ref={triggerRef2} type="button" onClick={handleOpen2}
         style={{
           width:"100%", background:"#fbfaf8", border:`1px solid ${open?"rgba(255,90,0,.45)":"rgba(0,0,0,.1)"}`,
           borderRadius:12, padding:"10px 14px", fontSize:13, color:INK,
@@ -748,14 +792,18 @@ function EventTypeMultiSelect({ selected=[], onToggle }) {
         </div>
       </button>
 
-      {/* Overlay PRIMA del dropdown */}
-      {open && <div style={{ position:"fixed", inset:0, zIndex:49 }} onMouseDown={()=>setOpen(false)} />}
+      {/* Overlay */}
+      {open && <div style={{ position:"fixed", inset:0, zIndex:9998 }} onMouseDown={()=>{ setOpen(false); setRect(null); }} />}
 
-      {open && (
+      {open && rect && (
         <div style={{
-          position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:50,
+          position:"fixed",
+          top: rect.bottom + 6,
+          left: rect.left,
+          width: rect.width,
+          zIndex:9999,
           background:"white", border:"1px solid rgba(0,0,0,.1)", borderRadius:14,
-          boxShadow:"0 8px 24px rgba(0,0,0,.1)", overflow:"hidden",
+          boxShadow:"0 8px 32px rgba(0,0,0,.15)", overflow:"hidden", maxHeight:260, overflowY:"auto",
         }}>
           {EVENT_TYPES.map(e => {
             const isActive = safe.includes(e);
