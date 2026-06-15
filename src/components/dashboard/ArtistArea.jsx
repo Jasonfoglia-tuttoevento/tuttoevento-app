@@ -617,17 +617,6 @@ function GenreMultiSelect({ selected=[], onToggle, isPro }) {
   const safe = Array.isArray(selected) ? selected : [];
   const maxReached = !isPro && safe.length >= 3;
 
-  useEffect(() => {
-    if (!open) return;
-    function close() { setOpen(false); setRect(null); }
-    window.addEventListener("resize", close);
-    window.addEventListener("scroll", close, true);
-    return () => {
-      window.removeEventListener("resize", close);
-      window.removeEventListener("scroll", close, true);
-    };
-  }, [open]);
-
   function handleOpen() {
     if (!open && triggerRef.current) {
       setRect(triggerRef.current.getBoundingClientRect());
@@ -663,9 +652,9 @@ function GenreMultiSelect({ selected=[], onToggle, isPro }) {
         </div>
       </button>
 
-      {/* Overlay per chiudere */}
+      {/* Overlay per chiudere — onClick, non onMouseDown, per non vincere sul click del checkbox */}
       {open && (
-        <div style={{ position:"fixed", inset:0, zIndex:9998 }} onMouseDown={()=>{ setOpen(false); setRect(null); }} />
+        <div style={{ position:"fixed", inset:0, zIndex:9998 }} onClick={()=>{ setOpen(false); setRect(null); }} />
       )}
 
       {/* Dropdown — position:fixed per bucare overflow:hidden delle card padre */}
@@ -686,8 +675,7 @@ function GenreMultiSelect({ selected=[], onToggle, isPro }) {
             const isDisabled = maxReached && !isActive;
             return (
               <button key={g} type="button"
-                onMouseDown={e=>{ e.preventDefault(); e.stopPropagation(); if(!isDisabled) onToggle(g); }}
-                onClick={e=>{ e.preventDefault(); e.stopPropagation(); if(!isDisabled) onToggle(g); }}
+                onClick={e=>{ e.stopPropagation(); if(!isDisabled) onToggle(g); }}
                 style={{
                   width:"100%", display:"flex", alignItems:"center", gap:10,
                   padding:"10px 14px", background:"none", border:"none",
@@ -747,17 +735,6 @@ function EventTypeMultiSelect({ selected=[], onToggle }) {
   const triggerRef2 = useRef(null);
   const safe = Array.isArray(selected) ? selected : [];
 
-  useEffect(() => {
-    if (!open) return;
-    function close() { setOpen(false); setRect(null); }
-    window.addEventListener("resize", close);
-    window.addEventListener("scroll", close, true);
-    return () => {
-      window.removeEventListener("resize", close);
-      window.removeEventListener("scroll", close, true);
-    };
-  }, [open]);
-
   function handleOpen2() {
     if (!open && triggerRef2.current) {
       setRect(triggerRef2.current.getBoundingClientRect());
@@ -792,8 +769,8 @@ function EventTypeMultiSelect({ selected=[], onToggle }) {
         </div>
       </button>
 
-      {/* Overlay */}
-      {open && <div style={{ position:"fixed", inset:0, zIndex:9998 }} onMouseDown={()=>{ setOpen(false); setRect(null); }} />}
+      {/* Overlay — onClick, non onMouseDown */}
+      {open && <div style={{ position:"fixed", inset:0, zIndex:9998 }} onClick={()=>{ setOpen(false); setRect(null); }} />}
 
       {open && rect && (
         <div style={{
@@ -809,8 +786,7 @@ function EventTypeMultiSelect({ selected=[], onToggle }) {
             const isActive = safe.includes(e);
             return (
               <button key={e} type="button"
-                onMouseDown={ev=>{ ev.preventDefault(); ev.stopPropagation(); onToggle(e); }}
-                onClick={ev=>{ ev.preventDefault(); ev.stopPropagation(); onToggle(e); }}
+                onClick={ev=>{ ev.stopPropagation(); onToggle(e); }}
                 style={{
                   width:"100%", display:"flex", alignItems:"center", gap:10,
                   padding:"10px 14px", background:"none", border:"none",
