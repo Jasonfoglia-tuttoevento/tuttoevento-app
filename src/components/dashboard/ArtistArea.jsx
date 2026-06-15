@@ -1012,11 +1012,11 @@ function TabCachet({ pricing={}, setPricing, eventTypes=[], saveArtistProfile, a
       )}
 
       <SCard>
-        <STitle sub="Il tuo cachet netto privato per ogni tipo di serata e durata">
+        <STitle sub="Indica quanto vuoi guadagnare per ogni tipo di serata e durata">
           Listino prezzi
         </STitle>
         <p style={{ fontSize:12, color:MUTED, margin:"0 0 18px", lineHeight:1.65 }}>
-          I prezzi che inserisci sono il tuo <strong style={{color:INK}}>cachet netto privato</strong> — i locali non li vedono. Il team TuttoEvento imposta il prezzo pubblico e lo pubblica nel marketplace.
+          Questi sono i <strong style={{color:INK}}>tuoi compensi di riferimento</strong>. Il team TuttoEvento li userà per proporti ai locali con il prezzo migliore, occupandosi della trattativa per te.
         </p>
 
         {/* Tabella responsive */}
