@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const O    = "#ff5a00";
 const INK  = "#0a0a0b";
@@ -42,7 +43,6 @@ function StrengthBar({ password }) {
 export default function ResetPasswordPage() {
   const router  = useRouter();
   const [phase,    setPhase]    = useState("loading"); // loading | ready | error | success
-  const [token,    setToken]    = useState("");
   const [password, setPassword] = useState("");
   const [confirm,  setConfirm]  = useState("");
   const [showPw,   setShowPw]   = useState(false);
@@ -50,44 +50,39 @@ export default function ResetPasswordPage() {
   const [error,    setError]    = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ── Estrai token dall'hash o dai query params ──────────────────
-  // Supabase PKCE reindirizza con hash: #access_token=...&type=recovery
-  // oppure come query: ?token=...&type=recovery
+  // ── Scambia il token_hash per una sessione valida ───────────────
+  // Il link email ora punta direttamente a:
+  // /reset-password?token_hash=...&type=recovery
+  // verifyOtp scambia questo hash per una sessione autenticata.
   useEffect(() => {
-    function parseToken() {
-      // 1. Prova dall'hash (flusso PKCE standard)
-      const hash = window.location.hash.substring(1);
-      if (hash) {
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get("access_token");
-        const type        = params.get("type");
-        if (accessToken && type === "recovery") {
-          setToken(accessToken);
-          setPhase("ready");
-          // Pulisci l'hash dall'URL senza ricaricare
-          window.history.replaceState(null, "", window.location.pathname);
-          return;
-        }
-      }
+    async function verify() {
+      const search    = new URLSearchParams(window.location.search);
+      const tokenHash = search.get("token_hash");
+      const type      = search.get("type");
 
-      // 2. Prova dai query params (fallback)
-      const search = new URLSearchParams(window.location.search);
-      const qToken = search.get("access_token") || search.get("token");
-      const qType  = search.get("type");
-      if (qToken && (qType === "recovery" || qToken.length > 20)) {
-        setToken(qToken);
-        setPhase("ready");
+      if (!tokenHash || type !== "recovery") {
+        setPhase("error");
+        setErrorMsg("Link non valido o scaduto. Richiedi un nuovo link per reimpostare la password.");
         return;
       }
 
-      // 3. Nessun token trovato
-      setPhase("error");
-      setErrorMsg("Link non valido o scaduto. Richiedi un nuovo link per reimpostare la password.");
-    }
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: "recovery",
+      });
 
-    // Aspetta che l'hash sia disponibile (può richiedere un tick dopo il redirect)
-    const timer = setTimeout(parseToken, 200);
-    return () => clearTimeout(timer);
+      if (error) {
+        setPhase("error");
+        setErrorMsg("Il link è scaduto o è già stato usato. Richiedi un nuovo link per reimpostare la password.");
+        return;
+      }
+
+      // Pulisce i query params dall'URL senza ricaricare
+      window.history.replaceState(null, "", window.location.pathname);
+      setPhase("ready");
+    }
+    verify();
   }, []);
 
   function validate() {
@@ -106,14 +101,13 @@ export default function ResetPasswordPage() {
     setLoading(true); setError("");
 
     try {
-      const res = await fetch("/api/reset-password", {
-        method:  "POST",
-        headers: { "Content-Type":"application/json" },
-        body:    JSON.stringify({ token, password }),
-      });
-      const d = await res.json();
-      if (!res.ok) { setError(d.error || "Errore reimpostazione password"); }
-      else {
+      // La sessione è già attiva (verifyOtp l'ha impostata) — aggiorna direttamente la password
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.updateUser({ password });
+
+      if (error) {
+        setError(error.message || "Errore reimpostazione password");
+      } else {
         setPhase("success");
         setTimeout(() => router.push("/login"), 3000);
       }
