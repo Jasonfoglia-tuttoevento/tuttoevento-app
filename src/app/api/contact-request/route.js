@@ -137,6 +137,7 @@ export async function POST(request) {
         artist_name: artistUser?.name || "",
         event_date: body.eventDate || "",
         event_type: body.eventType || "",
+        duration: body.duration || "",
         budget: body.budget ? Number(body.budget) : null,
         notes: body.notes || "",
         status: "pending",
@@ -162,7 +163,8 @@ export async function POST(request) {
         <p><strong>Artista richiesto:</strong> ${artistUser?.name || "—"}</p>
         ${body.eventDate ? `<p><strong>Data evento:</strong> ${body.eventDate}</p>` : ""}
         ${body.eventType ? `<p><strong>Tipo evento:</strong> ${body.eventType}</p>` : ""}
-        ${body.budget ? `<p><strong>Budget:</strong> €${body.budget}</p>` : ""}
+        ${body.duration ? `<p><strong>Durata:</strong> ${body.duration}</p>` : ""}
+        ${body.budget ? `<p><strong>Prezzo pubblico (approvato):</strong> €${body.budget}</p>` : ""}
         ${body.notes ? `<p><strong>Note:</strong> ${body.notes}</p>` : ""}
         <p style="margin-top:24px">
           <a href="https://tuttoevento.it/dashboard"

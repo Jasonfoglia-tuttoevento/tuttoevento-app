@@ -209,17 +209,32 @@ function TabOverview({ currentUser, bookings, plan }) {
 }
 
 // ── Tab: Marketplace ───────────────────────────────────────────
+const DURATIONS = [
+  { key:"1h",      label:"1 ora"  },
+  { key:"2h",      label:"2 ore"  },
+  { key:"3h",      label:"3 ore"  },
+  { key:"fullday", label:"Full day" },
+];
+
 function ContactRequestModal({ artist, onClose }) {
+  const eventTypes = Array.isArray(artist.eventTypes) ? artist.eventTypes : [];
+  const publicPricing = artist.publicPricing || {};
+
   const [eventDate, setEventDate] = useState("");
   const [eventType, setEventType] = useState("");
-  const [budget, setBudget]       = useState("");
+  const [duration, setDuration]   = useState("");
   const [notes, setNotes]         = useState("");
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState("");
   const [done, setDone]           = useState(false);
 
+  // Prezzo pubblico per la combinazione tipo evento + durata selezionata
+  const price = (eventType && duration) ? (publicPricing?.[eventType]?.[duration] || null) : null;
+  const canSubmit = !!(eventDate && eventType && duration && price);
+
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!canSubmit) return;
     setLoading(true); setError("");
     try {
       const res = await fetch("/api/contact-requests", {
@@ -228,7 +243,8 @@ function ContactRequestModal({ artist, onClose }) {
         body: JSON.stringify({
           artistId: artist.id,
           eventDate, eventType,
-          budget: budget || undefined,
+          duration,
+          budget: price,
           notes,
         }),
       });
@@ -268,23 +284,98 @@ function ContactRequestModal({ artist, onClose }) {
           <>
             <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:17, margin:"0 0 4px" }}>Richiedi contatto</p>
             <p style={{ fontSize:13, color:"#6b6b73", margin:"0 0 18px" }}>
-              Per <strong style={{color:INK}}>{artist.stageName || artist.name}</strong> — il team TuttoEvento ti aiuterà a definire i dettagli.
+              Per <strong style={{color:INK}}>{artist.stageName || artist.name}</strong> — seleziona tipo evento e durata per vedere il prezzo.
             </p>
-            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:12 }}>
-              <Inp label="Data evento" type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)} />
-              <Inp label="Tipo evento" value={eventType} onChange={e=>setEventType(e.target.value)} placeholder="Es. Serata in club, Evento privato..." />
-              <Inp label="Budget indicativo (€)" type="number" value={budget} onChange={e=>setBudget(e.target.value)} placeholder="Es. 500" />
-              <div>
-                <label style={{ fontSize:11, fontWeight:700, color:"#6b6b73", textTransform:"uppercase", letterSpacing:".08em", display:"block", marginBottom:6 }}>Note</label>
-                <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3} placeholder="Dettagli aggiuntivi sull'evento..."
-                  style={{ width:"100%", background:"#fbfaf8", border:"1px solid rgba(0,0,0,.1)", borderRadius:12, padding:"11px 14px", fontSize:14, fontFamily:"'Manrope',system-ui,sans-serif", resize:"vertical", boxSizing:"border-box" }} />
+
+            {eventTypes.length === 0 ? (
+              <div style={{ background:"rgba(220,38,38,.06)", border:"1px solid rgba(220,38,38,.2)", borderRadius:12, padding:"12px 14px", marginBottom:14 }}>
+                <p style={{ fontSize:13, fontWeight:600, color:"#dc2626", margin:0 }}>
+                  Questo artista non ha ancora impostato i tipi di evento. Riprova più tardi.
+                </p>
               </div>
-              {error && <p style={{ fontSize:12, color:"#dc2626", fontWeight:600, margin:0 }}>{error}</p>}
-              <button type="submit" disabled={loading}
-                style={{ background:INK, color:"white", border:"none", borderRadius:100, padding:"12px", fontWeight:800, fontSize:14, cursor:loading?"not-allowed":"pointer", fontFamily:"'Manrope',system-ui,sans-serif", opacity:loading?.6:1 }}>
-                {loading ? "Invio..." : "Invia richiesta →"}
-              </button>
-            </form>
+            ) : (
+              <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                <Inp label="Data evento" type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)} />
+
+                {/* Tipo evento — checkbox tra quelli offerti dall'artista */}
+                <div>
+                  <label style={{ fontSize:11, fontWeight:700, color:"#6b6b73", textTransform:"uppercase", letterSpacing:".08em", display:"block", marginBottom:8 }}>Tipo evento</label>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                    {eventTypes.map(et => {
+                      const active = eventType === et;
+                      return (
+                        <button key={et} type="button" onClick={() => setEventType(et)}
+                          style={{
+                            padding:"7px 14px", borderRadius:100, fontSize:12, fontWeight:700, cursor:"pointer",
+                            fontFamily:"'Manrope',system-ui,sans-serif",
+                            border: active ? `1px solid ${ORANGE}` : "1px solid rgba(0,0,0,.12)",
+                            background: active ? "rgba(255,90,0,.08)" : "white",
+                            color: active ? ORANGE : "#6b6b73",
+                          }}>
+                          {et}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Durata */}
+                {eventType && (
+                  <div>
+                    <label style={{ fontSize:11, fontWeight:700, color:"#6b6b73", textTransform:"uppercase", letterSpacing:".08em", display:"block", marginBottom:8 }}>Durata</label>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                      {DURATIONS.map(d => {
+                        const active = duration === d.key;
+                        const hasPrice = !!(publicPricing?.[eventType]?.[d.key]);
+                        return (
+                          <button key={d.key} type="button" disabled={!hasPrice} onClick={() => setDuration(d.key)}
+                            style={{
+                              padding:"7px 14px", borderRadius:100, fontSize:12, fontWeight:700,
+                              cursor: hasPrice ? "pointer" : "not-allowed",
+                              fontFamily:"'Manrope',system-ui,sans-serif",
+                              border: active ? `1px solid ${ORANGE}` : "1px solid rgba(0,0,0,.12)",
+                              background: active ? "rgba(255,90,0,.08)" : "white",
+                              color: !hasPrice ? "rgba(0,0,0,.25)" : (active ? ORANGE : "#6b6b73"),
+                              opacity: hasPrice ? 1 : .5,
+                            }}>
+                            {d.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Prezzo pubblico */}
+                {eventType && duration && (
+                  price ? (
+                    <div style={{ background:"rgba(22,163,74,.06)", border:"1px solid rgba(22,163,74,.2)", borderRadius:12, padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                      <span style={{ fontSize:13, fontWeight:600, color:"#16a34a" }}>Prezzo per questa fascia</span>
+                      <span style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:18, color:"#16a34a" }}>€{price}</span>
+                    </div>
+                  ) : (
+                    <div style={{ background:"rgba(220,38,38,.06)", border:"1px solid rgba(220,38,38,.2)", borderRadius:12, padding:"12px 14px" }}>
+                      <p style={{ fontSize:12, fontWeight:600, color:"#dc2626", margin:0 }}>
+                        Prezzo non ancora disponibile per questa combinazione. Scegli un'altra durata.
+                      </p>
+                    </div>
+                  )
+                )}
+
+                <div>
+                  <label style={{ fontSize:11, fontWeight:700, color:"#6b6b73", textTransform:"uppercase", letterSpacing:".08em", display:"block", marginBottom:6 }}>Note</label>
+                  <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3} placeholder="Dettagli aggiuntivi sull'evento..."
+                    style={{ width:"100%", background:"#fbfaf8", border:"1px solid rgba(0,0,0,.1)", borderRadius:12, padding:"11px 14px", fontSize:14, fontFamily:"'Manrope',system-ui,sans-serif", resize:"vertical", boxSizing:"border-box" }} />
+                </div>
+
+                {error && <p style={{ fontSize:12, color:"#dc2626", fontWeight:600, margin:0 }}>{error}</p>}
+
+                <button type="submit" disabled={loading || !canSubmit}
+                  style={{ background:INK, color:"white", border:"none", borderRadius:100, padding:"12px", fontWeight:800, fontSize:14, cursor:(loading||!canSubmit)?"not-allowed":"pointer", fontFamily:"'Manrope',system-ui,sans-serif", opacity:(loading||!canSubmit)?.5:1 }}>
+                  {loading ? "Invio..." : canSubmit ? `Invia richiesta — €${price} →` : "Seleziona tipo evento e durata"}
+                </button>
+              </form>
+            )}
           </>
         )}
       </div>
