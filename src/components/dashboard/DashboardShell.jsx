@@ -35,6 +35,7 @@ function getNavItems(role) {
   if (role === "artist") return [
     { id: "overview",    label: "Dashboard",      icon: Icons.dashboard },
     { id: "profile",     label: "Profilo",         icon: Icons.mic       },
+    { id: "cachet",      label: "Cachet",           icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9 9h4.5a1.5 1.5 0 010 3H10.5a1.5 1.5 0 000 3H15"/></svg> },
     { id: "video",       label: "Video",            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> },
     { id: "calendar",    label: "Calendario",      icon: Icons.calendar  },
     { id: "analytics",   label: "Analitiche",      icon: Icons.chart     },

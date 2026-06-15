@@ -171,6 +171,7 @@ export default function DashboardPage() {
       switch(activeTab){
         case "overview":   return <ArtistArea {...commonArtistProps} tab="mediakit"   />;
         case "profile":    return <ArtistArea {...commonArtistProps} tab="mediakit"   />;
+        case "cachet":     return <ArtistArea {...commonArtistProps} tab="cachet"     />;
         case "video":      return <ArtistArea {...commonArtistProps} tab="video"      />;
         case "calendar":   return <ArtistArea {...commonArtistProps} tab="calendario" />;
         case "analytics":  return <ArtistArea {...commonArtistProps} tab="analitiche" />;
