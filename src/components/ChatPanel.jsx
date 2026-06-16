@@ -195,9 +195,15 @@ export default function ChatPanel({ user }) {
   const inputRef   = useRef(null);
   const pingRef    = useRef(null);
   const typingRef  = useRef(null);
-  const supabaseRef = useRef(null);
+  const supabaseRef     = useRef(null);
+  const selectedConvRef = useRef(selectedConvId); // ref aggiornato per evitare stale closure
+  const isOpenRef       = useRef(isOpen);
 
   const totalUnread = conversations.reduce((t, c) => t + Number(c.unreadCount || 0), 0);
+
+  // Mantieni i ref sincronizzati con lo state (per closure nel canale realtime)
+  useEffect(() => { selectedConvRef.current = selectedConvId; }, [selectedConvId]);
+  useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
 
   // Map userId → user info (photo, verified)
   const usersMap = Object.fromEntries(users.map(u => [u.id, u]));
@@ -272,12 +278,14 @@ export default function ChatPanel({ user }) {
         .channel(`chat-realtime-${user.id}-${Date.now()}`)
         .on("postgres_changes", { event:"INSERT", schema:"public", table:"chat_messages" }, (payload) => {
           const m = payload.new;
-          if (Number(m.conversation_id) === Number(selectedConvId)) {
+          // Usa selectedConvRef per evitare stale closure
+          const activeConvId = selectedConvRef.current;
+          if (Number(m.conversation_id) === Number(activeConvId)) {
             setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, {
               id:m.id, conversationId:m.conversation_id, senderId:m.sender_id,
               body:m.body, createdAt:m.created_at, senderName:"", senderRole:"",
             }]);
-            if (isOpen) markAsRead(m.conversation_id);
+            if (isOpenRef.current) markAsRead(m.conversation_id);
           }
           loadConversations();
           if (m.sender_id !== user.id) {
@@ -464,7 +472,9 @@ export default function ChatPanel({ user }) {
   }
 
   const selectedConv = conversations.find(c => c.id === selectedConvId);
-  const otherName = selectedConv ? getOtherName(selectedConv.title, user?.name) : null;
+  const otherName = selectedConv
+    ? (usersMap[selectedConv.otherUserId]?.name || getOtherName(selectedConv.title, user?.name))
+    : null;
   const otherLastSeen = selectedConv ? onlineMap?.[selectedConv.otherUserId] : null;
   const otherOnline = isOnline(otherLastSeen);
   const otherUser = selectedConv ? usersMap[selectedConv.otherUserId] : null;
@@ -489,14 +499,15 @@ export default function ChatPanel({ user }) {
         .cp-btn:hover{transform:scale(1.03);}
         .cp-badge{background:#ff5a00;color:white;border-radius:100px;padding:2px 8px;font-size:11px;font-weight:900;}
 
-        .cp-overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);display:flex;justify-content:flex-end;animation:cpfi .2s ease;}
+        .cp-overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);display:flex;justify-content:flex-end;animation:cpfi .2s ease;height:100%;height:100dvh;}
         @keyframes cpfi{from{opacity:0}to{opacity:1}}
 
         .cp-panel{
-          width:100%;max-width:940px;height:100%;background:#0a0a0b;
+          width:100%;max-width:940px;height:100%;height:100dvh;background:#0a0a0b;
           display:grid;grid-template-columns:280px 1fr;
           animation:cpsi .25s cubic-bezier(.4,0,.2,1);
           border-left:1px solid rgba(255,255,255,.07);
+          overflow:hidden;
         }
         @keyframes cpsi{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
 
@@ -504,12 +515,14 @@ export default function ChatPanel({ user }) {
         .cp-main{display:flex;flex-direction:column;height:100%;overflow:hidden;background:#0a0a0b;}
 
         @media(max-width:767px){
-          .cp-panel{grid-template-columns:1fr;max-width:100%;}
+          .cp-overlay{align-items:flex-end;}
+          .cp-panel{grid-template-columns:1fr;max-width:100%;width:100%;border-radius:20px 20px 0 0;height:92%;height:92dvh;border-left:none;}
           .cp-sidebar{display:none;}
           .cp-sidebar.mv{display:flex!important;}
           .cp-main{display:none;}
           .cp-main.mv{display:flex!important;}
           .cp-back{display:block!important;}
+          .cp-form{padding-bottom:max(14px,env(safe-area-inset-bottom))!important;}
         }
 
         .cp-scroll::-webkit-scrollbar{width:3px;}
@@ -679,7 +692,7 @@ export default function ChatPanel({ user }) {
               </div>
 
               {/* Input */}
-              <form onSubmit={sendMessage} style={{ padding:"10px 14px 14px", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", gap:8, alignItems:"flex-end", flexShrink:0 }}>
+              <form onSubmit={sendMessage} className="cp-form" style={{ padding:"10px 14px 14px", borderTop:"1px solid rgba(255,255,255,.07)", display:"flex", gap:8, alignItems:"flex-end", flexShrink:0 }}>
                 <textarea
                   ref={inputRef}
                   className="cp-input"
