@@ -19,18 +19,16 @@ function rangesOverlap(startA, endA, startB, endB) {
   return aStart < bEnd && bStart < aEnd;
 }
 
-function mapBookingToFrontend(booking) {
+function mapBookingToFrontend(booking, viewerRole = null) {
   if (!booking) return null;
-  return {
+
+  const base = {
     id:              booking.id,
     organizerId:     booking.organizer_id,
     organizerName:   booking.organizer_name   || "",
     artistId:        booking.artist_id,
     artistUserId:    booking.artist_id,
     artistName:      booking.artist_name      || "",
-    artistCachet:    booking.artist_cachet    || "",
-    cachet:          booking.cachet           || "",
-    publicPrice:     booking.public_price     || null,
     promoterId:      booking.promoter_id      || null,
     promoterName:    booking.promoter_name    || "",
     eventId:         booking.event_id,
@@ -44,9 +42,24 @@ function mapBookingToFrontend(booking) {
     paidVenueAt:     booking.paid_venue_at    || null,
     paidArtistAt:    booking.paid_artist_at   || null,
     paidPromoterAt:  booking.paid_promoter_at || null,
+    artistConfirmation:  booking.artist_confirmation  || "pending",
+    artistConfirmedAt:   booking.artist_confirmed_at  || null,
+    artistDeclineReason: booking.artist_decline_reason|| null,
     createdAt:       booking.created_at,
     updatedAt:       booking.updated_at,
   };
+
+  // Il cachet/compenso artista NON è mai visibile all'admin né al locale —
+  // solo l'artista stesso e il sistema lo conoscono.
+  if (viewerRole === "artist") {
+    base.artistCachet = booking.artist_cachet || "";
+    base.cachet       = booking.cachet        || "";
+  }
+
+  // Il prezzo pubblico è visibile a locale/admin/promoter (serve per pagamenti/commissioni)
+  base.publicPrice = booking.public_price || null;
+
+  return base;
 }
 
 /* ─── Controlla overlap su booking esistenti ─────────────── */
@@ -148,6 +161,26 @@ async function updateArtistBookedSlots(booking) {
   }, { onConflict: "user_id" });
 }
 
+/* ─── Libera lo slot dal calendario artista (decline) ────── */
+async function removeArtistBookedSlot(booking) {
+  if (!booking?.artist_id) return;
+  const { data: profile } = await supabaseAdmin
+    .from("artist_profiles").select("*").eq("user_id", Number(booking.artist_id)).maybeSingle();
+  let bookedDates = []; let bookedSlots = [];
+  try { bookedDates = JSON.parse(profile?.booked_dates || "[]"); } catch {}
+  try { bookedSlots  = JSON.parse(profile?.booked_slots  || "[]"); } catch {}
+  bookedSlots = bookedSlots.filter(s => Number(s.bookingId) !== Number(booking.id));
+  // Rimuovi la data solo se non ci sono altri slot in quella data
+  const stillUsed = bookedSlots.some(s => s.date === booking.event_date);
+  if (!stillUsed) bookedDates = bookedDates.filter(d => d !== booking.event_date);
+  await supabaseAdmin.from("artist_profiles").upsert({
+    user_id: Number(booking.artist_id),
+    booked_dates: JSON.stringify(bookedDates),
+    booked_slots: JSON.stringify(bookedSlots),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+}
+
 /* ─── GET ─────────────────────────────────────────────────── */
 export async function GET(request) {
   const user = await getSessionUser();
@@ -188,7 +221,7 @@ export async function GET(request) {
     }
     const { data: bookings, error } = await query;
     if (error) return NextResponse.json({ error: "Errore caricamento booking" }, { status: 500 });
-    return NextResponse.json((bookings||[]).map(mapBookingToFrontend));
+    return NextResponse.json((bookings||[]).map(b => mapBookingToFrontend(b, user.role)));
   } catch (e) {
     console.error("GET bookings:", e);
     return NextResponse.json({ error: "Errore server booking" }, { status: 500 });
@@ -274,8 +307,9 @@ export async function POST(request) {
         platform_fee:      platformFee   || null,
         promoter_fee:      promoterFee   || null,
         sub_promoter_fee:  subPromoterFee || null,
-        status:            "pending",
+        status:            body.createdByAdmin ? "accepted" : "pending",
         payment_status:    "pending",
+        artist_confirmation: "pending",
         updated_at:        new Date().toISOString(),
       }).select("*").single();
     if (error) return NextResponse.json({ error: "Errore creazione booking" }, { status: 500 });
@@ -296,7 +330,9 @@ export async function POST(request) {
     }
 
     await updateEventStatus(body.eventId, "pending");
-    return NextResponse.json(mapBookingToFrontend(booking));
+    // Se creato da admin, il booking parte come "accepted" → aggiorna subito il calendario artista
+    if (body.createdByAdmin) await updateArtistBookedSlots(booking);
+    return NextResponse.json(mapBookingToFrontend(booking, user.role));
   } catch (e) {
     console.error("POST bookings:", e);
     return NextResponse.json({ error: e?.message || "Errore server" }, { status: 500 });
@@ -339,6 +375,30 @@ export async function PATCH(request) {
       updates.status = body.status;
     }
 
+
+    /* ══════════════════════════════════════════════════════
+       CASO 2b — conferma/declino presenza artista
+       Distinto dal pagamento: l'artista confirma di essere
+       disponibile/presente per la data specifica del booking.
+    ══════════════════════════════════════════════════════ */
+    if (body.confirmAction) {
+      if (user.role !== "artist" || Number(current.artist_id) !== Number(user.id)) return forbidden();
+
+      if (body.confirmAction === "confirm") {
+        updates.artist_confirmation = "confirmed";
+        updates.artist_confirmed_at = now;
+      } else if (body.confirmAction === "decline") {
+        if (!body.declineReason || body.declineReason.trim().length < 5) {
+          return NextResponse.json({ error: "Inserisci un breve motivo dell'indisponibilità" }, { status: 400 });
+        }
+        updates.artist_confirmation   = "declined";
+        updates.artist_decline_reason = body.declineReason.trim();
+        // Libera lo slot dal calendario: l'admin dovrà trovare un'alternativa
+        await removeArtistBookedSlot(current);
+      } else {
+        return NextResponse.json({ error: "confirmAction non riconosciuta" }, { status: 400 });
+      }
+    }
 
     /* ══════════════════════════════════════════════════════
        CASO 3 — cancellazione booking
@@ -410,7 +470,7 @@ export async function PATCH(request) {
     await updateEventStatus(updated.event_id, updated.status);
     if (updates.status === "accepted") await updateArtistBookedSlots(updated);
 
-    return NextResponse.json(mapBookingToFrontend(updated));
+    return NextResponse.json(mapBookingToFrontend(updated, user.role));
   } catch (e) {
     console.error("PATCH bookings:", e);
     return NextResponse.json({ error: e?.message || "Errore server" }, { status: 500 });

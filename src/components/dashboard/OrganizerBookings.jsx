@@ -19,6 +19,15 @@ function paymentLabel(ps) {
   return map[ps] || { label: ps||"—", color:MUTED, bg:"rgba(0,0,0,.06)" };
 }
 
+function artistConfirmLabel(ac) {
+  const map = {
+    pending:   { label:"Artista: in attesa di conferma", color:"#d97706", bg:"rgba(217,119,6,.1)"  },
+    confirmed: { label:"Artista confermato",              color:"#16a34a", bg:"rgba(22,163,74,.1)"  },
+    declined:  { label:"Artista NON disponibile",         color:"#dc2626", bg:"rgba(220,38,38,.1)"  },
+  };
+  return map[ac] || null;
+}
+
 function statusLabel(s) {
   const map = {
     pending:   { label:"In attesa",  color:"#d97706", bg:"rgba(217,119,6,.1)"  },
@@ -151,6 +160,9 @@ export default function OrganizerBookings({ bookings = [], onRefresh }) {
                   <h3 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:16, margin:0, color:INK }}>{b.artistName||"—"}</h3>
                   <Badge {...sl} />
                   <Badge {...pl} />
+                  {artistConfirmLabel(b.artistConfirmation) && (
+                    <Badge {...artistConfirmLabel(b.artistConfirmation)} />
+                  )}
                 </div>
                 {b.eventTitle && <p style={{ fontSize:13, fontWeight:600, color:INK, margin:"0 0 3px" }}>{b.eventTitle}</p>}
                 <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
@@ -159,6 +171,15 @@ export default function OrganizerBookings({ bookings = [], onRefresh }) {
                   {b.publicPrice && <span style={{ fontSize:12, fontWeight:700, color:INK }}>💶 €{b.publicPrice}</span>}
                 </div>
                 {b.message && <p style={{ fontSize:12, color:MUTED, margin:"6px 0 0", fontStyle:"italic" }}>"{b.message}"</p>}
+                {b.artistConfirmation === "declined" && (
+                  <div style={{ marginTop:8, background:"rgba(220,38,38,.06)", border:"1px solid rgba(220,38,38,.2)", borderRadius:10, padding:"8px 12px" }}>
+                    <p style={{ fontSize:12, fontWeight:700, color:"#dc2626", margin:"0 0 3px" }}>⚠ Artista non disponibile</p>
+                    {b.artistDeclineReason && (
+                      <p style={{ fontSize:11, color:"#dc2626", margin:0, fontStyle:"italic" }}>"{b.artistDeclineReason}"</p>
+                    )}
+                    <p style={{ fontSize:11, color:MUTED, margin:"4px 0 0" }}>Il team TuttoEvento sarà notificato per trovare un'alternativa.</p>
+                  </div>
+                )}
               </div>
             </div>
 

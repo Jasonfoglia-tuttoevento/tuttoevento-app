@@ -64,6 +64,8 @@ export async function GET(request) {
 
     if (user.role === "organizer") {
       query = query.eq("organizer_id", Number(user.id));
+    } else if (user.role === "artist") {
+      query = query.eq("artist_id", Number(user.id));
     } else if (user.role === "promoter") {
       // Trova gli artisti e locali nel portfolio del promoter
       const { data: portfolio } = await supabaseAdmin
@@ -228,7 +230,17 @@ export async function POST(request) {
   }
 }
 
+// Durata -> orario di inizio/fine placeholder (l'admin potrà affinare dal booking)
+const DURATION_TO_TIMES = {
+  "1h":      { startTime: "22:00", endTime: "23:00" },
+  "2h":      { startTime: "22:00", endTime: "00:00" },
+  "3h":      { startTime: "22:00", endTime: "01:00" },
+  "fullday": { startTime: "10:00", endTime: "23:59" },
+};
+
 // PATCH: aggiorna stato richiesta (solo admin)
+// status === "connected" → crea un booking reale collegato alla richiesta,
+// usando il public_pricing approvato per quel tipo evento/durata.
 export async function PATCH(request) {
   const user = await getSessionUser();
   if (!user) return unauthorized();
@@ -240,9 +252,93 @@ export async function PATCH(request) {
       return NextResponse.json({ error: "id e status obbligatori" }, { status: 400 });
     }
 
+    // Recupera la richiesta corrente
+    const { data: current, error: fetchErr } = await supabaseAdmin
+      .from("contact_requests")
+      .select("*")
+      .eq("id", Number(body.id))
+      .maybeSingle();
+    if (fetchErr || !current) return NextResponse.json({ error: "Richiesta non trovata" }, { status: 404 });
+
+    const now = new Date().toISOString();
+
+    /* ── Caso "connected": crea booking reale ── */
+    if (body.status === "connected" && !current.booking_id) {
+      if (!current.event_date) {
+        return NextResponse.json({ error: "La richiesta non ha una data evento" }, { status: 400 });
+      }
+
+      // Recupera public_pricing approvato per l'artista
+      const { data: artistProfile } = await supabaseAdmin
+        .from("artist_profiles")
+        .select("public_pricing, promoter_id")
+        .eq("user_id", Number(current.artist_id))
+        .maybeSingle();
+
+      const publicPricing = artistProfile?.public_pricing || {};
+      const eventType = current.event_type || "";
+      const duration  = current.duration   || "";
+      const publicPrice = Number(publicPricing?.[eventType]?.[duration]) || Number(current.budget) || 0;
+
+      if (publicPrice <= 0) {
+        return NextResponse.json({ error: "Nessun prezzo pubblico approvato per questo tipo evento/durata. Approva il cachet dell'artista prima di connettere." }, { status: 400 });
+      }
+
+      const times = DURATION_TO_TIMES[duration] || { startTime: "22:00", endTime: "23:59" };
+
+      // Recupera promoter eventualmente collegato all'artista
+      let promoterId = null, promoterName = "";
+      const { data: artistPromoterLink } = await supabaseAdmin
+        .from("promoter_portfolio")
+        .select("promoter_id, users:promoter_id(id, name)")
+        .eq("entity_type", "artist")
+        .eq("entity_id", Number(current.artist_id))
+        .maybeSingle();
+      if (artistPromoterLink?.users) {
+        promoterId   = artistPromoterLink.users.id;
+        promoterName = artistPromoterLink.users.name || "";
+      }
+
+      // Crea il booking chiamando l'API bookings esistente (calcolo commissioni, disponibilità, ecc.)
+      const bookingRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: request.headers.get("cookie") || "" },
+        body: JSON.stringify({
+          organizerId:    current.organizer_id,
+          organizerName:  current.organizer_name,
+          artistId:       current.artist_id,
+          artistName:     current.artist_name,
+          publicPrice,
+          promoterId,
+          promoterName,
+          eventTitle:     eventType || "Evento",
+          eventDate:      current.event_date,
+          startTime:      times.startTime,
+          endTime:        times.endTime,
+          message:        current.notes || "",
+          createdByAdmin: true,
+        }),
+      });
+      const bookingData = await bookingRes.json();
+      if (!bookingRes.ok) {
+        return NextResponse.json({ error: bookingData.error || "Errore creazione booking" }, { status: bookingRes.status });
+      }
+
+      // Collega la richiesta al booking creato
+      const { data, error } = await supabaseAdmin
+        .from("contact_requests")
+        .update({ status: body.status, booking_id: bookingData.id, updated_at: now })
+        .eq("id", Number(body.id))
+        .select("*").single();
+      if (error) return NextResponse.json({ error: "Errore aggiornamento richiesta" }, { status: 500 });
+
+      return NextResponse.json({ ...data, booking: bookingData });
+    }
+
+    /* ── Altri stati: solo aggiornamento status ── */
     const { data, error } = await supabaseAdmin
       .from("contact_requests")
-      .update({ status: body.status, updated_at: new Date().toISOString() })
+      .update({ status: body.status, updated_at: now })
       .eq("id", Number(body.id))
       .select("*").single();
 

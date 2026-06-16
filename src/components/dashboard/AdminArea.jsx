@@ -290,9 +290,25 @@ function SectionRequests({ requests, onUpdate }) {
                 <div style={{ display:"flex", gap:12, marginTop:4, flexWrap:"wrap" }}>
                   {r.event_date && <span style={{ fontSize:12, color:MUTED }}>{r.event_date}</span>}
                   {r.event_type && <span style={{ fontSize:12, color:MUTED }}>{r.event_type}</span>}
-                  {r.budget     && <span style={{ fontSize:12, fontWeight:700, color:ORANGE }}>€{r.budget}</span>}
+                  {r.duration   && <span style={{ fontSize:12, color:MUTED }}>{r.duration}</span>}
                 </div>
                 {r.notes && <p style={{ fontSize:12, color:MUTED, margin:"6px 0 0", fontStyle:"italic" }}>"{r.notes}"</p>}
+                {/* Booking collegato */}
+                {r.booking_id && (
+                  <p style={{ fontSize:11, fontWeight:700, color:"#16a34a", margin:"8px 0 0" }}>
+                    ✓ Booking #{r.booking_id} creato
+                  </p>
+                )}
+                {/* Decline artista — senza mostrare cachet */}
+                {r.booking && r.booking.artistConfirmation === "declined" && (
+                  <div style={{ marginTop:8, background:"rgba(220,38,38,.06)", border:"1px solid rgba(220,38,38,.18)", borderRadius:10, padding:"7px 11px" }}>
+                    <p style={{ fontSize:12, fontWeight:700, color:"#dc2626", margin:"0 0 2px" }}>⚠ Artista non disponibile per questa data</p>
+                    {r.booking.artistDeclineReason && (
+                      <p style={{ fontSize:11, color:"#dc2626", margin:0, fontStyle:"italic" }}>"{r.booking.artistDeclineReason}"</p>
+                    )}
+                    <p style={{ fontSize:11, color:MUTED, margin:"3px 0 0" }}>È necessario trovare un'alternativa o proporre un'altra data.</p>
+                  </div>
+                )}
               </div>
               <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:100, background:`${STATUS_COLORS[r.status]||"#6b7280"}18`, color:STATUS_COLORS[r.status]||"#6b7280", flexShrink:0 }}>
                 {STATUS_LABELS[r.status]||r.status}
@@ -304,6 +320,9 @@ function SectionRequests({ requests, onUpdate }) {
                 <button onClick={()=>onUpdate(r.id,"connected")} style={{ fontSize:12, fontWeight:700, padding:"5px 14px", borderRadius:100, border:"none", background:"#16a34a", color:"white", cursor:"pointer", fontFamily:"inherit" }}>Connetti</button>
                 <button onClick={()=>onUpdate(r.id,"rejected")}  style={{ fontSize:12, fontWeight:700, padding:"5px 14px", borderRadius:100, border:"1px solid #fca5a5", background:"transparent", color:"#dc2626", cursor:"pointer", fontFamily:"inherit" }}>Rifiuta</button>
               </>}
+              {r.status === "connected" && !r.booking_id && (
+                <span style={{ fontSize:11, color:MUTED, fontStyle:"italic" }}>Booking in creazione...</span>
+              )}
             </div>
           </div>
         ))
@@ -528,8 +547,18 @@ export default function AdminArea({ users=[], events=[], bookings=[], tab: initi
   }, [events]);
 
   async function updateRequestStatus(id, status) {
-    const res = await fetch("/api/contact-request",{ method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({id,status}) });
-    if (res.ok) setContactRequests(prev=>prev.map(r=>r.id===id?{...r,status}:r));
+    const res = await fetch("/api/contact-requests",{ method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({id,status}) });
+    if (res.ok) {
+      const data = await res.json();
+      // Aggiorna la richiesta con booking_id e dati booking se restituiti (es. dopo "connected")
+      setContactRequests(prev => prev.map(r =>
+        r.id === id ? { ...r, status, booking_id: data.booking_id || r.booking_id, booking: data.booking || r.booking } : r
+      ));
+    } else {
+      const err = await res.json().catch(()=>({}));
+      alert(err.error || "Errore durante l'operazione");
+    }
+    return res.ok;
   }
 
   const tab = initialTab || "overview";
