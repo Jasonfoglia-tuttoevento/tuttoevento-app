@@ -1,3 +1,4 @@
+"use client";
 // Costanti di design condivise tra tutti i componenti artista
 export const O      = "#ff5a00";
 export const INK    = "#0a0a0b";

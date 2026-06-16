@@ -1,7 +1,96 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { SCard, STitle, ProBadge, ProLock, O, INK, MUTED, MUTED2, BORDER, inp, DURATIONS } from "./shared";
+import { useState, useEffect } from "react";
+import { SCard, STitle, O, INK, MUTED, inp } from "./shared";
 
+/* ── Carta conferma presenza booking ── */
+function BookingConfirmCard({ booking, onRefresh }) {
+  const [showDecline, setShowDecline] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function sendConfirm(action) {
+    if (action === "decline" && declineReason.trim().length < 5) {
+      setError("Inserisci un breve motivo (almeno 5 caratteri)");
+      return;
+    }
+    setLoading(true); setError("");
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: booking.id,
+          confirmAction: action,
+          declineReason: action === "decline" ? declineReason.trim() : undefined,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setError(d.error || "Errore"); setLoading(false); return; }
+      if (onRefresh) onRefresh();
+    } catch {
+      setError("Errore di rete. Riprova.");
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{ background:"rgba(255,90,0,.04)", border:"1px solid rgba(255,90,0,.2)", borderRadius:16, padding:"14px 16px" }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, marginBottom:6 }}>
+        <p style={{ fontWeight:800, fontSize:14, margin:0, fontFamily:"'Sora',sans-serif", color:INK }}>{booking.eventTitle || "Evento"}</p>
+        <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:100, background:"rgba(255,90,0,.12)", color:O }}>
+          Conferma richiesta
+        </span>
+      </div>
+      <p style={{ fontSize:12, color:MUTED, margin:"0 0 10px", lineHeight:1.6 }}>
+        {booking.eventDate}{booking.startTime ? ` · ${booking.startTime}–${booking.endTime}` : ""} · {booking.organizerName}
+      </p>
+      <p style={{ fontSize:12, color:INK, margin:"0 0 12px", lineHeight:1.6 }}>
+        Confermi la tua presenza per questa data? Se non sei disponibile, segnalalo subito.
+      </p>
+
+      {!showDecline ? (
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          <button type="button" disabled={loading} onClick={()=>sendConfirm("confirm")}
+            style={{ fontSize:12, fontWeight:700, padding:"8px 18px", borderRadius:100, border:"none",
+              background:"#16a34a", color:"white", cursor:loading?"not-allowed":"pointer",
+              fontFamily:"inherit", opacity:loading?.6:1 }}>
+            ✓ Confermo presenza
+          </button>
+          <button type="button" disabled={loading} onClick={()=>setShowDecline(true)}
+            style={{ fontSize:12, fontWeight:700, padding:"8px 18px", borderRadius:100,
+              border:"1px solid #fca5a5", background:"transparent", color:"#dc2626",
+              cursor:loading?"not-allowed":"pointer", fontFamily:"inherit" }}>
+            Non sono disponibile
+          </button>
+        </div>
+      ) : (
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <textarea value={declineReason} onChange={e=>setDeclineReason(e.target.value)} rows={2}
+            placeholder="Motivo (es. impegno già preso per quella data)..."
+            style={{ ...inp, resize:"vertical" }} />
+          <div style={{ display:"flex", gap:8 }}>
+            <button type="button" disabled={loading} onClick={()=>sendConfirm("decline")}
+              style={{ fontSize:12, fontWeight:700, padding:"8px 18px", borderRadius:100, border:"none",
+                background:"#dc2626", color:"white", cursor:loading?"not-allowed":"pointer",
+                fontFamily:"inherit", opacity:loading?.6:1 }}>
+              Invia indisponibilità
+            </button>
+            <button type="button" onClick={()=>{setShowDecline(false);setError("");}}
+              style={{ fontSize:12, fontWeight:700, padding:"8px 18px", borderRadius:100,
+                border:"1px solid rgba(0,0,0,.12)", background:"transparent", color:MUTED,
+                cursor:"pointer", fontFamily:"inherit" }}>
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
+      {error && <p style={{ fontSize:12, color:"#dc2626", fontWeight:600, margin:"8px 0 0" }}>{error}</p>}
+    </div>
+  );
+}
+
+/* ── Componente principale ── */
 export default function ArtistRichieste({ bookings=[], onRefreshBookings }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -17,7 +106,7 @@ export default function ArtistRichieste({ bookings=[], onRefreshBookings }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // Booking che richiedono conferma presenza (status attivo, conferma non ancora data)
+  // Booking che richiedono conferma presenza
   const toConfirm = (Array.isArray(bookings) ? bookings : []).filter(b =>
     ["pending","accepted","confirmed"].includes(b.status) &&
     (b.artistConfirmation === "pending" || !b.artistConfirmation)
@@ -40,6 +129,7 @@ export default function ArtistRichieste({ bookings=[], onRefreshBookings }) {
         </SCard>
       )}
 
+      {/* Richieste dai locali */}
       <SCard>
         <STitle sub="Richieste di contatto ricevute dai locali tramite il marketplace">
           Richieste
@@ -47,13 +137,15 @@ export default function ArtistRichieste({ bookings=[], onRefreshBookings }) {
         {loading ? (
           <p style={{ fontSize:13, color:MUTED }}>Caricamento...</p>
         ) : requests.length === 0 ? (
-          <p style={{ fontSize:13, color:MUTED }}>Nessuna richiesta ricevuta ancora. Quando un locale ti contatta dal marketplace, la richiesta apparirà qui.</p>
+          <p style={{ fontSize:13, color:MUTED }}>
+            Nessuna richiesta ricevuta ancora. Quando un locale ti contatta dal marketplace, la richiesta apparirà qui.
+          </p>
         ) : (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {requests.map(r => (
               <div key={r.id} style={{ background:"#fbfaf8", borderRadius:16, padding:"14px 16px", border:"1px solid rgba(0,0,0,.06)" }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, marginBottom:6 }}>
-                  <p style={{ fontWeight:800, fontSize:14, margin:0, fontFamily:"'Sora',sans-serif" }}>{r.organizer_name || "Locale"}</p>
+                  <p style={{ fontWeight:800, fontSize:14, margin:0, fontFamily:"'Sora',sans-serif", color:INK }}>{r.organizer_name || "Locale"}</p>
                   <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:100, flexShrink:0,
                     background:(STATUS_COLOR[r.status]||"#6b7280")+"18",
                     color:STATUS_COLOR[r.status]||"#6b7280" }}>
@@ -61,7 +153,10 @@ export default function ArtistRichieste({ bookings=[], onRefreshBookings }) {
                   </span>
                 </div>
                 <p style={{ fontSize:12, color:MUTED, margin:0, lineHeight:1.6 }}>
-                  {r.event_date || "—"}{r.event_type ? ` · ${r.event_type}` : ""}{r.duration ? ` · ${r.duration}` : ""}
+                  {r.event_date || "—"}
+                  {r.start_time && r.end_time ? ` · ${r.start_time}–${r.end_time}` : ""}
+                  {r.event_type ? ` · ${r.event_type}` : ""}
+                  {r.duration ? ` · ${r.duration}` : ""}
                 </p>
                 {r.notes && <p style={{ fontSize:12, color:INK, margin:"8px 0 0", lineHeight:1.6 }}>{r.notes}</p>}
                 <p style={{ fontSize:11, color:MUTED, margin:"8px 0 0", fontStyle:"italic" }}>
@@ -74,101 +169,6 @@ export default function ArtistRichieste({ bookings=[], onRefreshBookings }) {
           </div>
         )}
       </SCard>
-    </div>
-  );
-}
-
-const TABS = [
-  { key:"mediakit",   label:"Profilo"    },
-  { key:"video",      label:"Video"      },
-  { key:"cachet",     label:"Cachet"     },
-  { key:"richieste",  label:"Richieste"  },
-  { key:"calendario", label:"Calendario" },
-  { key:"analitiche", label:"Analitiche" },
-  { key:"estratto",   label:"Guadagni"   },
-];
-
-/* ─────────────────────────────────────────────────────────────────
-   MAIN EXPORT
-───────────────────────────────────────────────────────────────── */
-export default function ArtistArea(props) {
-  const tabMapA = { profile:"mediakit", calendar:"calendario", analytics:"analitiche", earnings:"estratto" };
-  const initialTab = tabMapA[props.tab] || props.tab || "mediakit";
-  const plan = props.currentUser?.plan || "free";
-
-  const [tab, setTab] = useState(initialTab);
-  const [onboardStep, setOnboardStep] = useState(null);  // null = non attivo
-  const [highlightCard, setHighlightCard] = useState(null);
-
-  // Sincronizza il tab con la prop esterna (quando si clicca nella sidebar)
-  useEffect(() => {
-    const mapped = tabMapA[props.tab] || props.tab || "mediakit";
-    setTab(mapped);
-  }, [props.tab]);
-
-  // Controlla se primo accesso (nessun profilo salvato)
-  useEffect(() => {
-    const key = `te_onboard_artist_${props.currentUser?.id}`;
-    if (!localStorage.getItem(key)) {
-      setOnboardStep(0);
-    }
-  }, [props.currentUser?.id]);
-
-  function nextStep() {
-    const next = onboardStep + 1;
-    if (next >= ONBOARDING_STEPS_ARTIST.length) {
-      // Fine onboarding
-      const key = `te_onboard_artist_${props.currentUser?.id}`;
-      localStorage.setItem(key, "done");
-      setOnboardStep(null);
-      setHighlightCard(null);
-    } else {
-      setOnboardStep(next);
-      const s = ONBOARDING_STEPS_ARTIST[next];
-      if (s.highlight) setHighlightCard(s.highlight);
-    }
-  }
-
-  function skipOnboarding() {
-    const key = `te_onboard_artist_${props.currentUser?.id}`;
-    localStorage.setItem(key, "done");
-    setOnboardStep(null);
-    setHighlightCard(null);
-  }
-
-  function handleTabChange(newTab) {
-    setTab(newTab);
-  }
-
-  const p = props;
-  const setPricing = props.setPricing || (() => {});
-
-  return (
-    <div id="artist-area" style={{ fontFamily:"'Manrope',system-ui,sans-serif", color:INK, display:"flex", flexDirection:"column", gap:16, paddingBottom: onboardStep!==null ? 120 : 0 }}>
-      <style>{GLOBAL_CSS}</style>
-
-      {/* navigazione gestita dal DashboardShell */}
-
-      {/* Contenuto tab */}
-      {tab==="video"      && <VideoShowcase plan={plan} />}
-      {tab==="mediakit"   && <TabProfilo    plan={plan} highlightCard={highlightCard} stageName={p.stageName} setStageName={p.setStageName} artistType={p.artistType} setArtistType={p.setArtistType} bio={p.bio} setBio={p.setBio} city={p.city} setCity={p.setCity} musicGenres={p.musicGenres} setMusicGenres={p.setMusicGenres} eventTypes={p.eventTypes} setEventTypes={p.setEventTypes} photo={p.photo} setPhoto={p.setPhoto} instagram={p.instagram} setInstagram={p.setInstagram} spotify={p.spotify} setSpotify={p.setSpotify} youtube={p.youtube} setYoutube={p.setYoutube} soundcloud={p.soundcloud} setSoundcloud={p.setSoundcloud} tiktok={p.tiktok} setTiktok={p.setTiktok} rider={p.rider} setRider={p.setRider} saveArtistProfile={p.saveArtistProfile} artistMessage={p.artistMessage} />}
-      {tab==="cachet"     && <TabCachet     pricing={p.pricing} setPricing={setPricing} eventTypes={p.eventTypes} saveArtistProfile={p.saveArtistProfile} artistMessage={p.artistMessage} />}
-      {tab==="richieste"  && <TabRichieste bookings={p.bookings||[]} onRefreshBookings={props.onRefreshBookings} />}
-      {tab==="scalette"   && <TabScalette  bookings={p.bookings||[]} />}
-      {tab==="calendario" && <TabCalendario availableDates={p.availableDates||[]} setAvailableDates={p.setAvailableDates} bookedSlots={p.bookedSlots||[]} plan={plan} />}
-      {tab==="analitiche" && <AnalyticsWidget role="artist" userId={props.currentUser?.id} />}
-      {tab==="estratto"   && <TabGuadagni   bookings={p.bookings||[]} />}
-
-      {/* Onboarding toast — solo se attivo */}
-      {onboardStep !== null && (
-        <OnboardingToast
-          step={onboardStep}
-          totalSteps={ONBOARDING_STEPS_ARTIST.length}
-          onNext={nextStep}
-          onSkip={skipOnboarding}
-          onTabChange={handleTabChange}
-        />
-      )}
     </div>
   );
 }
