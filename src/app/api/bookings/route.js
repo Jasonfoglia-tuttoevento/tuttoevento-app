@@ -309,10 +309,12 @@ export async function POST(request) {
         sub_promoter_fee:  subPromoterFee || null,
         status:            body.createdByAdmin ? "accepted" : "pending",
         payment_status:    "pending",
-        artist_confirmation: "pending",
         updated_at:        new Date().toISOString(),
       }).select("*").single();
-    if (error) return NextResponse.json({ error: "Errore creazione booking" }, { status: 500 });
+    if (error) {
+      console.error("POST bookings insert error:", error.message, error.code);
+      return NextResponse.json({ error: "Errore creazione booking: " + error.message }, { status: 500 });
+    }
 
     // Salva dettaglio commissioni in booking_commissions
     if (publicPrice > 0) {
