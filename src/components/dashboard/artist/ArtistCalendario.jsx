@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { SCard, STitle, ProBadge, ProLock, O, INK, MUTED, MUTED2, BORDER, inp, DURATIONS } from "./shared";
+import { SCard, STitle, ProBadge, ProLock, O, INK, BORDER, MUTED, MUTED2, inp, DURATIONS } from "./shared";
 
 export default function ArtistCalendario({ availableDates=[], setAvailableDates, bookedSlots=[], plan }) {
   const [newDate, setNewDate] = useState("");

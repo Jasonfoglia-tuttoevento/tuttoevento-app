@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { SCard, STitle, ProBadge, ProLock, O, INK, MUTED, MUTED2, BORDER, inp, DURATIONS } from "./shared";
+import { SCard, STitle, ProBadge, ProLock, O, INK, BORDER, MUTED, MUTED2, inp, DURATIONS } from "./shared";
 
 export default function ArtistCachet({ pricing={}, setPricing, eventTypes=[], saveArtistProfile, artistMessage }) {
   const [approvalStatus, setApprovalStatus] = useState(null);
