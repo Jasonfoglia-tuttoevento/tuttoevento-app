@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { SCard, STitle, ProBadge, ProLock, Inp, SelectField, O, INK, BORDER, MUTED, MUTED2, inp, DURATIONS, ARTIST_TYPES } from "./shared";
+import { SCard, STitle, ProBadge, ProLock, Inp, SelectField, PhotoUploader, GenreMultiSelect, EventTypeMultiSelect, O, INK, BORDER, MUTED, MUTED2, inp, DURATIONS, ARTIST_TYPES } from "./shared";
 
 export default function ArtistProfilo({
   plan, stageName, setStageName, artistType, setArtistType,

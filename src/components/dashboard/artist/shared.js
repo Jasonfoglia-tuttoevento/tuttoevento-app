@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect, useRef } from "react";
 
 /* ── Design tokens ── */
 export const O      = "#ff5a00";
@@ -152,6 +153,297 @@ export function KpiCard({ label, value, accent=false, orange=false }) {
         fontFamily:"'Manrope',system-ui,sans-serif" }}>{label}</p>
       <p style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:26, letterSpacing:"-.04em",
         color: accent?"white":orange?O:INK, margin:0 }}>{value}</p>
+    </div>
+  );
+}
+
+
+/* ── Componenti profilo ── */
+export function PhotoUploader({ photo, onPhotoChange }) {
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+  const [preview, setPreview]   = useState(photo||"");
+  const fileRef                 = useRef(null);
+  const cameraRef               = useRef(null);
+
+  useEffect(() => { setPreview(photo||""); }, [photo]);
+
+  async function handleFile(file) {
+    if (!file) return;
+    setError(""); setLoading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/artists/upload-photo", { method:"POST", body:fd }); // invia a photo_pending per moderazione
+      const d   = await res.json();
+      if (!res.ok) { setError(d.error||"Errore upload"); }
+      else { setPreview(d.url); onPhotoChange(d.url); }
+    } catch { setError("Errore di rete"); }
+    setLoading(false);
+  }
+
+  const initials = "?";
+
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
+      {/* Anteprima avatar */}
+      <div style={{ position:"relative", flexShrink:0 }}>
+        {preview ? (
+          <img src={preview} alt="Foto profilo"
+            style={{ width:80, height:80, borderRadius:16, objectFit:"cover", border:`2px solid ${BORDER}` }} />
+        ) : (
+          <div style={{ width:80, height:80, borderRadius:16, background:`${O}15`, border:`2px dashed ${O}40`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={O} strokeWidth="1.5" strokeLinecap="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+        )}
+        {loading && (
+          <div style={{ position:"absolute", inset:0, borderRadius:16, background:"rgba(255,255,255,.8)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <div style={{ width:20, height:20, border:`2px solid rgba(0,0,0,.1)`, borderTopColor:O, borderRadius:"50%", animation:"spin .7s linear infinite" }} />
+          </div>
+        )}
+      </div>
+
+      {/* Bottoni upload */}
+      <div style={{ display:"flex", flexDirection:"column", gap:8, flex:1 }}>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          {/* Scatta foto (camera — mobile) */}
+          <button type="button" onClick={()=>cameraRef.current?.click()}
+            style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 14px", borderRadius:100, background:"white", border:`1px solid ${BORDER}`, fontSize:12, fontWeight:700, color:INK, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Scatta foto
+          </button>
+          <input ref={cameraRef} type="file" accept="image/*" capture="user" style={{ display:"none" }}
+            onChange={e=>handleFile(e.target.files?.[0])} />
+
+          {/* Scegli dalla galleria / file */}
+          <button type="button" onClick={()=>fileRef.current?.click()}
+            style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 14px", borderRadius:100, background:"white", border:`1px solid ${BORDER}`, fontSize:12, fontWeight:700, color:INK, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9l4-4 4 4 4-4 4 4"/><path d="M3 15l4 4 4-4 4 4 4-4"/></svg>
+            Galleria / File
+          </button>
+          <input ref={fileRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+            style={{ display:"none" }} onChange={e=>handleFile(e.target.files?.[0])} />
+        </div>
+        <p style={{ fontSize:11, color:MUTED, margin:0 }}>JPG, PNG, WebP o PDF · max 10MB</p>
+        {error && <p style={{ fontSize:12, fontWeight:700, color:"#dc2626", margin:0 }}>{error}</p>}
+      </div>
+    </div>
+  );
+}
+
+export function GenreMultiSelect({ selected=[], onToggle, isPro }) {
+  const [open, setOpen] = useState(false);
+  const [rect,  setRect]  = useState(null);
+  const triggerRef = useRef(null);
+  const safe = Array.isArray(selected) ? selected : [];
+  const maxReached = !isPro && safe.length >= 3;
+
+  function handleOpen() {
+    if (!open && triggerRef.current) {
+      setRect(triggerRef.current.getBoundingClientRect());
+    }
+    setOpen(p => !p);
+  }
+
+  return (
+    <div style={{ position:"relative" }}>
+      {/* Trigger */}
+      <button ref={triggerRef} type="button" onClick={handleOpen}
+        style={{
+          width:"100%", background:"#fbfaf8", border:`1px solid ${open?"rgba(255,90,0,.45)":"rgba(0,0,0,.1)"}`,
+          borderRadius:12, padding:"10px 14px", fontSize:13, color:INK,
+          fontFamily:"'Manrope',system-ui,sans-serif", cursor:"pointer", textAlign:"left",
+          display:"flex", alignItems:"center", justifyContent:"space-between", gap:8,
+          boxShadow: open?"0 0 0 3px rgba(255,90,0,.08)":"none", transition:"all .15s",
+        }}>
+        <span style={{ color: safe.length>0?INK:MUTED }}>
+          {safe.length===0 ? "Seleziona i tuoi generi..." :
+           safe.length===1 ? safe[0] :
+           `${safe[0]} +${safe.length-1} altri`}
+        </span>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {safe.length>0 && (
+            <span style={{ fontSize:11, fontWeight:700, color:"white", background:O, borderRadius:100, padding:"1px 8px", minWidth:20, textAlign:"center" }}>
+              {safe.length}
+            </span>
+          )}
+          <svg width="12" height="12" viewBox="0 0 12 12" style={{ transform:open?"rotate(180deg)":"none", transition:"transform .2s", flexShrink:0 }}>
+            <path d="M2 4l4 4 4-4" stroke={MUTED} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          </svg>
+        </div>
+      </button>
+
+      {/* Overlay per chiudere — onClick, non onMouseDown, per non vincere sul click del checkbox */}
+      {open && (
+        <div style={{ position:"fixed", inset:0, zIndex:9998 }} onClick={()=>{ setOpen(false); setRect(null); }} />
+      )}
+
+      {/* Dropdown — position:fixed per bucare overflow:hidden delle card padre */}
+      {open && rect && (
+        <div style={{
+          position:"fixed",
+          top: rect.bottom + 6,
+          left: rect.left,
+          width: rect.width,
+          zIndex:9999,
+          background:"white", border:"1px solid rgba(0,0,0,.1)", borderRadius:14,
+          boxShadow:"0 8px 32px rgba(0,0,0,.15)", maxHeight:260, overflowY:"auto",
+          animation:"te-slide-down .15s ease",
+        }}>
+          <style>{`@keyframes te-slide-down{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+          {MUSIC_GENRES.map(g => {
+            const isActive   = safe.includes(g);
+            const isDisabled = maxReached && !isActive;
+            return (
+              <button key={g} type="button"
+                onClick={e=>{ e.stopPropagation(); if(!isDisabled) onToggle(g); }}
+                style={{
+                  width:"100%", display:"flex", alignItems:"center", gap:10,
+                  padding:"10px 14px", background:"none", border:"none",
+                  cursor:isDisabled?"not-allowed":"pointer",
+                  borderBottom:"1px solid rgba(0,0,0,.04)",
+                  opacity:isDisabled?.4:1, transition:"background .1s",
+                  fontFamily:"'Manrope',system-ui,sans-serif",
+                  WebkitTapHighlightColor:"transparent",
+                }}>
+                <div style={{
+                  width:18, height:18, borderRadius:5, flexShrink:0,
+                  border:`1.5px solid ${isActive?O:"rgba(0,0,0,.2)"}`,
+                  background:isActive?O:"white",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  transition:"all .15s", pointerEvents:"none",
+                }}>
+                  {isActive && (
+                    <svg width="10" height="10" viewBox="0 0 10 10">
+                      <polyline points="1,5 4,8 9,2" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontSize:13, fontWeight:isActive?700:500, color:isActive?INK:MUTED, pointerEvents:"none" }}>
+                  {g}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Tag selezionati sotto */}
+      {safe.length>0 && (
+        <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:8 }}>
+          {safe.map(g=>(
+            <span key={g} style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:12, fontWeight:700, color:O, background:`${O}10`, border:`1px solid ${O}25`, borderRadius:100, padding:"3px 10px" }}>
+              {g}
+              <button type="button" onClick={()=>onToggle(g)}
+                style={{ background:"none", border:"none", cursor:"pointer", color:O, fontSize:13, lineHeight:1, padding:0, display:"flex", alignItems:"center" }}>
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function EventTypeMultiSelect({ selected=[], onToggle }) {
+  const [open, setOpen] = useState(false);
+  const [rect, setRect]  = useState(null);
+  const triggerRef2 = useRef(null);
+  const safe = Array.isArray(selected) ? selected : [];
+
+  function handleOpen2() {
+    if (!open && triggerRef2.current) {
+      setRect(triggerRef2.current.getBoundingClientRect());
+    }
+    setOpen(p => !p);
+  }
+
+  return (
+    <div style={{ position:"relative" }}>
+      <button ref={triggerRef2} type="button" onClick={handleOpen2}
+        style={{
+          width:"100%", background:"#fbfaf8", border:`1px solid ${open?"rgba(255,90,0,.45)":"rgba(0,0,0,.1)"}`,
+          borderRadius:12, padding:"10px 14px", fontSize:13, color:INK,
+          fontFamily:"'Manrope',system-ui,sans-serif", cursor:"pointer", textAlign:"left",
+          display:"flex", alignItems:"center", justifyContent:"space-between", gap:8,
+          boxShadow: open?"0 0 0 3px rgba(255,90,0,.08)":"none", transition:"all .15s",
+        }}>
+        <span style={{ color:safe.length>0?INK:MUTED }}>
+          {safe.length===0 ? "Seleziona i tipi di evento..." :
+           safe.length===1 ? safe[0] :
+           `${safe[0]} +${safe.length-1} altri`}
+        </span>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {safe.length>0 && (
+            <span style={{ fontSize:11, fontWeight:700, color:"white", background:O, borderRadius:100, padding:"1px 8px", minWidth:20, textAlign:"center" }}>
+              {safe.length}
+            </span>
+          )}
+          <svg width="12" height="12" viewBox="0 0 12 12" style={{ transform:open?"rotate(180deg)":"none", transition:"transform .2s", flexShrink:0 }}>
+            <path d="M2 4l4 4 4-4" stroke={MUTED} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          </svg>
+        </div>
+      </button>
+
+      {/* Overlay — onClick, non onMouseDown */}
+      {open && <div style={{ position:"fixed", inset:0, zIndex:9998 }} onClick={()=>{ setOpen(false); setRect(null); }} />}
+
+      {open && rect && (
+        <div style={{
+          position:"fixed",
+          top: rect.bottom + 6,
+          left: rect.left,
+          width: rect.width,
+          zIndex:9999,
+          background:"white", border:"1px solid rgba(0,0,0,.1)", borderRadius:14,
+          boxShadow:"0 8px 32px rgba(0,0,0,.15)", overflow:"hidden", maxHeight:260, overflowY:"auto",
+        }}>
+          {EVENT_TYPES.map(e => {
+            const isActive = safe.includes(e);
+            return (
+              <button key={e} type="button"
+                onClick={ev=>{ ev.stopPropagation(); onToggle(e); }}
+                style={{
+                  width:"100%", display:"flex", alignItems:"center", gap:10,
+                  padding:"10px 14px", background:"none", border:"none",
+                  cursor:"pointer", borderBottom:"1px solid rgba(0,0,0,.04)",
+                  transition:"background .1s", fontFamily:"'Manrope',system-ui,sans-serif",
+                  WebkitTapHighlightColor:"transparent",
+                }}>
+                <div style={{
+                  width:18, height:18, borderRadius:5, flexShrink:0,
+                  border:`1.5px solid ${isActive?O:"rgba(0,0,0,.2)"}`,
+                  background:isActive?O:"white",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  transition:"all .15s", pointerEvents:"none",
+                }}>
+                  {isActive && (
+                    <svg width="10" height="10" viewBox="0 0 10 10">
+                      <polyline points="1,5 4,8 9,2" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontSize:13, fontWeight:isActive?700:500, color:isActive?INK:MUTED, pointerEvents:"none" }}>{e}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {safe.length>0 && (
+        <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:8 }}>
+          {safe.map(e=>(
+            <span key={e} style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:12, fontWeight:700, color:O, background:`${O}10`, border:`1px solid ${O}25`, borderRadius:100, padding:"3px 10px" }}>
+              {e}
+              <button type="button" onClick={()=>onToggle(e)}
+                style={{ background:"none", border:"none", cursor:"pointer", color:O, fontSize:13, lineHeight:1, padding:0 }}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
