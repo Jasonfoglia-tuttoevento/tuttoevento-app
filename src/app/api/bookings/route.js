@@ -325,7 +325,7 @@ export async function POST(request) {
         commissions.push({ booking_id:booking.id, recipient_id:Number(promoterParentId), recipient_role:"sub_promoter", amount:subPromoterFee, percentage:10 });
       }
       if (commissions.length > 0) {
-        await supabaseAdmin.from("booking_commissions").insert(commissions).catch(()=>{});
+        await supabaseAdmin.from("booking_commissions").insert(commissions);
       }
     }
 
