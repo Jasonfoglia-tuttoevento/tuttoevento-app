@@ -220,17 +220,34 @@ function ContactRequestModal({ artist, onClose }) {
   const eventTypes = Array.isArray(artist.eventTypes) ? artist.eventTypes : [];
   const publicPricing = artist.publicPricing || {};
 
-  const [eventDate, setEventDate] = useState("");
-  const [eventType, setEventType] = useState("");
-  const [duration, setDuration]   = useState("");
-  const [notes, setNotes]         = useState("");
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState("");
-  const [done, setDone]           = useState(false);
+  const [eventDate, setEventDate]   = useState("");
+  const [eventType, setEventType]   = useState("");
+  const [duration, setDuration]     = useState("");
+  const [startTime, setStartTime]   = useState("");
+  const [endTime, setEndTime]       = useState("");
+  const [notes, setNotes]           = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState("");
+  const [done, setDone]             = useState(false);
+
+  // Quando cambia la durata, precompila l'orario suggerito
+  function onDurationChange(dk) {
+    setDuration(dk);
+    const defaults = {
+      "1h":      { start:"22:00", end:"23:00" },
+      "2h":      { start:"22:00", end:"00:00" },
+      "3h":      { start:"22:00", end:"01:00" },
+      "fullday": { start:"10:00", end:"23:59" },
+    };
+    if (defaults[dk] && !startTime) {
+      setStartTime(defaults[dk].start);
+      setEndTime(defaults[dk].end);
+    }
+  }
 
   // Prezzo pubblico per la combinazione tipo evento + durata selezionata
   const price = (eventType && duration) ? (publicPricing?.[eventType]?.[duration] || null) : null;
-  const canSubmit = !!(eventDate && eventType && duration && price);
+  const canSubmit = !!(eventDate && eventType && duration && price && startTime && endTime);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -244,6 +261,8 @@ function ContactRequestModal({ artist, onClose }) {
           artistId: artist.id,
           eventDate, eventType,
           duration,
+          startTime,
+          endTime,
           budget: price,
           notes,
         }),
@@ -328,7 +347,7 @@ function ContactRequestModal({ artist, onClose }) {
                         const active = duration === d.key;
                         const hasPrice = !!(publicPricing?.[eventType]?.[d.key]);
                         return (
-                          <button key={d.key} type="button" disabled={!hasPrice} onClick={() => setDuration(d.key)}
+                          <button key={d.key} type="button" disabled={!hasPrice} onClick={() => onDurationChange(d.key)}
                             style={{
                               padding:"7px 14px", borderRadius:100, fontSize:12, fontWeight:700,
                               cursor: hasPrice ? "pointer" : "not-allowed",
@@ -362,6 +381,24 @@ function ContactRequestModal({ artist, onClose }) {
                   )
                 )}
 
+                {/* Orario evento */}
+                <div>
+                  <label style={{ fontSize:11, fontWeight:700, color:"#6b6b73", textTransform:"uppercase", letterSpacing:".08em", display:"block", marginBottom:8 }}>Orario evento</label>
+                  <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+                    <div style={{ flex:1 }}>
+                      <label style={{ fontSize:11, color:"#6b6b73", display:"block", marginBottom:4 }}>Inizio</label>
+                      <input type="time" value={startTime} onChange={e=>setStartTime(e.target.value)}
+                        style={{ width:"100%", background:"#fbfaf8", border:"1px solid rgba(0,0,0,.1)", borderRadius:10, padding:"9px 12px", fontSize:14, fontFamily:"'Manrope',system-ui,sans-serif", outline:"none", boxSizing:"border-box" }} />
+                    </div>
+                    <span style={{ fontSize:13, color:"#6b6b73", marginTop:18 }}>→</span>
+                    <div style={{ flex:1 }}>
+                      <label style={{ fontSize:11, color:"#6b6b73", display:"block", marginBottom:4 }}>Fine</label>
+                      <input type="time" value={endTime} onChange={e=>setEndTime(e.target.value)}
+                        style={{ width:"100%", background:"#fbfaf8", border:"1px solid rgba(0,0,0,.1)", borderRadius:10, padding:"9px 12px", fontSize:14, fontFamily:"'Manrope',system-ui,sans-serif", outline:"none", boxSizing:"border-box" }} />
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label style={{ fontSize:11, fontWeight:700, color:"#6b6b73", textTransform:"uppercase", letterSpacing:".08em", display:"block", marginBottom:6 }}>Note</label>
                   <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3} placeholder="Dettagli aggiuntivi sull'evento..."
@@ -372,7 +409,7 @@ function ContactRequestModal({ artist, onClose }) {
 
                 <button type="submit" disabled={loading || !canSubmit}
                   style={{ background:INK, color:"white", border:"none", borderRadius:100, padding:"12px", fontWeight:800, fontSize:14, cursor:(loading||!canSubmit)?"not-allowed":"pointer", fontFamily:"'Manrope',system-ui,sans-serif", opacity:(loading||!canSubmit)?.5:1 }}>
-                  {loading ? "Invio..." : canSubmit ? `Invia richiesta — €${price} →` : "Seleziona tipo evento e durata"}
+                  {loading ? "Invio..." : canSubmit ? `Invia richiesta — €${price} →` : "Completa tutti i campi"}
                 </button>
               </form>
             )}
@@ -460,13 +497,54 @@ function TabMarketplace({ artists, plan }) {
 // ── Tab: CRM ───────────────────────────────────────────────────
 function TabCRM({ bookings, plan }) {
   const [notes, setNotes] = useState({});
+  const [contactRequests, setContactRequests] = useState([]);
+  const [crLoading, setCrLoading] = useState(true);
 
   const STATI = ["pending","reviewed","confirmed","rejected"];
   const STATUS_LABEL = { pending:"In attesa", reviewed:"In revisione", confirmed:"Confermato", rejected:"Rifiutato" };
   const STATUS_COLOR = { pending:"#d97706", reviewed:"#2563eb", confirmed:"#16a34a", rejected:"#dc2626" };
 
+  const CR_STATUS_LABEL = { pending:"In attesa", contacted:"Contattato", confirmed:"Confermato", rejected:"Rifiutato" };
+  const CR_STATUS_COLOR = { pending:"#d97706", contacted:"#2563eb", confirmed:"#16a34a", rejected:"#dc2626" };
+
+  useEffect(() => {
+    fetch("/api/contact-requests")
+      .then(r => r.json())
+      .then(d => setContactRequests(Array.isArray(d) ? d : []))
+      .catch(() => setContactRequests([]))
+      .finally(() => setCrLoading(false));
+  }, []);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* Richieste di contatto inviate dal marketplace */}
+      <Card>
+        <SectionTitle>Richieste inviate</SectionTitle>
+        {crLoading ? (
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,.3)" }}>Caricamento...</p>
+        ) : contactRequests.length === 0 ? (
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,.3)" }}>Nessuna richiesta di contatto inviata ancora. Vai su "Trova artisti" per contattare un artista.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {contactRequests.map((r) => (
+              <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fbfaf8", borderRadius: 16, padding: "12px 16px", gap: 10 }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontWeight: 700, fontSize: 13, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.artist_name || "Artista"}</p>
+                  <p style={{ fontSize: 11, color: MUTED, margin: "2px 0 0" }}>
+                    {r.event_date || "—"}{r.event_type ? ` · ${r.event_type}` : ""}{r.budget ? ` · €${r.budget}` : ""}
+                  </p>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 100, flexShrink: 0,
+                  background: (CR_STATUS_COLOR[r.status] || "#6b7280") + "18",
+                  color: CR_STATUS_COLOR[r.status] || "#6b7280" }}>
+                  {CR_STATUS_LABEL[r.status] || r.status || "—"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* Pipeline base */}
       <Card>

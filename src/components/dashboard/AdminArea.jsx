@@ -289,6 +289,7 @@ function SectionRequests({ requests, onUpdate }) {
                 <p style={{ fontWeight:700, fontSize:14, margin:0 }}>{r.organizer_name} <span style={{ color:MUTED, fontWeight:400 }}>cerca</span> {r.artist_name}</p>
                 <div style={{ display:"flex", gap:12, marginTop:4, flexWrap:"wrap" }}>
                   {r.event_date && <span style={{ fontSize:12, color:MUTED }}>{r.event_date}</span>}
+                  {(r.start_time||r.startTime) && <span style={{ fontSize:12, color:MUTED }}>{r.start_time||r.startTime} – {r.end_time||r.endTime}</span>}
                   {r.event_type && <span style={{ fontSize:12, color:MUTED }}>{r.event_type}</span>}
                   {r.duration   && <span style={{ fontSize:12, color:MUTED }}>{r.duration}</span>}
                 </div>
@@ -527,7 +528,7 @@ export default function AdminArea({ users=[], events=[], bookings=[], tab: initi
   useEffect(() => {
     fetch("/api/finance").then(r=>r.json()).then(d=>setFinance(d||{})).catch(()=>{});
     fetch("/api/contacts").then(r=>r.json()).then(d=>setContacts(Array.isArray(d)?d:[])).catch(()=>{});
-    fetch("/api/contact-request").then(r=>r.json()).then(d=>setContactRequests(Array.isArray(d)?d:[])).catch(()=>{});
+    fetch("/api/contact-requests").then(r=>r.json()).then(d=>setContactRequests(Array.isArray(d)?d:[])).catch(()=>{});
   }, []);
 
   const rate  = Number(finance.commission_rate) || 0.08;

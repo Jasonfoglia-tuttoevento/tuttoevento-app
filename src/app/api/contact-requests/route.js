@@ -141,8 +141,10 @@ export async function POST(request) {
         event_type: body.eventType || "",
         duration: body.duration || "",
         budget: body.budget ? Number(body.budget) : null,
-        notes: body.notes || "",
-        status: "pending",
+        notes:      body.notes      || "",
+        start_time: body.startTime  || null,
+        end_time:   body.endTime    || null,
+        status:     "pending",
         updated_at: new Date().toISOString(),
       })
       .select("*").single();
@@ -284,7 +286,9 @@ export async function PATCH(request) {
         return NextResponse.json({ error: "Nessun prezzo pubblico approvato per questo tipo evento/durata. Approva il cachet dell'artista prima di connettere." }, { status: 400 });
       }
 
-      const times = DURATION_TO_TIMES[duration] || { startTime: "22:00", endTime: "23:59" };
+      const times = current.start_time && current.end_time
+        ? { startTime: current.start_time, endTime: current.end_time }
+        : (DURATION_TO_TIMES[duration] || { startTime: "22:00", endTime: "23:59" });
 
       // Recupera promoter eventualmente collegato all'artista
       let promoterId = null, promoterName = "";
