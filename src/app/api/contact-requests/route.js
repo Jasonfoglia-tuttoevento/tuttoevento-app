@@ -290,30 +290,89 @@ export async function PATCH(request) {
         promoterName = artistPromoterLink.users.name || "";
       }
 
-      // Crea il booking chiamando l'API bookings esistente (calcolo commissioni, disponibilità, ecc.)
-      const bookingRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/bookings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Cookie: request.headers.get("cookie") || "" },
-        body: JSON.stringify({
-          organizerId:    current.organizer_id,
-          organizerName:  current.organizer_name,
-          artistId:       current.artist_id,
-          artistName:     current.artist_name,
-          publicPrice,
-          promoterId,
-          promoterName,
-          eventTitle:     eventType || "Evento",
-          eventDate:      current.event_date,
-          startTime:      times.startTime,
-          endTime:        times.endTime,
-          message:        current.notes || "",
-          createdByAdmin: true,
-        }),
-      });
-      const bookingData = await bookingRes.json();
-      if (!bookingRes.ok) {
-        return NextResponse.json({ error: bookingData.error || "Errore creazione booking" }, { status: bookingRes.status });
+      // ── Calcolo commissioni (stesso schema di POST /api/bookings) ──
+      let platformFee    = 0;
+      let promoterFee    = 0;
+      let subPromoterFee = 0;
+      let promoterParentId = null;
+
+      if (publicPrice > 0 && promoterId) {
+        const { data: promoterData } = await supabaseAdmin
+          .from("users").select("promoter_parent_id").eq("id", Number(promoterId)).maybeSingle();
+        promoterParentId = promoterData?.promoter_parent_id || null;
+        if (promoterParentId) {
+          platformFee    = Math.round(publicPrice * 0.20 * 100) / 100;
+          promoterFee    = Math.round(publicPrice * 0.10 * 100) / 100;
+          subPromoterFee = Math.round(publicPrice * 0.10 * 100) / 100;
+        } else {
+          platformFee = Math.round(publicPrice * 0.20 * 100) / 100;
+          promoterFee = Math.round(publicPrice * 0.20 * 100) / 100;
+        }
+      } else if (publicPrice > 0) {
+        platformFee = Math.round(publicPrice * 0.40 * 100) / 100;
       }
+
+      // ── Insert booking diretto su Supabase ──
+      const { data: bookingData, error: bookingErr } = await supabaseAdmin
+        .from("bookings")
+        .insert({
+          organizer_id:        Number(current.organizer_id),
+          organizer_name:      current.organizer_name || "",
+          artist_id:           Number(current.artist_id),
+          artist_name:         current.artist_name || "",
+          public_price:        publicPrice,
+          promoter_id:         promoterId     || null,
+          promoter_name:       promoterName   || "",
+          promoter_parent_id:  promoterParentId || null,
+          event_title:         eventType      || "Evento",
+          event_date:          current.event_date || "",
+          start_time:          times.startTime,
+          end_time:            times.endTime,
+          message:             current.notes  || "",
+          platform_fee:        platformFee    || null,
+          promoter_fee:        promoterFee    || null,
+          sub_promoter_fee:    subPromoterFee || null,
+          status:              "accepted",
+          payment_status:      "pending",
+          artist_confirmation: "pending",
+          updated_at:          now,
+        })
+        .select("*").single();
+
+      if (bookingErr) {
+        console.error("Errore insert booking da connetti:", bookingErr);
+        return NextResponse.json({ error: "Errore creazione booking: " + bookingErr.message }, { status: 500 });
+      }
+
+      // ── Commissioni ──
+      if (publicPrice > 0) {
+        const commissions = [];
+        commissions.push({ booking_id: bookingData.id, recipient_id: 1, recipient_role: "platform", amount: platformFee, percentage: promoterParentId ? 20 : 40 });
+        if (promoterId && promoterFee > 0)
+          commissions.push({ booking_id: bookingData.id, recipient_id: Number(promoterId), recipient_role: "promoter", amount: promoterFee, percentage: 10 });
+        if (promoterParentId && subPromoterFee > 0)
+          commissions.push({ booking_id: bookingData.id, recipient_id: Number(promoterParentId), recipient_role: "sub_promoter", amount: subPromoterFee, percentage: 10 });
+        if (commissions.length > 0)
+          await supabaseAdmin.from("booking_commissions").insert(commissions);
+      }
+
+      // ── Aggiorna booked_dates artista ──
+      try {
+        const { data: artistProfile } = await supabaseAdmin
+          .from("artist_profiles").select("booked_dates, booked_slots").eq("user_id", Number(current.artist_id)).maybeSingle();
+        let bookedDates = []; let bookedSlots = [];
+        try { bookedDates = JSON.parse(artistProfile?.booked_dates || "[]"); } catch {}
+        try { bookedSlots  = JSON.parse(artistProfile?.booked_slots  || "[]"); } catch {}
+        if (!bookedDates.includes(current.event_date)) bookedDates.push(current.event_date);
+        const slot = { bookingId: bookingData.id, date: current.event_date, startTime: times.startTime, endTime: times.endTime, organizerId: current.organizer_id, organizerName: current.organizer_name };
+        if (!bookedSlots.some(s => Number(s.bookingId) === Number(bookingData.id))) bookedSlots.push(slot);
+        await supabaseAdmin.from("artist_profiles").upsert({
+          user_id: Number(current.artist_id),
+          booked_dates: JSON.stringify(bookedDates),
+          booked_slots: JSON.stringify(bookedSlots),
+          updated_at: now,
+        }, { onConflict: "user_id" });
+      } catch(e) { console.error("Errore update booked_dates:", e); }
 
       // Collega la richiesta al booking creato
       const { data, error } = await supabaseAdmin

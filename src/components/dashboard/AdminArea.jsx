@@ -551,10 +551,15 @@ export default function AdminArea({ users=[], events=[], bookings=[], tab: initi
     const res = await fetch("/api/contact-requests",{ method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({id,status}) });
     if (res.ok) {
       const data = await res.json();
-      // Aggiorna la richiesta con booking_id e dati booking se restituiti (es. dopo "connected")
+      // Aggiorna ottimisticamente la riga locale
       setContactRequests(prev => prev.map(r =>
         r.id === id ? { ...r, status, booking_id: data.booking_id || r.booking_id, booking: data.booking || r.booking } : r
       ));
+      // Ricarica l'intera lista dal server per avere dati freschi (booking_id, ecc.)
+      fetch("/api/contact-requests")
+        .then(r => r.json())
+        .then(d => { if (Array.isArray(d)) setContactRequests(d); })
+        .catch(() => {});
     } else {
       const err = await res.json().catch(()=>({}));
       alert(err.error || "Errore durante l'operazione");
