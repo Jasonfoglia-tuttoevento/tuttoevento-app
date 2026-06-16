@@ -143,7 +143,7 @@ const ONBOARDING_STEPS_ARTIST = [
     id: 4,
     mood: "celebrate",
     title: "Perfetto! Sei pronto per ricevere richieste 🎉",
-    body: "Aggiungi le date in cui sei disponibile nel Calendario. Più date aggiungi, più booking ricevi. In bocca al lupo!",
+    body: "Indica nel Calendario i giorni in cui NON sei disponibile. Le date non bloccate sono considerate libere e possono ricevere richieste di booking.",
     highlight: "calendario",
     cta: "Inizia a usare TuttoEvento",
     mascotPos: "center",
@@ -1112,7 +1112,7 @@ function TabCalendario({ availableDates=[], setAvailableDates, bookedSlots=[], p
 
       {/* Aggiungi data */}
       <SCard>
-        <STitle sub="Aggiungi le date in cui sei libero — più date = più probabilità di booking">Disponibilità</STitle>
+        <STitle sub="Segna i giorni in cui NON sei disponibile — le date non bloccate sono aperte ai booking">Indisponibilità</STitle>
         <div style={{ display:"flex", gap:10, marginBottom:avail.length>0?18:0, flexWrap:"wrap" }}>
           <input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)}
             style={{ ...inp, flex:1, maxWidth:200 }} />
@@ -1125,7 +1125,7 @@ function TabCalendario({ availableDates=[], setAvailableDates, bookedSlots=[], p
         {avail.length===0 ? (
           <div style={{ padding:"24px 0", textAlign:"center" }}>
             <p style={{ fontSize:13, color:MUTED, margin:0 }}>Nessuna data aggiunta ancora.</p>
-            <p style={{ fontSize:12, color:"rgba(0,0,0,.25)", margin:"4px 0 0" }}>Aggiungi le date per iniziare a ricevere richieste.</p>
+            <p style={{ fontSize:12, color:"rgba(0,0,0,.25)", margin:"4px 0 0" }}>Nessuna data bloccata — sei disponibile per tutti i giorni.</p>
           </div>
         ) : (
           <div style={{ display:"flex", flexDirection:"column", gap:14 }}>

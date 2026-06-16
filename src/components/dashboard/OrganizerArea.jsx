@@ -252,6 +252,11 @@ function ContactRequestModal({ artist, onClose }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
+    // Validazione: fine non deve essere uguale a inizio (orari identici = durata 0)
+    if (startTime && endTime && startTime === endTime) {
+      setError("L'orario di fine deve essere diverso dall'inizio.");
+      return;
+    }
     setLoading(true); setError("");
     try {
       const res = await fetch("/api/contact-requests", {

@@ -11,11 +11,16 @@ function timeToMinutes(time) {
 }
 
 function rangesOverlap(startA, endA, startB, endB) {
-  const aStart = timeToMinutes(startA);
-  const aEnd   = timeToMinutes(endA);
-  const bStart = timeToMinutes(startB);
-  const bEnd   = timeToMinutes(endB);
+  let aStart = timeToMinutes(startA);
+  let aEnd   = timeToMinutes(endA);
+  let bStart = timeToMinutes(startB);
+  let bEnd   = timeToMinutes(endB);
   if ([aStart,aEnd,bStart,bEnd].some(v=>v===null)) return false;
+  // Gestione mezzanotte: se fine < inizio, aggiungi 24h alla fine
+  if (aEnd <= aStart) aEnd += 1440;
+  if (bEnd <= bStart) bEnd += 1440;
+  // Normalizza b relativo ad a per coprire il caso sfalsato
+  if (bStart < aStart) { bStart += 1440; bEnd += 1440; }
   return aStart < bEnd && bStart < aEnd;
 }
 
@@ -76,40 +81,31 @@ async function artistHasBookingOverlap({ artistId, eventDate, startTime, endTime
   });
 }
 
-/* ─── Controlla disponibilità nel calendario artista ────── */
+/* ─── Controlla calendario artista (solo giorni bloccati come indisponibili) ── */
 async function artistIsUnavailableOnDate(artistId, eventDate) {
   const { data: profile } = await supabaseAdmin
     .from("artist_profiles")
-    .select("available_dates, booked_dates")
+    .select("available_dates")
     .eq("user_id", Number(artistId))
     .maybeSingle();
 
   if (!profile) return { unavailable: false };
 
-  // Controlla se la data è nelle booked_dates (già occupato)
-  let bookedDates = [];
-  try { bookedDates = JSON.parse(profile.booked_dates || "[]"); } catch {}
-  if (bookedDates.includes(eventDate)) {
+  // available_dates ora contiene i giorni di INDISPONIBILITÀ indicati dall'artista
+  // (rinominato logicamente — il campo DB si chiama ancora available_dates)
+  let blockedDates = [];
+  try { blockedDates = JSON.parse(profile.available_dates || "[]"); } catch {}
+
+  if (blockedDates.includes(eventDate)) {
     return {
       unavailable: true,
-      reason: "calendar_busy",
-      message: `L'artista ha già una serata confermata il ${eventDate}. Scegli un'altra data.`,
+      reason: "calendar_blocked",
+      message: `L'artista ha indicato indisponibilità per il ${eventDate}. Scegli un'altra data.`,
     };
   }
 
-  // Controlla se l'artista ha indicato disponibilità e questa data NON c'è
-  let availableDates = [];
-  try { availableDates = JSON.parse(profile.available_dates || "[]"); } catch {}
-
-  // Solo se l'artista ha impostato date disponibili e questa non è tra quelle
-  if (availableDates.length > 0 && !availableDates.includes(eventDate)) {
-    return {
-      unavailable: true,
-      reason: "not_available",
-      message: `L'artista non ha indicato disponibilità per il ${eventDate}. Controlla le date disponibili prima di inviare la richiesta.`,
-    };
-  }
-
+  // booked_dates NON blocca più la data intera — solo artistHasBookingOverlap
+  // controlla gli orari sovrapposti. Stessa data con orario diverso = ok.
   return { unavailable: false };
 }
 
