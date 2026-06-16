@@ -1441,7 +1441,7 @@ function BookingConfirmCard({ booking, onRefresh }) {
     <div style={{ background:"rgba(255,90,0,.04)", border:"1px solid rgba(255,90,0,.2)", borderRadius:16, padding:"14px 16px" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, marginBottom:6 }}>
         <p style={{ fontWeight:800, fontSize:14, margin:0, fontFamily:"'Sora',sans-serif" }}>{booking.eventTitle || "Evento"}</p>
-        <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:100, background:"rgba(255,90,0,.12)", color:ORANGE }}>
+        <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:100, background:"rgba(255,90,0,.12)", color:O }}>
           Conferma richiesta
         </span>
       </div>
