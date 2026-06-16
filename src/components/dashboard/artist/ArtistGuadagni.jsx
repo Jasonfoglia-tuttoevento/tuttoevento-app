@@ -110,25 +110,7 @@ export default function ArtistGuadagni({ bookings=[] }) {
 /* ─────────────────────────────────────────────────────────────────
    GLOBAL CSS
 ───────────────────────────────────────────────────────────────── */
-const GLOBAL_CSS = `
-  #artist-area input:focus,
-  #artist-area textarea:focus,
-  #artist-area select:focus {
-    border-color: rgba(255,90,0,.45) !important;
-    box-shadow: 0 0 0 3px rgba(255,90,0,.08) !important;
-  }
-  #artist-area input::placeholder,
-  #artist-area textarea::placeholder { color: rgba(0,0,0,.28); }
-  #artist-area input[type=date] { color-scheme: light; }
-  #artist-area input[type=number]::-webkit-inner-spin-button { opacity:.3; }
-  #artist-area button[type=submit]:not(:disabled):hover {
-    filter: brightness(1.08);
-    transform: translateY(-1px);
-  }
-  @media(max-width:600px) {
-    #artist-area { gap: 10px !important; }
-  }
-`;
+
 
 /* ─────────────────────────────────────────────────────────────────
    TAB: RICHIESTE — contatti dai locali tramite marketplace
