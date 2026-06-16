@@ -117,19 +117,6 @@ export async function POST(request) {
     const { data: artistUser } = await supabaseAdmin
       .from("users").select("id, name").eq("id", Number(body.artistId)).maybeSingle();
 
-    // Controlla se esiste già una richiesta pending per la stessa coppia
-    const { data: existing } = await supabaseAdmin
-      .from("contact_requests")
-      .select("id")
-      .eq("organizer_id", Number(user.id))
-      .eq("artist_id", Number(body.artistId))
-      .eq("status", "pending")
-      .maybeSingle();
-
-    if (existing) {
-      return NextResponse.json({ error: "Hai già una richiesta in attesa per questo artista" }, { status: 409 });
-    }
-
     const { data: req, error } = await supabaseAdmin
       .from("contact_requests")
       .insert({
