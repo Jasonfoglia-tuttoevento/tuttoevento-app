@@ -191,7 +191,6 @@ export default function DashboardPage() {
         case "bookings":    return <OrganizerBookings bookings={bookings} onRefresh={()=>loadBookings(`?organizerId=${user.id}`)} />;
         case "preferiti":   return <OrganizerArea currentUser={user} tab="preferiti"   events={events} artists={artists} bookings={bookings} />;
         case "analytics":   return <OrganizerArea currentUser={user} tab="analitiche"  events={events} artists={artists} bookings={bookings} />;
-        case "earnings":    return <OrganizerArea currentUser={user} tab="estratto"    events={events} artists={artists} bookings={bookings} />;
         default: return null;
       }
     }
@@ -199,11 +198,11 @@ export default function DashboardPage() {
     if(role==="promoter"){
       switch(activeTab){
         case "overview":    return <PromoterArea currentUser={user} tab="overview"    events={events} artists={artists} bookings={bookings} users={users} />;
-        case "network":     return <PromoterArea currentUser={user} tab="network"    events={events} artists={artists} bookings={bookings} users={users} />;
         case "roster":      return <PromoterArea currentUser={user} tab="roster"      events={events} artists={artists} bookings={bookings} users={users} />;
         case "deals":       return <PromoterArea currentUser={user} tab="trattative"  events={events} artists={artists} bookings={bookings} users={users} />;
         case "commissions": return <PromoterCommissions bookings={bookings} onRefresh={()=>loadBookings()} />;
         case "calendario":  return <PromoterArea currentUser={user} tab="calendario"  events={events} artists={artists} bookings={bookings} users={users} />;
+        case "subnetwork":  return <PromoterArea currentUser={user} tab="subnetwork" events={events} artists={artists} bookings={bookings} users={users} />;
         case "agency":      return <PromoterArea currentUser={user} tab="agenzia"     events={events} artists={artists} bookings={bookings} users={users} />;
         default: return null;
       }

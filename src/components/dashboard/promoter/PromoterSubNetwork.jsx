@@ -228,12 +228,12 @@ export default function PromoterSubNetwork({ currentUser, plan }) {
       </Card>
 
       <Card>
-        <STitle>Come funzionano le commissioni</STitle>
+        <STitle sub="Tutto si calcola sul MARGINE = prezzo locale − cachet artista">Come funzionano le commissioni</STitle>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))", gap:10 }}>
           {[
-            ["🏦", "TuttoEvento", "Trattiene la commissione piattaforma su ogni booking (es. 15%)"],
-            ["👑", "Tu", "Ricevi la tua percentuale sui booking degli artisti del network"],
-            ["🤝", "Promoter nel network", "Riceve la % che gli hai assegnato, scalata dalla tua quota — la sua dashboard è identica alla tua"],
+            ["🤝", "Promoter nel network", "Chi porta il booking prende il 50% del margine. La sua dashboard è identica alla tua."],
+            ["👑", "Tu (padre)", "Ricevi il 25% del margine, in modo passivo, su ogni booking del tuo network."],
+            ["🏦", "TuttoEvento", "Trattiene il 25% del margine."],
           ].map(([ico, title, desc]) => (
             <div key={title} style={{ background:"#fbfaf8", borderRadius:14, padding:"14px 16px" }}>
               <p style={{ fontSize:22, margin:"0 0 6px" }}>{ico}</p>
@@ -242,6 +242,10 @@ export default function PromoterSubNetwork({ currentUser, plan }) {
             </div>
           ))}
         </div>
+        <p style={{ fontSize:12, color:MUTED, margin:"12px 0 0", lineHeight:1.6 }}>
+          Esempio: locale paga €350, artista €240 → margine €110. Il sub prende €55, tu €27,50, TuttoEvento €27,50.
+          Senza sub, il margine si divide invece 50% a te e 50% a TuttoEvento.
+        </p>
       </Card>
     </div>
   );
