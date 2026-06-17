@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { O, INK, MUTED, SCard, STitle, ProBadge, ProLock, Inp, KpiCard, StatusBadge } from "./shared";
-
+import { Card, INK, Inp, KpiCard, MUTED, O, ProBadge, ProLock, SCard, STitle, StatusBadge } from "./shared";
 export default function PromoterTrattative({ contactRequests, portfolio, plan, onUpdateStatus }) {
   const myIds = portfolio.map(p => Number(p.entity_id));
   const myRequests = contactRequests.filter(r =>

@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import VerifiedBadge from "@/components/VerifiedBadge";
-import { O, INK, MUTED, SCard, STitle, ProBadge, ProLock, Inp, fmt } from "./shared";
-
+import { Card, INK, Inp, MUTED, O, ProBadge, ProLock, SCard, STitle, SectionTitle, fmt } from "./shared";
 export default function OrganizerEstratto({ bookings }) {
   const fmt = n => new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:0 }).format(n);
   const confirmed = bookings.filter(b => ["confirmed","accettato","accepted"].includes((b.status||"").toLowerCase()));

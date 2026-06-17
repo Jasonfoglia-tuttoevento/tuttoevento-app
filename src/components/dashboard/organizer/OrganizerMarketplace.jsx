@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { O, INK, MUTED, SCard, STitle, ProBadge, ProLock, Inp } from "./shared";
-
+import ContactRequestModal from "@/components/dashboard/ContactRequestModal";
+import { Card, INK, Inp, MUTED, O, ProBadge, ProLock, SCard, STitle, SectionTitle } from "./shared";
 export default function OrganizerMarketplace({ artists, plan }) {
   const [search, setSearch]     = useState("");
   const [genreFilter, setGenre] = useState("");

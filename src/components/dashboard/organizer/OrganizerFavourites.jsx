@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { O, INK, MUTED, SCard, STitle } from "./shared";
-
+import { INK, MUTED, O, SCard, STitle } from "./shared";
 const STORAGE_KEY = "te_organizer_favourites_v1";
 
 export default function OrganizerFavourites({ artists=[], currentUser }) {

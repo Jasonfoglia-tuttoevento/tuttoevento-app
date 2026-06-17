@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import VerifiedBadge from "@/components/VerifiedBadge";
-import { O, INK, MUTED, SCard, STitle, ProBadge, ProLock, Inp, fmt } from "./shared";
-
+import { Card, INK, Inp, MUTED, O, ProBadge, ProLock, SCard, STitle, SectionTitle, fmt } from "./shared";
 export default function OrganizerOverview({ currentUser, bookings, plan }) {
   const pending   = bookings.filter(b => ["pending","in_attesa"].includes((b.status||"").toLowerCase())).length;
   const confirmed = bookings.filter(b => ["confirmed","accettato","accepted"].includes((b.status||"").toLowerCase())).length;

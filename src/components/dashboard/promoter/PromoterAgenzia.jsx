@@ -1,7 +1,8 @@
 "use client";
+import PromoterReferral from "./PromoterReferral";
 import { useState, useEffect, useMemo } from "react";
-import { O, INK, MUTED, SCard, STitle, ProBadge, ProLock, Inp, KpiCard } from "./shared";
-
+import VerifiedBadge from "@/components/VerifiedBadge";
+import { Card, INK, Inp, KpiCard, MUTED, O, ProBadge, ProLock, SCard, STitle } from "./shared";
 export default function PromoterAgenzia({ currentUser, portfolio, plan }) {
   const [agencyName, setAgencyName] = useState(currentUser?.name||"");
   const [bio, setBio]               = useState("");
@@ -40,7 +41,7 @@ export default function PromoterAgenzia({ currentUser, portfolio, plan }) {
     <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
       {/* Sezione referral */}
-      <ReferralSection currentUser={currentUser} plan={plan} />
+      <PromoterReferral currentUser={currentUser} plan={plan} />
 
       {/* Preview pagina pubblica base */}
       <Card>

@@ -52,3 +52,8 @@ export function StatusBadge({ status }) {
   const s = map[status] || { label:status||"—", color:MUTED };
   return <span style={{ fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:100, background:`${s.color}18`, color:s.color }}>{s.label}</span>;
 }
+
+
+// Alias retrocompatibili
+export const Card = SCard;
+export const SectionTitle = STitle;

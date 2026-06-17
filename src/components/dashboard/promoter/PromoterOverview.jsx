@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { O, INK, MUTED, SCard, STitle, ProBadge, ProLock, Inp, KpiCard, StatusBadge, fmt } from "./shared";
-
+import { Card, INK, Inp, KpiCard, MUTED, O, ProBadge, ProLock, SCard, STitle, StatusBadge, fmt } from "./shared";
 export default function PromoterOverview({ currentUser, bookings, portfolio, contactRequests, plan, commissions }) {
   const portfolioArtists = portfolio.filter(p => p.entity_type === "artist");
   const portfolioVenues  = portfolio.filter(p => p.entity_type === "venue");

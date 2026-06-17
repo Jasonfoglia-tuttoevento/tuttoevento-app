@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { O, INK, MUTED, SCard, STitle, ProBadge, ProLock, Inp, KpiCard } from "./shared";
-
+import { Card, INK, Inp, KpiCard, MUTED, O, ProBadge, ProLock, SCard, STitle } from "./shared";
 export default function PromoterRoster({ portfolio, users, plan, onAdd, onRemove, addingEntry, addMsg }) {
   const [newEntry, setNewEntry] = useState({ entityType:"artist", entityId:"" });
   const availableArtists = users.filter(u => u.role==="artist");

@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { O, INK, MUTED, SCard, STitle, KpiCard } from "./shared";
-
+import { INK, KpiCard, MUTED, O, SCard, STitle } from "./shared";
 const MONTHS = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
 const DAYS_LABEL = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
 
