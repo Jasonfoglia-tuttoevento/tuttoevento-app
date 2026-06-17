@@ -48,6 +48,7 @@ function getNavItems(role) {
   if (role === "organizer") return [
     { id: "overview",    label: "Dashboard",      icon: Icons.dashboard },
     { id: "marketplace", label: "Trova artisti",  icon: Icons.search    },
+    { id: "preferiti",   label: "Preferiti",      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
     { id: "richieste",   label: "Richieste",      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
     { id: "bookings",    label: "Booking",        icon: Icons.calendar  },
     { id: "analytics",   label: "Analitiche",     icon: Icons.chart     },
@@ -61,6 +62,7 @@ function getNavItems(role) {
     { id: "network",     label: "La mia rete",    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M5 17l5.5-4M19 17l-5.5-4"/></svg> },
     { id: "deals",       label: "Trattative",     icon: Icons.briefcase  },
     { id: "commissions", label: "Commissioni",    icon: Icons.wallet     },
+    { id: "calendario",  label: "Calendario",     icon: Icons.calendar   },
     { id: "agency",      label: "Agenzia",        icon: Icons.link       },
     { id: "settings",    label: "Impostazioni",   icon: Icons.settings   },
   ];

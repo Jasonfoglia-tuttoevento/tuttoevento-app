@@ -189,6 +189,7 @@ export default function DashboardPage() {
         case "marketplace": return <OrganizerArea currentUser={user} tab="marketplace" events={events} artists={artists} bookings={bookings} />;
         case "richieste":   return <OrganizerArea currentUser={user} tab="crm"         events={events} artists={artists} bookings={bookings} />;
         case "bookings":    return <OrganizerBookings bookings={bookings} onRefresh={()=>loadBookings(`?organizerId=${user.id}`)} />;
+        case "preferiti":   return <OrganizerArea currentUser={user} tab="preferiti"   events={events} artists={artists} bookings={bookings} />;
         case "analytics":   return <OrganizerArea currentUser={user} tab="analitiche"  events={events} artists={artists} bookings={bookings} />;
         case "earnings":    return <OrganizerArea currentUser={user} tab="estratto"    events={events} artists={artists} bookings={bookings} />;
         default: return null;
@@ -202,6 +203,7 @@ export default function DashboardPage() {
         case "roster":      return <PromoterArea currentUser={user} tab="roster"      events={events} artists={artists} bookings={bookings} users={users} />;
         case "deals":       return <PromoterArea currentUser={user} tab="trattative"  events={events} artists={artists} bookings={bookings} users={users} />;
         case "commissions": return <PromoterCommissions bookings={bookings} onRefresh={()=>loadBookings()} />;
+        case "calendario":  return <PromoterArea currentUser={user} tab="calendario"  events={events} artists={artists} bookings={bookings} users={users} />;
         case "agency":      return <PromoterArea currentUser={user} tab="agenzia"     events={events} artists={artists} bookings={bookings} users={users} />;
         default: return null;
       }
