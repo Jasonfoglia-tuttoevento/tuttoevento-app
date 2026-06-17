@@ -48,7 +48,7 @@ export default function PromoterAgenzia({ currentUser, portfolio, plan }) {
         <STitle>Pagina pubblica agenzia</STitle>
         <p style={{ fontSize:13, color:MUTED, marginBottom:16 }}>
           Questa pagina sarà visibile agli artisti e ai locali nel marketplace.
-          {!isPro && <span style={{ color:ORANGE, fontWeight:700 }}> Con PRO sblocchi la versione brandizzata completa.</span>}
+          {!isPro && <span style={{ color:O, fontWeight:700 }}> Con PRO sblocchi la versione brandizzata completa.</span>}
         </p>
 
         {/* Preview card */}
@@ -57,7 +57,7 @@ export default function PromoterAgenzia({ currentUser, portfolio, plan }) {
             {logo ? (
               <img src={logo} alt="Logo" style={{ width:56, height:56, borderRadius:14, objectFit:"cover", border:"2px solid rgba(255,255,255,.1)" }} />
             ) : (
-              <div style={{ width:56, height:56, borderRadius:14, background:ORANGE, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:20, color:"white" }}>
+              <div style={{ width:56, height:56, borderRadius:14, background:O, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:20, color:"white" }}>
                 {(agencyName||"A").charAt(0).toUpperCase()}
               </div>
             )}
