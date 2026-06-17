@@ -21,7 +21,7 @@ export default function PromoterOverview({ currentUser, bookings, portfolio, con
       <Card>
         <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
           <div>
-            <p style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:ORANGE, margin:"0 0 4px", fontFamily:"'Manrope',system-ui,sans-serif" }}>Area Promoter</p>
+            <p style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".16em", color:O, margin:"0 0 4px", fontFamily:"'Manrope',system-ui,sans-serif" }}>Area Promoter</p>
             <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:22, letterSpacing:"-.03em", margin:"0 0 4px" }}>
               Ciao{currentUser?.name ? ` ${currentUser.name}` : ""}
             </h2>
@@ -30,23 +30,23 @@ export default function PromoterOverview({ currentUser, bookings, portfolio, con
             </p>
           </div>
           <a href="/pricing" style={{ textDecoration:"none", display:"flex", alignItems:"center", gap:10,
-            background: plan==="pro" ? `${ORANGE}10` : "white",
-            border: `1px solid ${plan==="pro" ? `${ORANGE}25` : "rgba(0,0,0,.1)"}`,
+            background: plan==="pro" ? `${O}10` : "white",
+            border: `1px solid ${plan==="pro" ? `${O}25` : "rgba(0,0,0,.1)"}`,
             borderRadius:100, padding:"9px 18px", transition:"all .2s",
             boxShadow:"0 1px 4px rgba(0,0,0,.06)"
           }}>
-            <span style={{ width:8, height:8, borderRadius:"50%", background: plan==="pro" ? ORANGE : "#6b6b73", display:"inline-block", flexShrink:0 }} />
-            <span style={{ fontSize:13, fontWeight:700, color: plan==="pro" ? ORANGE : INK, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+            <span style={{ width:8, height:8, borderRadius:"50%", background: plan==="pro" ? O : "#6b6b73", display:"inline-block", flexShrink:0 }} />
+            <span style={{ fontSize:13, fontWeight:700, color: plan==="pro" ? O : INK, fontFamily:"'Manrope',system-ui,sans-serif" }}>
               Piano {plan==="pro" ? "Pro" : "Free"}
             </span>
             {plan==="free" && (
-              <span style={{ fontSize:12, fontWeight:700, color:ORANGE, display:"flex", alignItems:"center", gap:3 }}>
+              <span style={{ fontSize:12, fontWeight:700, color:O, display:"flex", alignItems:"center", gap:3 }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 Upgrade
               </span>
             )}
             {plan==="pro" && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={O} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             )}
           </a>
         </div>

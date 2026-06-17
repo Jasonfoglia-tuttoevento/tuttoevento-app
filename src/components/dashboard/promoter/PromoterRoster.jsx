@@ -43,7 +43,7 @@ export default function PromoterRoster({ portfolio, users, plan, onAdd, onRemove
           <button
             disabled={addingEntry || !newEntry.entityId || (newEntry.entityType==="artist"&&atMaxArtists&&plan!=="pro") || (newEntry.entityType==="venue"&&atMaxVenues&&plan!=="pro")}
             onClick={() => onAdd(newEntry)}
-            style={{ background:ORANGE, color:"white", border:"none", borderRadius:100, padding:"11px 22px", fontWeight:800, fontSize:13, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif", opacity:addingEntry?.5:1 }}>
+            style={{ background:O, color:"white", border:"none", borderRadius:100, padding:"11px 22px", fontWeight:800, fontSize:13, cursor:"pointer", fontFamily:"'Manrope',system-ui,sans-serif", opacity:addingEntry?.5:1 }}>
             {addingEntry?"...":"+ Aggiungi"}
           </button>
         </div>
@@ -51,7 +51,7 @@ export default function PromoterRoster({ portfolio, users, plan, onAdd, onRemove
 
         {/* Limiti piano Free */}
         {plan==="free" && (
-          <div style={{ marginTop:14, background:"rgba(255,90,0,.05)", border:"1px solid rgba(255,90,0,.15)", borderRadius:14, padding:"10px 14px", fontSize:12, color:ORANGE, fontWeight:700, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+          <div style={{ marginTop:14, background:"rgba(255,90,0,.05)", border:"1px solid rgba(255,90,0,.15)", borderRadius:14, padding:"10px 14px", fontSize:12, color:O, fontWeight:700, fontFamily:"'Manrope',system-ui,sans-serif" }}>
             🔒 Piano Free: max 5 artisti e 3 locali nel roster. <span style={{ color:INK }}>Con PRO: illimitati.</span>
           </div>
         )}

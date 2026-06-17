@@ -39,7 +39,7 @@ export default function OrganizerMarketplace({ artists, plan }) {
             <Inp label="Distanza (km)" placeholder="Es. 50" />
             <Inp label="Disponibilità" type="date" placeholder="" />
           </div>
-          <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(255,90,0,.06)", borderRadius: 12, fontSize: 13, color: ORANGE, fontWeight: 700 }}>
+          <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(255,90,0,.06)", borderRadius: 12, fontSize: 13, color: O, fontWeight: 700 }}>
             🤖 AI matching: suggerisce i 3 artisti più adatti in base a storico, budget e tipo evento
           </div>
         </Card>
@@ -60,7 +60,7 @@ export default function OrganizerMarketplace({ artists, plan }) {
                 {a.verified && <VerifiedBadge size={15} />}
               </div>
                 </div>
-                <p style={{ fontSize: 12, color: ORANGE, fontWeight: 700, margin: "0 0 4px" }}>{(Array.isArray(a.musicGenres) && a.musicGenres.length) ? a.musicGenres.join(", ") : (Array.isArray(a.genres) && a.genres.length) ? a.genres.join(", ") : "—"}</p>
+                <p style={{ fontSize: 12, color: O, fontWeight: 700, margin: "0 0 4px" }}>{(Array.isArray(a.musicGenres) && a.musicGenres.length) ? a.musicGenres.join(", ") : (Array.isArray(a.genres) && a.genres.length) ? a.genres.join(", ") : "—"}</p>
                 <p style={{ fontSize: 12, color: MUTED, margin: "0 0 12px" }}>📍 {a.city || "Italia"}</p>
                 <button type="button" onClick={() => setContactArtist(a)}
                   style={{ width: "100%", background: INK, color: "white", border: "none", borderRadius: 12, padding: "10px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Manrope',system-ui,sans-serif" }}>

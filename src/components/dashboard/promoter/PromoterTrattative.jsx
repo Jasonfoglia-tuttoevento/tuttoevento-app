@@ -42,7 +42,7 @@ export default function PromoterTrattative({ contactRequests, portfolio, plan, o
                 <div style={{ display:"flex", gap:12, marginTop:5, flexWrap:"wrap" }}>
                   {r.event_date && <span style={{ fontSize:12, color:MUTED }}>📅 {r.event_date}</span>}
                   {r.event_type && <span style={{ fontSize:12, color:MUTED }}>🎪 {r.event_type}</span>}
-                  {r.budget     && <span style={{ fontSize:12, fontWeight:700, color:ORANGE }}>💶 €{r.budget}</span>}
+                  {r.budget     && <span style={{ fontSize:12, fontWeight:700, color:O }}>💶 €{r.budget}</span>}
                 </div>
                 {r.notes && <p style={{ fontSize:12, color:MUTED, margin:"6px 0 0", fontStyle:"italic" }}>"{r.notes}"</p>}
               </div>

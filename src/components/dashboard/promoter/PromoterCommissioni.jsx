@@ -72,13 +72,13 @@ export default function PromoterCommissioni({ commissions, bookings, portfolio, 
                     <td style={{ padding:"10px 12px", color:MUTED }}>{r.eventDate||"—"}</td>
                     <td style={{ padding:"10px 12px", fontWeight:700 }}>{fmt(r.public_price)}</td>
                     <td style={{ padding:"10px 12px", color:MUTED }}>{fmt(r.te_margin)}</td>
-                    <td style={{ padding:"10px 12px", fontWeight:800, color:ORANGE }}>{fmt(r.promoter_share)}</td>
+                    <td style={{ padding:"10px 12px", fontWeight:800, color:O }}>{fmt(r.promoter_share)}</td>
                   </tr>
                 ))}
                 <tr style={{ borderTop:"2px solid rgba(0,0,0,.1)", background:"#fbfaf8" }}>
                   <td colSpan={4} style={{ padding:"12px", fontWeight:800 }}>TOTALE</td>
                   <td style={{ padding:"12px", fontWeight:700 }}>{fmt(totalMargin)}</td>
-                  <td style={{ padding:"12px", fontWeight:800, color:ORANGE, fontSize:15 }}>{fmt(totalShare)}</td>
+                  <td style={{ padding:"12px", fontWeight:800, color:O, fontSize:15 }}>{fmt(totalShare)}</td>
                 </tr>
               </tbody>
             </table>

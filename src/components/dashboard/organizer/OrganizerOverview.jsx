@@ -165,9 +165,9 @@ function ContactRequestModal({ artist, onClose }) {
                           style={{
                             padding:"7px 14px", borderRadius:100, fontSize:12, fontWeight:700, cursor:"pointer",
                             fontFamily:"'Manrope',system-ui,sans-serif",
-                            border: active ? `1px solid ${ORANGE}` : "1px solid rgba(0,0,0,.12)",
+                            border: active ? `1px solid ${O}` : "1px solid rgba(0,0,0,.12)",
                             background: active ? "rgba(255,90,0,.08)" : "white",
-                            color: active ? ORANGE : "#6b6b73",
+                            color: active ? O : "#6b6b73",
                           }}>
                           {et}
                         </button>
@@ -190,9 +190,9 @@ function ContactRequestModal({ artist, onClose }) {
                               padding:"7px 14px", borderRadius:100, fontSize:12, fontWeight:700,
                               cursor: hasPrice ? "pointer" : "not-allowed",
                               fontFamily:"'Manrope',system-ui,sans-serif",
-                              border: active ? `1px solid ${ORANGE}` : "1px solid rgba(0,0,0,.12)",
+                              border: active ? `1px solid ${O}` : "1px solid rgba(0,0,0,.12)",
                               background: active ? "rgba(255,90,0,.08)" : "white",
-                              color: !hasPrice ? "rgba(0,0,0,.25)" : (active ? ORANGE : "#6b6b73"),
+                              color: !hasPrice ? "rgba(0,0,0,.25)" : (active ? O : "#6b6b73"),
                               opacity: hasPrice ? 1 : .5,
                             }}>
                             {d.label}
