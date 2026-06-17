@@ -257,21 +257,26 @@ export async function PATCH(request) {
         return NextResponse.json({ error: "La richiesta non ha una data evento" }, { status: 400 });
       }
 
-      // Recupera public_pricing approvato per l'artista
+      // Recupera public_pricing (prezzo locale) e cachet_pricing (prezzo artista) approvati
       const { data: artistProfile } = await supabaseAdmin
         .from("artist_profiles")
-        .select("public_pricing, promoter_id")
+        .select("public_pricing, cachet_pricing, promoter_id")
         .eq("user_id", Number(current.artist_id))
         .maybeSingle();
 
       const publicPricing = artistProfile?.public_pricing || {};
+      const cachetPricing = artistProfile?.cachet_pricing || {};
       const eventType = current.event_type || "";
       const duration  = current.duration   || "";
-      const publicPrice = Number(publicPricing?.[eventType]?.[duration]) || Number(current.budget) || 0;
+      const publicPrice  = Number(publicPricing?.[eventType]?.[duration]) || Number(current.budget) || 0;
+      const artistCachet = Number(cachetPricing?.[eventType]?.[duration]) || 0;
 
       if (publicPrice <= 0) {
         return NextResponse.json({ error: "Nessun prezzo pubblico approvato per questo tipo evento/durata. Approva il cachet dell'artista prima di connettere." }, { status: 400 });
       }
+
+      // Margine = prezzo pagato dal locale − cachet che prende l'artista
+      const margine = Math.max(0, publicPrice - artistCachet);
 
       const times = current.start_time && current.end_time
         ? { startTime: current.start_time, endTime: current.end_time }
@@ -290,26 +295,32 @@ export async function PATCH(request) {
         promoterName = artistPromoterLink.users.name || "";
       }
 
-      // ── Calcolo commissioni (stesso schema di POST /api/bookings) ──
+      // ── Calcolo commissioni sul MARGINE (prezzo locale − cachet artista) ──
+      // Senza sub:  margine spaccato 50/50 → TuttoEvento 50%, promoter 50%
+      // Con sub:    subpromoter 50% del margine, TuttoEvento 25%, promoter 25%
       let platformFee    = 0;
       let promoterFee    = 0;
       let subPromoterFee = 0;
       let promoterParentId = null;
 
-      if (publicPrice > 0 && promoterId) {
+      if (margine > 0 && promoterId) {
         const { data: promoterData } = await supabaseAdmin
           .from("users").select("promoter_parent_id").eq("id", Number(promoterId)).maybeSingle();
         promoterParentId = promoterData?.promoter_parent_id || null;
         if (promoterParentId) {
-          platformFee    = Math.round(publicPrice * 0.20 * 100) / 100;
-          promoterFee    = Math.round(publicPrice * 0.10 * 100) / 100;
-          subPromoterFee = Math.round(publicPrice * 0.10 * 100) / 100;
+          // Il promoter che ha fatto la vendita è un sub: prende il 50% del margine
+          // Il suo parent prende 25%, TuttoEvento 25%
+          subPromoterFee = Math.round(margine * 0.50 * 100) / 100;
+          platformFee    = Math.round(margine * 0.25 * 100) / 100;
+          promoterFee    = Math.round(margine * 0.25 * 100) / 100;
         } else {
-          platformFee = Math.round(publicPrice * 0.20 * 100) / 100;
-          promoterFee = Math.round(publicPrice * 0.20 * 100) / 100;
+          // Promoter senza parent: 50% margine al promoter, 50% a TuttoEvento
+          platformFee = Math.round(margine * 0.50 * 100) / 100;
+          promoterFee = Math.round(margine * 0.50 * 100) / 100;
         }
-      } else if (publicPrice > 0) {
-        platformFee = Math.round(publicPrice * 0.40 * 100) / 100;
+      } else if (margine > 0) {
+        // Nessun promoter coinvolto: tutto il margine a TuttoEvento
+        platformFee = Math.round(margine * 100) / 100;
       }
 
       // ── Insert booking diretto su Supabase ──
@@ -345,13 +356,13 @@ export async function PATCH(request) {
       }
 
       // ── Commissioni ──
-      if (publicPrice > 0) {
+      if (margine > 0) {
         const commissions = [];
-        commissions.push({ booking_id: bookingData.id, recipient_id: 1, recipient_role: "platform", amount: platformFee, percentage: promoterParentId ? 20 : 40 });
+        commissions.push({ booking_id: bookingData.id, recipient_id: 1, recipient_role: "platform", amount: platformFee, percentage: promoterParentId ? 25 : (promoterId ? 50 : 100) });
         if (promoterId && promoterFee > 0)
-          commissions.push({ booking_id: bookingData.id, recipient_id: Number(promoterId), recipient_role: "promoter", amount: promoterFee, percentage: 10 });
-        if (promoterParentId && subPromoterFee > 0)
-          commissions.push({ booking_id: bookingData.id, recipient_id: Number(promoterParentId), recipient_role: "sub_promoter", amount: subPromoterFee, percentage: 10 });
+          commissions.push({ booking_id: bookingData.id, recipient_id: Number(promoterId), recipient_role: promoterParentId ? "sub_promoter" : "promoter", amount: promoterParentId ? subPromoterFee : promoterFee, percentage: promoterParentId ? 50 : 50 });
+        if (promoterParentId && promoterFee > 0)
+          commissions.push({ booking_id: bookingData.id, recipient_id: Number(promoterParentId), recipient_role: "promoter", amount: promoterFee, percentage: 25 });
         if (commissions.length > 0)
           await supabaseAdmin.from("booking_commissions").insert(commissions);
       }

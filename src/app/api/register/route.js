@@ -131,6 +131,37 @@ export async function POST(request) {
       }, { onConflict:"user_id" });
     }
 
+    // ── 3b. Se è un promoter registrato col referral di un altro promoter,
+    //        agganciarlo come sub-promoter del network ─────────────
+    if (safeRole === "promoter" && body.referralCode) {
+      const { data: parentPromoter } = await supabaseAdmin
+        .from("users")
+        .select("id, role")
+        .eq("referral_code", body.referralCode.toUpperCase())
+        .eq("role", "promoter")
+        .maybeSingle();
+
+      if (parentPromoter && parentPromoter.id !== createdUser.id) {
+        // Imposta il parent sul nuovo promoter
+        await supabaseAdmin
+          .from("users")
+          .update({ promoter_parent_id: parentPromoter.id })
+          .eq("id", createdUser.id);
+
+        // Crea/attiva il record nel network del parent
+        await supabaseAdmin
+          .from("promoter_sub_network")
+          .upsert({
+            parent_id:      parentPromoter.id,
+            sub_id:         createdUser.id,
+            email:          normalizedEmail,
+            commission_pct: 50,
+            status:         "active",
+            accepted_at:    new Date().toISOString(),
+          }, { onConflict: "parent_id,email" });
+      }
+    }
+
     // ── 4. Email di benvenuto con PDF termini ────────────────────
     try {
       const pdfPath = path.join(process.cwd(), "public", pdfFileName);
