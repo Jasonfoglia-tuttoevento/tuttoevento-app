@@ -18,7 +18,7 @@ tramite la piattaforma TuttoEvento ("Piattaforma").
 L'Artista si impegna a eseguire una prestazione artistica (${eventType || "evento"}) presso ${venue || "la sede del Committente"} in data ${dataEvento}, orario ${orario}.
 
 2. COMPENSO
-Il Committente corrisponde un importo totale di € ${publicPrice || 0}. All'Artista spetta un cachet di € ${artistCachet || 0}. La differenza costituisce il margine di intermediazione gestito dalla Piattaforma.
+Il Committente corrisponde alla Piattaforma il compenso concordato di € ${publicPrice || 0} per la prestazione. La Piattaforma corrisponde all'Artista il cachet concordato${artistCachet ? ` di € ${artistCachet}` : ""}. La differenza costituisce il margine di intermediazione gestito dalla Piattaforma, secondo gli accordi tra le parti.
 
 3. PAGAMENTI
 I pagamenti sono tracciati tramite la Piattaforma. Il Committente versa l'importo dovuto; la Piattaforma provvede alla ripartizione verso Artista e promoter secondo gli accordi.

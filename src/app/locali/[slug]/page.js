@@ -92,6 +92,34 @@ export default async function VenuePublicPage({ params }) {
           </Link>
         </div>
 
+        {/* Localizzazione */}
+        {(v.address || (v.latitude && v.longitude)) && (
+          <div style={{ background:"white", borderRadius:20, padding:"22px 24px", border:"1px solid rgba(0,0,0,.06)", marginBottom:16 }}>
+            <h2 style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:18, color:INK, margin:"0 0 12px", letterSpacing:"-.02em" }}>Dove si trova</h2>
+            {v.address && (
+              <p style={{ fontSize:14, color:"#333", margin:"0 0 14px", display:"flex", alignItems:"center", gap:8 }}>
+                <span>📍</span> {v.address}{v.city ? `, ${v.city}` : ""}
+              </p>
+            )}
+            {v.latitude && v.longitude ? (
+              <div style={{ borderRadius:16, overflow:"hidden", border:"1px solid rgba(0,0,0,.08)" }}>
+                <iframe
+                  title={`Mappa ${v.name}`}
+                  width="100%" height="280" style={{ border:0, display:"block" }}
+                  loading="lazy"
+                  src={`https://www.google.com/maps?q=${v.latitude},${v.longitude}&z=15&output=embed`}
+                />
+              </div>
+            ) : v.address ? (
+              <a href={`https://www.google.com/maps/search/${encodeURIComponent(v.address + " " + (v.city||""))}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{ display:"inline-block", fontSize:13, fontWeight:700, color:O, textDecoration:"none" }}>
+                Apri in Google Maps →
+              </a>
+            ) : null}
+          </div>
+        )}
+
         {/* Recensioni */}
         <div style={{ background:"white", borderRadius:20, padding:"22px 24px", border:"1px solid rgba(0,0,0,.06)" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, marginBottom:16, flexWrap:"wrap" }}>
