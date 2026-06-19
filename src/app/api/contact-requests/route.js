@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getSessionUser, unauthorized, forbidden } from "@/lib/auth";
 import { Resend } from "resend";
 import { sendPushToUser } from "@/lib/pushNotifications";
+import { generateContractText, TERMS_VERSION } from "@/lib/contract-template";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -366,6 +367,27 @@ export async function PATCH(request) {
         if (commissions.length > 0)
           await supabaseAdmin.from("booking_commissions").insert(commissions);
       }
+
+      // ── Genera contratto digitale (snapshot) ──
+      try {
+        const contractText = generateContractText({
+          artistName:    current.artist_name,
+          organizerName: current.organizer_name,
+          eventDate:     current.event_date,
+          eventType:     current.event_type,
+          venue:         current.organizer_name,
+          publicPrice,
+          artistCachet,
+          startTime:     times?.startTime,
+          endTime:       times?.endTime,
+        });
+        await supabaseAdmin.from("contracts").insert({
+          booking_id:       bookingData.id,
+          content_snapshot: contractText,
+          terms_version:    TERMS_VERSION,
+          status:           "pending",
+        });
+      } catch (e) { console.error("Errore creazione contratto:", e); }
 
       // ── Aggiorna booked_dates artista ──
       try {

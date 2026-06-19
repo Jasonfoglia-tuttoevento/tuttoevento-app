@@ -12,6 +12,7 @@ export async function GET(request, { params }) {
         music_genres, event_types, photo, photo_status,
         instagram, spotify, youtube, soundcloud, tiktok,
         slug, approval_status, available_dates, public_pricing,
+        rating_avg, rating_count,
         users!inner(id, name, plan, verified, role)
       `)
       .eq("slug", slug)
@@ -46,6 +47,8 @@ export async function GET(request, { params }) {
       verified:      profile.users?.verified || false,
       availableDates:(() => { try { return Array.isArray(profile.available_dates)?profile.available_dates:JSON.parse(profile.available_dates||"[]"); } catch { return []; }})(),
       publicPricing: profile.public_pricing || null,
+      ratingAvg:     Number(profile.rating_avg) || 0,
+      ratingCount:   Number(profile.rating_count) || 0,
     });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
