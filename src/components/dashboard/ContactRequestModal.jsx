@@ -18,6 +18,13 @@ const REASON_ICONS = {
   booking_overlap: "⏰",
 };
 
+const DURATION_TO_TIMES = {
+  "1h":      { startTime: "22:00", endTime: "23:00" },
+  "2h":      { startTime: "22:00", endTime: "00:00" },
+  "3h":      { startTime: "22:00", endTime: "01:00" },
+  "fullday": { startTime: "10:00", endTime: "23:59" },
+};
+
 const DURATIONS = [
   { key:"1h",      label:"1 ora"    },
   { key:"2h",      label:"2 ore"    },
@@ -128,42 +135,7 @@ export default function ContactRequestModal({ artist, currentUser, onClose, onSu
             </label>
             <input type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)} required
               style={{ ...inp, borderColor: isBlocked?"#dc2626": isAvailable?"#16a34a":"rgba(0,0,0,.1)" }} />
-
-            {/* Feedback disponibilità */}
-            {checkingAvail && (
-              <p style={{ fontSize:11, color:MUTED, margin:"5px 0 0", fontFamily:"'Manrope',system-ui,sans-serif" }}>
-                ⏳ Controllo disponibilità...
-              </p>
-            )}
-            {!checkingAvail && isBlocked && (
-              <div style={{ marginTop:8, background:"rgba(220,38,38,.06)", border:"1px solid rgba(220,38,38,.2)", borderRadius:12, padding:"10px 14px", display:"flex", gap:10, alignItems:"flex-start" }}>
-                <span style={{ fontSize:18, flexShrink:0 }}>{REASON_ICONS[availability.reason] || "⚠️"}</span>
-                <div>
-                  <p style={{ fontSize:12, fontWeight:700, color:"#dc2626", margin:"0 0 2px", fontFamily:"'Manrope',system-ui,sans-serif" }}>Artista non disponibile</p>
-                  <p style={{ fontSize:12, color:"#dc2626", margin:0, lineHeight:1.5, fontFamily:"'Manrope',system-ui,sans-serif" }}>{availability.message}</p>
-                </div>
-              </div>
-            )}
-            {!checkingAvail && isAvailable && eventDate && (
-              <p style={{ fontSize:11, fontWeight:700, color:"#16a34a", margin:"5px 0 0", fontFamily:"'Manrope',system-ui,sans-serif" }}>
-                ✓ Artista disponibile in questa data
-              </p>
-            )}
           </div>
-
-          {/* Orario — mostra solo se disponibile o non controllato */}
-          {!isBlocked && (
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              <div>
-                <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>Ora inizio</label>
-                <input type="time" value={startTime} onChange={e=>setStartTime(e.target.value)} style={inp} />
-              </div>
-              <div>
-                <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>Ora fine</label>
-                <input type="time" value={endTime} onChange={e=>setEndTime(e.target.value)} style={inp} />
-              </div>
-            </div>
-          )}
 
           {/* Tipo evento */}
           <div>
@@ -183,11 +155,18 @@ export default function ContactRequestModal({ artist, currentUser, onClose, onSu
             </div>
           </div>
 
-          {/* Durata */}
+          {/* Durata — precompila l'orario, evita il falso blocco "tutto il giorno" */}
           <div>
             <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>Durata</label>
             <div style={{ position:"relative" }}>
-              <select value={duration} onChange={e=>setDuration(e.target.value)}
+              <select value={duration} onChange={e=>{
+                  const val = e.target.value;
+                  setDuration(val);
+                  if (val && DURATION_TO_TIMES[val]) {
+                    setStartTime(DURATION_TO_TIMES[val].startTime);
+                    setEndTime(DURATION_TO_TIMES[val].endTime);
+                  }
+                }}
                 style={{ ...inp, appearance:"none", WebkitAppearance:"none", cursor:"pointer" }}>
                 <option value="">Seleziona...</option>
                 {DURATIONS.map(d=>(
@@ -195,6 +174,51 @@ export default function ContactRequestModal({ artist, currentUser, onClose, onSu
                 ))}
               </select>
               <svg style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}
+                width="12" height="12" viewBox="0 0 12 12">
+                <path d="M2 4l4 4 4-4" stroke={MUTED} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+          {/* Orario — modificabile, precompilato dalla durata */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <div>
+              <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>Ora inizio</label>
+              <input type="time" value={startTime} onChange={e=>setStartTime(e.target.value)} style={inp} />
+            </div>
+            <div>
+              <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>Ora fine</label>
+              <input type="time" value={endTime} onChange={e=>setEndTime(e.target.value)} style={inp} />
+            </div>
+            {!startTime && !endTime && (
+              <p style={{ gridColumn:"1 / -1", fontSize:11, color:MUTED, margin:0, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+                Seleziona prima la durata, oppure imposta un orario manualmente.
+              </p>
+            )}
+          </div>
+
+          {/* Feedback disponibilità — qui, dopo che l'utente ha potuto scegliere orario */}
+          <div>
+            {checkingAvail && (
+              <p style={{ fontSize:11, color:MUTED, margin:0, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+                ⏳ Controllo disponibilità...
+              </p>
+            )}
+            {!checkingAvail && isBlocked && (
+              <div style={{ background:"rgba(220,38,38,.06)", border:"1px solid rgba(220,38,38,.2)", borderRadius:12, padding:"10px 14px", display:"flex", gap:10, alignItems:"flex-start" }}>
+                <span style={{ fontSize:18, flexShrink:0 }}>{REASON_ICONS[availability.reason] || "⚠️"}</span>
+                <div>
+                  <p style={{ fontSize:12, fontWeight:700, color:"#dc2626", margin:"0 0 2px", fontFamily:"'Manrope',system-ui,sans-serif" }}>Artista non disponibile in questo orario</p>
+                  <p style={{ fontSize:12, color:"#dc2626", margin:0, lineHeight:1.5, fontFamily:"'Manrope',system-ui,sans-serif" }}>{availability.message}</p>
+                </div>
+              </div>
+            )}
+            {!checkingAvail && isAvailable && eventDate && startTime && endTime && (
+              <p style={{ fontSize:11, fontWeight:700, color:"#16a34a", margin:0, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+                ✓ Artista disponibile in questa fascia oraria
+              </p>
+            )}
+          </div>
                 width="12" height="12" viewBox="0 0 12 12">
                 <path d="M2 4l4 4 4-4" stroke={MUTED} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
               </svg>
