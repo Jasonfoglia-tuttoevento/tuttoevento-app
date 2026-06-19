@@ -8,6 +8,7 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
   const [password, setPass]   = useState("");
   const [extra, setExtra]     = useState("");
   const [terms, setTerms]     = useState(false);
+  const [website, setWebsite] = useState(""); // honeypot anti-bot — campo invisibile, solo i bot lo compilano
   const [referralCode, setReferralCode] = useState("");
   const [promoterName, setPromoterName] = useState("");
 
@@ -85,6 +86,7 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
           agencyName: isPromoter ? extra : undefined,
           venueName:  !isArtist && !isPromoter ? extra : undefined,
           termsAccepted: true,
+          website, // honeypot
         }),
       });
       const d = await res.json();
@@ -124,6 +126,11 @@ export default function RegisterFormInline({ role = "artist", dark = true }) {
         </div>
       )}
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Honeypot anti-bot: invisibile per umani, i bot lo compilano e vengono filtrati silenziosamente */}
+      <input type="text" name="website" value={website} onChange={e=>setWebsite(e.target.value)}
+        autoComplete="off" tabIndex={-1}
+        style={{ position:"absolute", left:"-9999px", width:1, height:1, opacity:0 }}
+        aria-hidden="true" />
 
       {/* Step 1 — dati base */}
       {step === 1 && (

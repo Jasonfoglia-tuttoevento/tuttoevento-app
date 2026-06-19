@@ -28,6 +28,18 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
+
+    // Genera slug solo se non esiste già (evita di rompere link condivisi)
+    const { data: existing } = await supabaseAdmin
+      .from("venue_profiles").select("slug").eq("user_id", Number(user.id)).maybeSingle();
+    let slug = existing?.slug;
+    if (!slug && body.venueName) {
+      const base = body.venueName.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      slug = `${base}-${user.id}`;
+    }
+
     const payload = {
       user_id: Number(user.id),
       venue_name: body.venueName || "",
@@ -36,6 +48,7 @@ export async function POST(request) {
       capacity: body.capacity ? Number(body.capacity) : null,
       description: body.description || "",
       instagram: body.instagram || "",
+      slug,
       updated_at: new Date().toISOString(),
     };
 

@@ -9,6 +9,7 @@ import ArtistScalette   from "./artist/ArtistScalette";
 import ArtistAnalitiche from "./artist/ArtistAnalitiche";
 import ArtistGuadagni   from "./artist/ArtistGuadagni";
 import ArtistRichieste  from "./artist/ArtistRichieste";
+import ArtistContatti   from "./artist/ArtistContatti";
 
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS — stile Spotify (bianco/grigio chiaro + arancione)
@@ -923,6 +924,7 @@ export default function ArtistArea(props) {
       {tab==="mediakit"   && <ArtistProfilo plan={plan} highlightCard={highlightCard} stageName={p.stageName} setStageName={p.setStageName} artistType={p.artistType} setArtistType={p.setArtistType} bio={p.bio} setBio={p.setBio} city={p.city} setCity={p.setCity} musicGenres={p.musicGenres} setMusicGenres={p.setMusicGenres} eventTypes={p.eventTypes} setEventTypes={p.setEventTypes} photo={p.photo} setPhoto={p.setPhoto} instagram={p.instagram} setInstagram={p.setInstagram} spotify={p.spotify} setSpotify={p.setSpotify} youtube={p.youtube} setYoutube={p.setYoutube} soundcloud={p.soundcloud} setSoundcloud={p.setSoundcloud} tiktok={p.tiktok} setTiktok={p.setTiktok} rider={p.rider} setRider={p.setRider} saveArtistProfile={p.saveArtistProfile} artistMessage={p.artistMessage} />}
       {tab==="cachet"     && <ArtistCachet  pricing={p.pricing} setPricing={setPricing} eventTypes={p.eventTypes} saveArtistProfile={p.saveArtistProfile} artistMessage={p.artistMessage} />}
       {tab==="richieste"  && <ArtistRichieste bookings={p.bookings||[]} onRefreshBookings={props.onRefreshBookings} />}
+      {tab==="contatti"   && <ArtistContatti />}
       {tab==="scalette"   && <ArtistScalette bookings={p.bookings||[]} currentUser={props.currentUser} />}
       {tab==="calendario" && <ArtistCalendario availableDates={p.availableDates||[]} setAvailableDates={p.setAvailableDates} bookedSlots={p.bookedSlots||[]} plan={plan} />}
       {tab==="analitiche" && <AnalyticsWidget role="artist" userId={props.currentUser?.id} />}

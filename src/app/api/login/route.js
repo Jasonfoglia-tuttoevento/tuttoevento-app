@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { createServerClient } from "@supabase/ssr";
+import { rateLimitGuard } from "@/lib/rate-limit";
 
 export async function POST(request) {
   try {
+    const limited = await rateLimitGuard(request, "login");
+    if (limited) return limited;
+
     const body = await request.json();
 
     if (!body.email || !body.password) {

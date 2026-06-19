@@ -1,10 +1,19 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { Card, INK, Inp, MUTED, O, ProBadge, ProLock, SCard, STitle, SectionTitle } from "./shared";
+import CRMContacts from "@/components/CRMContacts";
+import { ReviewForm } from "@/components/ReviewWidget";
 export default function OrganizerCRM({ bookings, plan }) {
   const [notes, setNotes] = useState({});
   const [contactRequests, setContactRequests] = useState([]);
   const [crLoading, setCrLoading] = useState(true);
+  const [reviewedIds, setReviewedIds] = useState([]);
+
+  const toReview = (Array.isArray(bookings) ? bookings : []).filter(b =>
+    b.eventDate && new Date(b.eventDate) < new Date() &&
+    ["accepted","confirmed","completed"].includes(b.status) &&
+    !reviewedIds.includes(b.id)
+  );
 
   const STATI = ["pending","reviewed","confirmed","rejected"];
   const STATUS_LABEL = { pending:"In attesa", reviewed:"In revisione", confirmed:"Confermato", rejected:"Rifiutato" };
@@ -76,26 +85,21 @@ export default function OrganizerCRM({ bookings, plan }) {
         )}
       </Card>
 
-      {/* CRM avanzato — solo PRO */}
-      <ProLock feature="Il CRM completo con note, rating e storico" plan={plan}>
+      {/* CRM — rubrica contatti reale */}
+      <CRMContacts contactType="artist" />
+
+      {/* Eventi conclusi da recensire */}
+      {toReview.length > 0 && (
         <Card>
-          <SectionTitle>CRM avanzato — Note & Rating <ProBadge /></SectionTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {(bookings.slice(0, 3)).map((b, i) => (
-              <div key={b.id || i} style={{ background: "#fbfaf8", borderRadius: 16, padding: "14px 16px", border: "1px solid rgba(0,0,0,.07)" }}>
-                <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 8px" }}>{b.artistName || "Artista"}</p>
-                <textarea placeholder="Aggiungi note private su questo artista..." rows={2}
-                  style={{ width: "100%", background: "white", border: "1px solid rgba(0,0,0,.1)", borderRadius: 10, padding: "8px 10px", fontSize: 12, fontFamily: "'Manrope',system-ui,sans-serif", outline: "none", resize: "none" }} />
-                <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                  {[1,2,3,4,5].map(n => (
-                    <button key={n} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#fbbf24" }}>★</button>
-                  ))}
-                </div>
-              </div>
+          <SectionTitle>Eventi conclusi — lascia una recensione</SectionTitle>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {toReview.map(b => (
+              <ReviewForm key={b.id} bookingId={b.id} targetName={b.artistName}
+                onDone={() => setReviewedIds(prev => [...prev, b.id])} />
             ))}
           </div>
         </Card>
-      </ProLock>
+      )}
 
       {/* Export CSV — solo PRO */}
       <ProLock feature="L'export CSV dei dati" plan={plan}>

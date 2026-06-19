@@ -4,6 +4,7 @@ import { getSessionUser, unauthorized, forbidden } from "@/lib/auth";
 import { Resend } from "resend";
 import { sendPushToUser } from "@/lib/pushNotifications";
 import { generateContractText, TERMS_VERSION } from "@/lib/contract-template";
+import { rateLimitGuard } from "@/lib/rate-limit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -106,6 +107,9 @@ export async function POST(request) {
   const user = await getSessionUser();
   if (!user) return unauthorized();
   if (user.role !== "organizer") return forbidden();
+
+  const limited = await rateLimitGuard(request, "contact-request");
+  if (limited) return limited;
 
   try {
     const body = await request.json();

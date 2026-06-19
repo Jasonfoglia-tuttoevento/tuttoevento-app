@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { SCard, STitle, O, INK, MUTED, inp } from "./shared";
+import { ReviewForm } from "@/components/ReviewWidget";
 
 /* ── Carta conferma presenza booking ── */
 function BookingConfirmCard({ booking, onRefresh }) {
@@ -112,6 +113,14 @@ export default function ArtistRichieste({ bookings=[], onRefreshBookings }) {
     (b.artistConfirmation === "pending" || !b.artistConfirmation)
   );
 
+  // Booking conclusi (data passata) ancora da recensire
+  const [reviewedIds, setReviewedIds] = useState([]);
+  const toReview = (Array.isArray(bookings) ? bookings : []).filter(b =>
+    b.eventDate && new Date(b.eventDate) < new Date() &&
+    ["accepted","confirmed","completed"].includes(b.status) &&
+    !reviewedIds.includes(b.id)
+  );
+
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
 
@@ -124,6 +133,19 @@ export default function ArtistRichieste({ bookings=[], onRefreshBookings }) {
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {toConfirm.map(b => (
               <BookingConfirmCard key={b.id} booking={b} onRefresh={onRefreshBookings} />
+            ))}
+          </div>
+        </SCard>
+      )}
+
+      {/* Eventi conclusi da recensire */}
+      {toReview.length > 0 && (
+        <SCard>
+          <STitle sub="Lascia una recensione al locale">Eventi conclusi</STitle>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {toReview.map(b => (
+              <ReviewForm key={b.id} bookingId={b.id} targetName={b.organizerName}
+                onDone={() => setReviewedIds(prev => [...prev, b.id])} />
             ))}
           </div>
         </SCard>

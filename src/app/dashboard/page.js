@@ -173,6 +173,7 @@ export default function DashboardPage() {
         case "overview":   return <ArtistArea {...commonArtistProps} tab="mediakit"   />;
         case "profile":    return <ArtistArea {...commonArtistProps} tab="mediakit"   />;
         case "cachet":     return <ArtistArea {...commonArtistProps} tab="cachet"     />;
+        case "contatti":   return <ArtistArea {...commonArtistProps} tab="contatti"   />;
         case "richieste":  return <ArtistArea {...commonArtistProps} tab="richieste"  />;
         case "scalette":   return <ArtistArea {...commonArtistProps} tab="scalette"   />;
         case "video":      return <ArtistArea {...commonArtistProps} tab="video"      />;

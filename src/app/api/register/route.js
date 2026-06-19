@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { Resend } from "resend";
 import fs from "fs";
 import path from "path";
+import { rateLimitGuard } from "@/lib/rate-limit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -66,7 +67,17 @@ const WELCOME_HTML = (name, role, pdfFileName) => `
 
 export async function POST(request) {
   try {
+    const limited = await rateLimitGuard(request, "register");
+    if (limited) return limited;
+
     const body = await request.json();
+
+    // ── Honeypot anti-bot: campo invisibile nel form, solo i bot lo compilano ──
+    if (body.website) {
+      // Risposta finta "successo" per non far capire al bot che è stato bloccato
+      return NextResponse.json({ ok: true }, { status: 201 });
+    }
+
     if (!body.name || !body.email || !body.password || !body.role)
       return NextResponse.json({ error:"Compila tutti i campi" }, { status:400 });
     if (!body.termsAccepted)
