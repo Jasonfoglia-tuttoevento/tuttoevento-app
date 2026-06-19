@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { SCard, STitle, O, INK, MUTED, inp } from "./shared";
 import { ReviewForm } from "@/components/ReviewWidget";
+import ContractWidget from "@/components/ContractWidget";
 
 /* ── Carta conferma presenza booking ── */
 function BookingConfirmCard({ booking, onRefresh }) {
@@ -87,6 +88,11 @@ function BookingConfirmCard({ booking, onRefresh }) {
         </div>
       )}
       {error && <p style={{ fontSize:12, color:"#dc2626", fontWeight:600, margin:"8px 0 0" }}>{error}</p>}
+
+      {/* Contratto digitale del booking */}
+      <div style={{ marginTop:12 }}>
+        <ContractWidget bookingId={booking.id} currentUserRole="artist" />
+      </div>
     </div>
   );
 }

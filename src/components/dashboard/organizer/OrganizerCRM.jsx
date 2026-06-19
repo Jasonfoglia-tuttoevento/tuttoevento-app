@@ -3,11 +3,18 @@ import { useState, useEffect, useRef } from "react";
 import { Card, INK, Inp, MUTED, O, ProBadge, ProLock, SCard, STitle, SectionTitle } from "./shared";
 import CRMContacts from "@/components/CRMContacts";
 import { ReviewForm } from "@/components/ReviewWidget";
+import ContractWidget from "@/components/ContractWidget";
 export default function OrganizerCRM({ bookings, plan }) {
   const [notes, setNotes] = useState({});
   const [contactRequests, setContactRequests] = useState([]);
   const [crLoading, setCrLoading] = useState(true);
   const [reviewedIds, setReviewedIds] = useState([]);
+  const [expandedContracts, setExpandedContracts] = useState({});
+
+  // Booking attivi/confermati con contratto da firmare o consultare
+  const withContract = (Array.isArray(bookings) ? bookings : []).filter(b =>
+    ["pending","accepted","confirmed"].includes(b.status)
+  );
 
   const toReview = (Array.isArray(bookings) ? bookings : []).filter(b =>
     b.eventDate && new Date(b.eventDate) < new Date() &&
@@ -84,6 +91,32 @@ export default function OrganizerCRM({ bookings, plan }) {
           </div>
         )}
       </Card>
+
+      {/* Contratti digitali dei booking */}
+      {withContract.length > 0 && (
+        <Card>
+          <SectionTitle>Contratti booking</SectionTitle>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {withContract.map(b => (
+              <div key={b.id}>
+                <button type="button"
+                  onClick={()=>setExpandedContracts(prev=>({...prev,[b.id]:!prev[b.id]}))}
+                  style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between",
+                    background:"#fbfaf8", border:"1px solid rgba(0,0,0,.06)", borderRadius:14,
+                    padding:"12px 14px", cursor:"pointer", fontFamily:"inherit" }}>
+                  <span style={{ fontSize:13, fontWeight:700, color:INK }}>{b.artistName || "Artista"} — {b.eventDate || "—"}</span>
+                  <span style={{ fontSize:12, color:O, fontWeight:700 }}>{expandedContracts[b.id] ? "Nascondi ▲" : "Vedi contratto ▼"}</span>
+                </button>
+                {expandedContracts[b.id] && (
+                  <div style={{ marginTop:8 }}>
+                    <ContractWidget bookingId={b.id} currentUserRole="organizer" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* CRM — rubrica contatti reale */}
       <CRMContacts contactType="artist" />
