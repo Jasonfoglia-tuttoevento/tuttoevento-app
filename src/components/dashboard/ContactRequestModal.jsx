@@ -18,15 +18,27 @@ const REASON_ICONS = {
   booking_overlap: "⏰",
 };
 
+const DURATIONS = [
+  { key:"1h",      label:"1 ora"    },
+  { key:"2h",      label:"2 ore"    },
+  { key:"3h",      label:"3 ore"    },
+  { key:"fullday", label:"Full day" },
+];
+
 export default function ContactRequestModal({ artist, currentUser, onClose, onSuccess }) {
   const [eventDate,  setEventDate]  = useState("");
   const [startTime,  setStartTime]  = useState("");
   const [endTime,    setEndTime]    = useState("");
   const [eventType,  setEventType]  = useState("");
-  const [budget,     setBudget]     = useState("");
+  const [duration,   setDuration]   = useState("");
   const [notes,      setNotes]      = useState("");
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState("");
+
+  // Prezzo calcolato dal listino pubblico dell'artista per tipo evento + durata selezionati
+  const calculatedPrice = (eventType && duration && artist?.publicPricing)
+    ? (artist.publicPricing[eventType]?.[duration] ?? null)
+    : null;
 
   // Stato disponibilità artista
   const [availability, setAvailability] = useState(null); // null | { available, message, reason }
@@ -73,7 +85,8 @@ export default function ContactRequestModal({ artist, currentUser, onClose, onSu
           startTime: startTime || undefined,
           endTime:   endTime   || undefined,
           eventType,
-          budget: budget ? Number(budget) : null,
+          duration,
+          budget: calculatedPrice, // prezzo dal listino artista, non più inserito a mano
           notes,
         }),
       });
@@ -170,12 +183,42 @@ export default function ContactRequestModal({ artist, currentUser, onClose, onSu
             </div>
           </div>
 
-          {/* Budget */}
+          {/* Durata */}
           <div>
-            <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>Budget indicativo (€)</label>
-            <input type="number" min="0" placeholder="es. 300" value={budget} onChange={e=>setBudget(e.target.value)} style={inp} />
-            <p style={{ fontSize:10, color:MUTED, margin:"4px 0 0", fontFamily:"'Manrope',system-ui,sans-serif" }}>Il budget è riservato e visibile solo al nostro team.</p>
+            <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>Durata</label>
+            <div style={{ position:"relative" }}>
+              <select value={duration} onChange={e=>setDuration(e.target.value)}
+                style={{ ...inp, appearance:"none", WebkitAppearance:"none", cursor:"pointer" }}>
+                <option value="">Seleziona...</option>
+                {DURATIONS.map(d=>(
+                  <option key={d.key} value={d.key}>{d.label}</option>
+                ))}
+              </select>
+              <svg style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}
+                width="12" height="12" viewBox="0 0 12 12">
+                <path d="M2 4l4 4 4-4" stroke={MUTED} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              </svg>
+            </div>
           </div>
+
+          {/* Prezzo — calcolato dal listino dell'artista, non modificabile */}
+          {eventType && duration && (
+            <div>
+              <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase", letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>Prezzo per questa serata</label>
+              {calculatedPrice !== null ? (
+                <div style={{ background:`${O}08`, border:`1px solid ${O}30`, borderRadius:12, padding:"12px 14px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <span style={{ fontFamily:"'Sora',sans-serif", fontWeight:900, fontSize:22, color:O, letterSpacing:"-.03em" }}>€{calculatedPrice}</span>
+                  <span style={{ fontSize:11, color:MUTED, fontWeight:600 }}>Prezzo fisso impostato dall'artista</span>
+                </div>
+              ) : (
+                <div style={{ background:"rgba(217,119,6,.08)", border:"1px solid rgba(217,119,6,.25)", borderRadius:12, padding:"12px 14px" }}>
+                  <p style={{ fontSize:12.5, color:"#d97706", fontWeight:600, margin:0 }}>
+                    L'artista non ha ancora impostato un prezzo per questa combinazione. Il nostro team ti contatterà con una proposta su misura.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Note */}
           <div>
