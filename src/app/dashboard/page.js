@@ -38,8 +38,6 @@ export default function DashboardPage() {
   const parseObject = v => { try { return v&&typeof v==="object"?v:JSON.parse(v||"{}"); } catch { return {}; } };
 
   // ── Setter stabili — definiti una volta, non cambiano mai ──────
-  // Ognuno aggiorna un campo specifico di artistProfile
-  // Helper: crea un setter stabile che accetta sia un valore sia una funzione updater
   const upd = (key, v) => setArtistProfile(p => ({ ...p, [key]: typeof v === "function" ? v(p[key]) : v }));
   const setStageName     = useCallback(v => upd("stageName",     v), []);
   const setArtistType    = useCallback(v => upd("artistType",    v), []);
@@ -192,6 +190,7 @@ export default function DashboardPage() {
         case "bookings":    return <OrganizerBookings bookings={bookings} onRefresh={()=>loadBookings(`?organizerId=${user.id}`)} />;
         case "preferiti":   return <OrganizerArea currentUser={user} tab="preferiti"   events={events} artists={artists} bookings={bookings} />;
         case "analytics":   return <OrganizerArea currentUser={user} tab="analitiche"  events={events} artists={artists} bookings={bookings} />;
+        case "profilo":     return <OrganizerArea currentUser={user} tab="profilo"     events={events} artists={artists} bookings={bookings} />;
         default: return null;
       }
     }
