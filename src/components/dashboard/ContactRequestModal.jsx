@@ -219,11 +219,6 @@ export default function ContactRequestModal({ artist, currentUser, onClose, onSu
               </p>
             )}
           </div>
-                width="12" height="12" viewBox="0 0 12 12">
-                <path d="M2 4l4 4 4-4" stroke={MUTED} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-              </svg>
-            </div>
-          </div>
 
           {/* Prezzo — calcolato dal listino dell'artista, non modificabile */}
           {eventType && duration && (
