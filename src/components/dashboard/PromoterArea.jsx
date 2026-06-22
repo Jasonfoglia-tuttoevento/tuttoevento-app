@@ -9,6 +9,8 @@ import PromoterCommissioni from "./promoter/PromoterCommissioni";
 import PromoterAgenzia     from "./promoter/PromoterAgenzia";
 import PromoterCalendario  from "./promoter/PromoterCalendario";
 import PromoterSubNetwork  from "./promoter/PromoterSubNetwork";
+import PromoterOutreach    from "./promoter/PromoterOutreach";
+import PromoterBundles     from "./promoter/PromoterBundles";
 
 const INK = "#0a0a0b";
 
@@ -71,10 +73,12 @@ export default function PromoterArea({ currentUser, events=[], bookings=[], user
     <div id="promoter-area" style={{ fontFamily:"'Manrope',system-ui,sans-serif", color:INK, display:"flex", flexDirection:"column", gap:16 }}>
       {tab==="overview"                       && <PromoterOverview    currentUser={currentUser} bookings={bookings} portfolio={portfolio} contactRequests={contactRequests} plan={plan} commissions={commissions} />}
       {tab==="analitiche"                     && <AnalyticsWidget     role="promoter" userId={currentUser?.id} />}
-      {tab==="roster"                         && <PromoterRoster      portfolio={portfolio} users={allUsers} plan={plan} onAdd={handleAdd} onRemove={handleRemove} addingEntry={addingEntry} addMsg={addMsg} />}
+      {tab==="roster"                         && <PromoterRoster      portfolio={portfolio} users={allUsers} plan={plan} onAdd={handleAdd} onRemove={handleRemove} addingEntry={addingEntry} addMsg={addMsg} currentUser={currentUser} />}
       {(tab==="trattative"||tab==="deals")    && <PromoterTrattative  contactRequests={contactRequests} portfolio={portfolio} plan={plan} onUpdateStatus={handleUpdateStatus} />}
       {(tab==="commissioni"||tab==="commissions") && <PromoterCommissioni commissions={commissions} bookings={bookings} portfolio={portfolio} plan={plan} />}
       {tab==="calendario"                     && <PromoterCalendario  bookings={bookings} portfolio={portfolio} />}
+      {tab==="outreach"                       && <PromoterOutreach    currentUser={currentUser} portfolio={portfolio} />}
+      {tab==="bundles"                        && <PromoterBundles     portfolio={portfolio} />}
       {tab==="subnetwork"                     && <PromoterSubNetwork currentUser={currentUser} plan={plan} />}
       {(tab==="agenzia"||tab==="agency")      && <PromoterAgenzia     currentUser={currentUser} portfolio={portfolio} plan={plan} />}
     </div>

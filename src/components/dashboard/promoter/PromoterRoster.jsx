@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { Card, INK, Inp, KpiCard, MUTED, O, ProBadge, ProLock, SCard, STitle } from "./shared";
-export default function PromoterRoster({ portfolio, users, plan, onAdd, onRemove, addingEntry, addMsg }) {
+export default function PromoterRoster({ portfolio, users, plan, onAdd, onRemove, addingEntry, addMsg, currentUser }) {
   const [newEntry, setNewEntry] = useState({ entityType:"artist", entityId:"" });
   const availableArtists = users.filter(u => u.role==="artist");
   const availableVenues  = users.filter(u => u.role==="organizer");
@@ -66,13 +66,19 @@ export default function PromoterRoster({ portfolio, users, plan, onAdd, onRemove
           {portfolioArtists.length===0 ? (
             <p style={{ fontSize:13, color:"rgba(0,0,0,.3)" }}>Nessun artista nel roster.</p>
           ) : portfolioArtists.map(p => (
-            <div key={p.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.05)" }}>
-              <div>
+            <div key={p.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderBottom:"1px solid rgba(0,0,0,.05)", gap:10 }}>
+              <div style={{ flex:1, minWidth:0 }}>
                 <p style={{ fontWeight:700, fontSize:13, margin:0 }}>{p.entity_name||"—"}</p>
                 {p.notes && <p style={{ fontSize:11, color:MUTED, margin:"2px 0 0" }}>{p.notes}</p>}
               </div>
+              {p.entity_slug && (
+                <a href={`/pitch/${p.entity_slug}?via=${encodeURIComponent(currentUser?.name||"")}`} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize:11, fontWeight:700, color:O, background:`${O}10`, borderRadius:100, padding:"5px 12px", textDecoration:"none", flexShrink:0 }}>
+                  📄 Scheda pitch
+                </a>
+              )}
               <button onClick={()=>onRemove(p.id)}
-                style={{ background:"transparent", border:"none", color:"#dc2626", fontWeight:700, fontSize:15, cursor:"pointer" }}>×</button>
+                style={{ background:"transparent", border:"none", color:"#dc2626", fontWeight:700, fontSize:15, cursor:"pointer", flexShrink:0 }}>×</button>
             </div>
           ))}
         </Card>

@@ -203,6 +203,8 @@ export default function DashboardPage() {
         case "deals":       return <PromoterArea currentUser={user} tab="trattative"  events={events} artists={artists} bookings={bookings} users={users} />;
         case "commissions": return <PromoterCommissions bookings={bookings} onRefresh={()=>loadBookings()} />;
         case "calendario":  return <PromoterArea currentUser={user} tab="calendario"  events={events} artists={artists} bookings={bookings} users={users} />;
+        case "outreach":    return <PromoterArea currentUser={user} tab="outreach"   events={events} artists={artists} bookings={bookings} users={users} />;
+        case "bundles":     return <PromoterArea currentUser={user} tab="bundles"    events={events} artists={artists} bookings={bookings} users={users} />;
         case "subnetwork":  return <PromoterArea currentUser={user} tab="subnetwork" events={events} artists={artists} bookings={bookings} users={users} />;
         case "agency":      return <PromoterArea currentUser={user} tab="agenzia"     events={events} artists={artists} bookings={bookings} users={users} />;
         default: return null;

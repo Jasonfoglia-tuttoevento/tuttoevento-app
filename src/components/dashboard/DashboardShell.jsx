@@ -62,6 +62,8 @@ function getNavItems(role) {
     { id: "deals",       label: "Trattative",     icon: Icons.briefcase  },
     { id: "commissions", label: "Commissioni",    icon: Icons.wallet     },
     { id: "calendario",  label: "Calendario",     icon: Icons.calendar   },
+    { id: "outreach",    label: "Proponi artisti", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> },
+    { id: "bundles",     label: "Pacchetti",      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> },
     { id: "subnetwork",  label: "La mia rete",    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M12 8v3M7.5 18H16.5M9.5 11l-4 7M14.5 11l4 7"/></svg> },
     { id: "agency",      label: "Agenzia",        icon: Icons.link       },
     { id: "settings",    label: "Impostazioni",   icon: Icons.settings   },

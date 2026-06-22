@@ -21,7 +21,21 @@ export async function GET(request) {
       .order("created_at", { ascending: false });
 
     if (error) return NextResponse.json({ error: "Errore caricamento portfolio" }, { status: 500 });
-    return NextResponse.json(data || []);
+
+    // Arricchisci con slug per gli artisti (serve alla scheda pitch-ready)
+    const artistIds = (data || []).filter(p => p.entity_type === "artist").map(p => p.entity_id);
+    let slugMap = {};
+    if (artistIds.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from("artist_profiles").select("user_id, slug").in("user_id", artistIds);
+      slugMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p.slug]));
+    }
+    const enriched = (data || []).map(p => ({
+      ...p,
+      entity_slug: p.entity_type === "artist" ? slugMap[p.entity_id] || null : null,
+    }));
+
+    return NextResponse.json(enriched);
   } catch (e) {
     return NextResponse.json({ error: "Errore server" }, { status: 500 });
   }
