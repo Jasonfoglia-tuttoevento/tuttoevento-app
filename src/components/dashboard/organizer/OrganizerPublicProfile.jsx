@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Card, INK, MUTED, O, SectionTitle } from "./shared.jsx";
+import { Card, INK, MUTED, O, SectionTitle } from "./shared";
 
 const Inp = {
   width:"100%", background:"#fbfaf8", border:"1px solid rgba(0,0,0,.1)",

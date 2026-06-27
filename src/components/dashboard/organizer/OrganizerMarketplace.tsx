@@ -3,7 +3,13 @@ import { useState, useEffect, useRef } from "react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import ContactRequestModal from "@/components/dashboard/ContactRequestModal";
 import { Card, INK, Inp, MUTED, O, ProBadge, ProLock, SCard, STitle, SectionTitle } from "./shared";
-export default function OrganizerMarketplace({ artists, plan }) {
+interface OrganizerMarketplaceProps {
+  artists: any[];
+  plan: string;
+  currentUser?: any;
+}
+
+export default function OrganizerMarketplace({ artists = [], plan, currentUser }: OrganizerMarketplaceProps) {
   const [search, setSearch]     = useState("");
   const [genreFilter, setGenre] = useState("");
   const [contactArtist, setContactArtist] = useState(null);
@@ -72,7 +78,7 @@ export default function OrganizerMarketplace({ artists, plan }) {
         </div>
       )}
 
-      {contactArtist && <ContactRequestModal artist={contactArtist} onClose={() => setContactArtist(null)} />}
+      {contactArtist && <ContactRequestModal artist={contactArtist} currentUser={currentUser} onClose={() => setContactArtist(null)} onSuccess={() => setContactArtist(null)} />}
     </div>
   );
 }

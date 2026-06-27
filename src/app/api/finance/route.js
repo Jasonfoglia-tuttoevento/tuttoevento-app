@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser, unauthorized, forbidden } from "@/lib/auth";
 
-// GET: legge la riga finanziaria (sempre id minore = la prima)
 export async function GET() {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+  if (user.role !== "admin") return forbidden();
+
   try {
     const { data, error } = await supabaseAdmin
       .from("company_finance")
@@ -11,10 +15,7 @@ export async function GET() {
       .limit(1)
       .maybeSingle();
 
-    if (error) {
-      console.error("Errore GET finance:", error);
-      return NextResponse.json({ error: "Errore lettura dati finanziari" }, { status: 500 });
-    }
+    if (error) return NextResponse.json({ error: "Errore lettura dati finanziari" }, { status: 500 });
     return NextResponse.json(data || {});
   } catch (e) {
     console.error("Errore API finance GET:", e);
@@ -22,8 +23,11 @@ export async function GET() {
   }
 }
 
-// POST: aggiorna la riga finanziaria
 export async function POST(request) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+  if (user.role !== "admin") return forbidden();
+
   try {
     const body = await request.json();
 
@@ -48,24 +52,12 @@ export async function POST(request) {
 
     let result;
     if (existing?.id) {
-      result = await supabaseAdmin
-        .from("company_finance")
-        .update(payload)
-        .eq("id", existing.id)
-        .select("*")
-        .single();
+      result = await supabaseAdmin.from("company_finance").update(payload).eq("id", existing.id).select("*").single();
     } else {
-      result = await supabaseAdmin
-        .from("company_finance")
-        .insert(payload)
-        .select("*")
-        .single();
+      result = await supabaseAdmin.from("company_finance").insert(payload).select("*").single();
     }
 
-    if (result.error) {
-      console.error("Errore POST finance:", result.error);
-      return NextResponse.json({ error: "Errore salvataggio" }, { status: 500 });
-    }
+    if (result.error) return NextResponse.json({ error: "Errore salvataggio" }, { status: 500 });
     return NextResponse.json(result.data);
   } catch (e) {
     console.error("Errore API finance POST:", e);
