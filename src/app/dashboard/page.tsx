@@ -79,11 +79,11 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isTourManager, setIsTourManager] = useState(false);
 
-  // Dati globali
-  const [users, setUsers] = useState<unknown[]>([]);
-  const [events, setEvents] = useState<unknown[]>([]);
-  const [artists, setArtists] = useState<unknown[]>([]);
-  const [bookings, setBookings] = useState<unknown[]>([]);
+  // Dati globali — tipizzati come Record per compatibilità con AdminArea e altri componenti
+  const [users, setUsers] = useState<Record<string, unknown>[]>([]);
+  const [events, setEvents] = useState<Record<string, unknown>[]>([]);
+  const [artists, setArtists] = useState<Record<string, unknown>[]>([]);
+  const [bookings, setBookings] = useState<Record<string, unknown>[]>([]);
 
   // Profilo artista
   const [artistProfile, setArtistProfile] = useState<ArtistProfile>({
@@ -334,7 +334,12 @@ export default function DashboardPage() {
     }
 
     if (role === "organizer") {
-      const orgProps = { currentUser: user, events, artists, bookings };
+      const orgProps = {
+        currentUser: user ? { ...user, id: String(user.id) } : null,
+        events,
+        artists,
+        bookings,
+      };
       const tabMap: Record<string, React.ReactNode> = {
         overview: <OrganizerArea {...orgProps} tab="overview" />,
         marketplace: <OrganizerArea {...orgProps} tab="marketplace" />,
