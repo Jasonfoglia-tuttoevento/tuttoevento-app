@@ -10,7 +10,6 @@ import AdminCRM from "./admin/AdminCRM";
 import AdminCalendar from "./admin/AdminCalendar";
 import AdminGrowth from "./admin/AdminGrowth";
 import AdminAudit from "./admin/AdminAudit";
-// ── Nuovo Import Tour Managers ────────────────────────────────
 import AdminTourManagers from "./admin/AdminTourManagers";
 
 // ── Helpers & Costanti ────────────────────────────────────────
@@ -96,7 +95,7 @@ function suggestPrice(
   if (!cachet || !eventType) return null;
   const net = Number(cachet);
   const bench = MARKET_BENCHMARKS[eventType] || MARKET_BENCHMARKS["Altro"];
-  
+
   const cityKey = Object.entries(CITY_MULT).find(([k]) =>
     (city || "").toLowerCase().includes(k)
   )?.[0];
@@ -108,14 +107,14 @@ function suggestPrice(
   const genreMult = genreKey ? GENRE_MULT[genreKey] : 1.0;
 
   const seasonMult = SEASON_MULT[new Date().getMonth()];
-  
+
   let suggested = net / (1 - 0.45);
   suggested = Math.max(suggested, bench.min * cityMult * genreMult);
   suggested = Math.min(suggested, bench.max * cityMult * genreMult);
   suggested = Math.round((suggested * cityMult * genreMult * seasonMult) / 10) * 10;
-  
+
   const markup = ((suggested - net) / net * 100).toFixed(0);
-  
+
   return {
     suggested,
     net,
@@ -190,9 +189,9 @@ function SectionOverview({
   byRole,
   eventModes,
 }: {
-  fin: any;
-  stats: any;
-  byRole: Record<string, any[]>;
+  fin: Record<string, number>;
+  stats: { confirmedCount: number; volume: number; commission: number };
+  byRole: Record<string, unknown[]>;
   eventModes: { managed: number; self: number };
 }) {
   return (
@@ -211,7 +210,7 @@ function SectionOverview({
           <h3 style={{ fontFamily: "Sora,sans-serif", fontWeight: 800, fontSize: 15, margin: "0 0 14px" }}>
             Conto economico
           </h3>
-          {[
+          {([
             ["Ricavi", fmt(fin.revenue)],
             ["− Costi op.", fmt(fin.totalOpCosts)],
             ["= EBITDA", fmt(fin.ebitda)],
@@ -219,7 +218,7 @@ function SectionOverview({
             ["= EBIT", fmt(fin.ebit)],
             ["− Imposte", fmt(fin.taxes)],
             ["= Utile netto", fmt(fin.netProfit)],
-          ].map(([k, v]) => (
+          ] as [string, string][]).map(([k, v]) => (
             <div
               key={k}
               style={{
@@ -254,12 +253,12 @@ function SectionOverview({
           <Card>
             <h3 style={{ fontFamily: "Sora,sans-serif", fontWeight: 800, fontSize: 15, margin: "0 0 12px" }}>Utenti</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(70px,1fr))", gap: 8 }}>
-              {[
+              {([
                 ["Locali", byRole.organizer?.length || 0],
                 ["Artisti", byRole.artist?.length || 0],
                 ["Promoter", byRole.promoter?.length || 0],
                 ["Admin", byRole.admin?.length || 0],
-              ].map(([k, v]) => (
+              ] as [string, number][]).map(([k, v]) => (
                 <div
                   key={k}
                   style={{
@@ -319,17 +318,17 @@ function SectionOverview({
 }
 
 // ── Sezione Artisti con pricing ───────────────────────────────
-function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) {
+function SectionArtists({ users, bookings }: { users: Record<string, unknown>[]; bookings: unknown[] }) {
   const artists = (users || []).filter((u) => u.role === "artist");
-  const [selected, setSelected] = useState<any>(null);
+  const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
   const [pricing, setPricing] = useState<{ eventType: string; publicPrice: string }[]>([]);
   const [basePubPrice, setBase] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
-  const [artistProfile, setProfile] = useState<any>(null);
+  const [artistProfile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [pricingTab, setPricingTab] = useState<"manual" | "dynamic">("manual");
 
-  const inp = {
+  const inp: React.CSSProperties = {
     background: "#f5f5f6",
     border: "1px solid rgba(0,0,0,.08)",
     borderRadius: 10,
@@ -339,22 +338,22 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
     outline: "none",
   };
 
-  async function selectArtist(a: any) {
+  async function selectArtist(a: Record<string, unknown>) {
     setSelected(a);
     setMsg("");
     setBase("");
     setProfile(null);
     setPricingTab("manual");
-    
+
     try {
       const res = await fetch(`/api/artist-pricing?artistId=${a.id}`);
       const data = await res.json();
       const map: Record<string, string> = {};
-      (Array.isArray(data) ? data : []).forEach((p: any) => {
-        map[p.event_type] = p.public_price;
+      (Array.isArray(data) ? data : []).forEach((p: Record<string, unknown>) => {
+        map[String(p.event_type)] = String(p.public_price);
       });
       setPricing(EVENT_TYPES.map((t) => ({ eventType: t, publicPrice: map[t] || "" })));
-      
+
       const r2 = await fetch(`/api/artist-profile?userId=${a.id}`);
       setProfile((await r2.json()) || null);
     } catch (e) {
@@ -378,16 +377,16 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
         }),
       });
       setMsg(res.ok ? (approve ? "✓ Pubblicato nel marketplace" : "✓ Rimosso dal marketplace") : "Errore salvataggio");
-    } catch (e) {
+    } catch {
       setMsg("Errore di rete");
     } finally {
       setSaving(false);
     }
   }
 
-  const cachet = artistProfile?.baseCachet || artistProfile?.base_cachet;
-  const city = artistProfile?.city;
-  const genres = artistProfile?.genres || artistProfile?.musicGenres;
+  const cachet = (artistProfile?.baseCachet || artistProfile?.base_cachet) as string | number | undefined;
+  const city = artistProfile?.city as string | undefined;
+  const genres = (artistProfile?.genres || artistProfile?.musicGenres) as string[] | string | undefined;
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 14 }}>
@@ -401,7 +400,7 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {artists.map((a) => (
               <button
-                key={a.id}
+                key={String(a.id)}
                 onClick={() => selectArtist(a)}
                 style={{
                   textAlign: "left",
@@ -414,7 +413,7 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
                   fontFamily: "inherit",
                 }}
               >
-                <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>{a.name}</p>
+                <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>{String(a.name)}</p>
                 <p
                   style={{
                     fontSize: 11,
@@ -422,7 +421,7 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
                     margin: "2px 0 0",
                   }}
                 >
-                  {a.email}
+                  {String(a.email)}
                 </p>
               </button>
             ))}
@@ -450,7 +449,7 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
               >
                 <div>
                   <h3 style={{ fontFamily: "Sora,sans-serif", fontWeight: 800, fontSize: 18, margin: 0 }}>
-                    {selected.name}
+                    {String(selected.name)}
                   </h3>
                   <p style={{ fontSize: 12, color: MUTED, margin: "4px 0 0" }}>
                     {city && `${city} · `}
@@ -462,10 +461,10 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  {[
+                  {([
                     ["manual", "Manuale"],
                     ["dynamic", "Dinamico"],
-                  ].map(([id, label]) => (
+                  ] as [string, string][]).map(([id, label]) => (
                     <button
                       key={id}
                       onClick={() => setPricingTab(id as "manual" | "dynamic")}
@@ -491,7 +490,7 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
                 <>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
                     {pricing.map((p, i) => {
-                      const sug = cachet ? suggestPrice(cachet, p.eventType, city, genres) : null;
+                      const sug = cachet ? suggestPrice(cachet, p.eventType, city || "", genres || "") : null;
                       return (
                         <div key={p.eventType} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 12, fontWeight: 600, minWidth: 140, flexShrink: 0 }}>
@@ -626,7 +625,7 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {EVENT_TYPES.map((tipo) => {
-                      const s2 = suggestPrice(cachet, tipo, city, genres);
+                      const s2 = suggestPrice(cachet, tipo, city || "", genres || "");
                       if (!s2) return null;
                       const minM = Math.round(s2.bench.min * s2.cityMult);
                       const maxM = Math.round(s2.bench.max * s2.cityMult);
@@ -738,7 +737,7 @@ function SectionArtists({ users, bookings }: { users: any[]; bookings: any[] }) 
 }
 
 // ── Sezione Richieste ─────────────────────────────────────────
-function SectionRequests({ requests, onUpdate }: { requests: any[]; onUpdate: (id: string, status: string) => void }) {
+function SectionRequests({ requests, onUpdate }: { requests: Record<string, unknown>[]; onUpdate: (id: string, status: string) => void }) {
   const STATUS_COLORS: Record<string, string> = {
     pending: "#d97706",
     reviewed: "#2563eb",
@@ -759,158 +758,160 @@ function SectionRequests({ requests, onUpdate }: { requests: any[]; onUpdate: (i
           <p style={{ color: "rgba(0,0,0,.3)", fontSize: 13 }}>Nessuna richiesta.</p>
         </Card>
       ) : (
-        requests.map((r) => (
-          <div
-            key={r.id}
-            style={{
-              background: "white",
-              border: "1px solid rgba(0,0,0,.07)",
-              borderRadius: 18,
-              padding: "14px 16px",
-            }}
-          >
+        requests.map((r) => {
+          const status = String(r.status || "");
+          const booking = r.booking as Record<string, unknown> | undefined;
+          return (
             <div
+              key={String(r.id)}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: 10,
-                flexWrap: "wrap",
-                marginBottom: 10,
+                background: "white",
+                border: "1px solid rgba(0,0,0,.07)",
+                borderRadius: 18,
+                padding: "14px 16px",
               }}
             >
-              <div>
-                <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>
-                  {r.organizer_name} <span style={{ color: MUTED, fontWeight: 400 }}>cerca</span> {r.artist_name}
-                </p>
-                <div style={{ display: "flex", gap: 12, marginTop: 4, flexWrap: "wrap" }}>
-                  {r.event_date && <span style={{ fontSize: 12, color: MUTED }}>{r.event_date}</span>}
-                  {(r.start_time || r.startTime) && (
-                    <span style={{ fontSize: 12, color: MUTED }}>
-                      {r.start_time || r.startTime} – {r.end_time || r.endTime}
-                    </span>
-                  )}
-                  {r.event_type && <span style={{ fontSize: 12, color: MUTED }}>{r.event_type}</span>}
-                  {r.duration && <span style={{ fontSize: 12, color: MUTED }}>{r.duration}</span>}
-                </div>
-                {r.notes && (
-                  <p style={{ fontSize: 12, color: MUTED, margin: "6px 0 0", fontStyle: "italic" }}>"{r.notes}"</p>
-                )}
-                {/* Booking collegato */}
-                {r.booking_id && (
-                  <p style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", margin: "8px 0 0" }}>
-                    ✓ Booking #{r.booking_id} creato
-                  </p>
-                )}
-                {/* Decline artista */}
-                {r.booking && r.booking.artistConfirmation === "declined" && (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      background: "rgba(220,38,38,.06)",
-                      border: "1px solid rgba(220,38,38,.18)",
-                      borderRadius: 10,
-                      padding: "7px 11px",
-                    }}
-                  >
-                    <p style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", margin: "0 0 2px" }}>
-                      ⚠ Artista non disponibile per questa data
-                    </p>
-                    {r.booking.artistDeclineReason && (
-                      <p style={{ fontSize: 11, color: "#dc2626", margin: 0, fontStyle: "italic" }}>
-                        "{r.booking.artistDeclineReason}"
-                      </p>
-                    )}
-                    <p style={{ fontSize: 11, color: MUTED, margin: "3px 0 0" }}>
-                      È necessario trovare un'alternativa o proporre un'altra data.
-                    </p>
-                  </div>
-                )}
-              </div>
-              <span
+              <div
                 style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: "3px 10px",
-                  borderRadius: 100,
-                  background: `${STATUS_COLORS[r.status] || "#6b7280"}18`,
-                  color: STATUS_COLORS[r.status] || "#6b7280",
-                  flexShrink: 0,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  flexWrap: "wrap",
+                  marginBottom: 10,
                 }}
               >
-                {STATUS_LABELS[r.status] || r.status}
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {r.status === "pending" && (
-                <button
-                  onClick={() => onUpdate(r.id, "reviewed")}
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>
+                    {String(r.organizer_name)} <span style={{ color: MUTED, fontWeight: 400 }}>cerca</span> {String(r.artist_name)}
+                  </p>
+                  <div style={{ display: "flex", gap: 12, marginTop: 4, flexWrap: "wrap" }}>
+                    {r.event_date && <span style={{ fontSize: 12, color: MUTED }}>{String(r.event_date)}</span>}
+                    {(r.start_time || r.startTime) && (
+                      <span style={{ fontSize: 12, color: MUTED }}>
+                        {String(r.start_time || r.startTime)} – {String(r.end_time || r.endTime)}
+                      </span>
+                    )}
+                    {r.event_type && <span style={{ fontSize: 12, color: MUTED }}>{String(r.event_type)}</span>}
+                    {r.duration && <span style={{ fontSize: 12, color: MUTED }}>{String(r.duration)}</span>}
+                  </div>
+                  {r.notes && (
+                    <p style={{ fontSize: 12, color: MUTED, margin: "6px 0 0", fontStyle: "italic" }}>"{String(r.notes)}"</p>
+                  )}
+                  {r.booking_id && (
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", margin: "8px 0 0" }}>
+                      ✓ Booking #{String(r.booking_id)} creato
+                    </p>
+                  )}
+                  {booking && booking.artistConfirmation === "declined" && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        background: "rgba(220,38,38,.06)",
+                        border: "1px solid rgba(220,38,38,.18)",
+                        borderRadius: 10,
+                        padding: "7px 11px",
+                      }}
+                    >
+                      <p style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", margin: "0 0 2px" }}>
+                        ⚠ Artista non disponibile per questa data
+                      </p>
+                      {booking.artistDeclineReason && (
+                        <p style={{ fontSize: 11, color: "#dc2626", margin: 0, fontStyle: "italic" }}>
+                          "{String(booking.artistDeclineReason)}"
+                        </p>
+                      )}
+                      <p style={{ fontSize: 11, color: MUTED, margin: "3px 0 0" }}>
+                        È necessario trovare un'alternativa o proporre un'altra data.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <span
                   style={{
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700,
-                    padding: "5px 14px",
+                    padding: "3px 10px",
                     borderRadius: 100,
-                    border: "none",
-                    background: INK,
-                    color: "white",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
+                    background: `${STATUS_COLORS[status] || "#6b7280"}18`,
+                    color: STATUS_COLORS[status] || "#6b7280",
+                    flexShrink: 0,
                   }}
                 >
-                  Prendi in carico
-                </button>
-              )}
-              {["pending", "reviewed"].includes(r.status) && (
-                <>
+                  {STATUS_LABELS[status] || status}
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {status === "pending" && (
                   <button
-                    onClick={() => onUpdate(r.id, "connected")}
+                    onClick={() => onUpdate(String(r.id), "reviewed")}
                     style={{
                       fontSize: 12,
                       fontWeight: 700,
                       padding: "5px 14px",
                       borderRadius: 100,
                       border: "none",
-                      background: "#16a34a",
+                      background: INK,
                       color: "white",
                       cursor: "pointer",
                       fontFamily: "inherit",
                     }}
                   >
-                    Connetti
+                    Prendi in carico
                   </button>
-                  <button
-                    onClick={() => onUpdate(r.id, "rejected")}
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      padding: "5px 14px",
-                      borderRadius: 100,
-                      border: "1px solid #fca5a5",
-                      background: "transparent",
-                      color: "#dc2626",
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                    }}
-                  >
-                    Rifiuta
-                  </button>
-                </>
-              )}
-              {r.status === "connected" && !r.booking_id && (
-                <span style={{ fontSize: 11, color: MUTED, fontStyle: "italic" }}>Booking in creazione...</span>
-              )}
+                )}
+                {["pending", "reviewed"].includes(status) && (
+                  <>
+                    <button
+                      onClick={() => onUpdate(String(r.id), "connected")}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        padding: "5px 14px",
+                        borderRadius: 100,
+                        border: "none",
+                        background: "#16a34a",
+                        color: "white",
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Connetti
+                    </button>
+                    <button
+                      onClick={() => onUpdate(String(r.id), "rejected")}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        padding: "5px 14px",
+                        borderRadius: 100,
+                        border: "1px solid #fca5a5",
+                        background: "transparent",
+                        color: "#dc2626",
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Rifiuta
+                    </button>
+                  </>
+                )}
+                {status === "connected" && !r.booking_id && (
+                  <span style={{ fontSize: 11, color: MUTED, fontStyle: "italic" }}>Booking in creazione...</span>
+                )}
+              </div>
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
 }
 
 // ── Sezione Contatti ──────────────────────────────────────────
-function SectionContacts({ contacts, setContacts }: { contacts: any[]; setContacts: (c: any[]) => void }) {
+function SectionContacts({ contacts, setContacts }: { contacts: Record<string, unknown>[]; setContacts: (c: Record<string, unknown>[]) => void }) {
   const [contact, setContact] = useState({ name: "", role: "", email: "", phone: "", notes: "" });
-  const inp = {
+  const inp: React.CSSProperties = {
     background: "#f5f5f6",
     border: "1px solid rgba(0,0,0,.08)",
     borderRadius: 12,
@@ -938,7 +939,7 @@ function SectionContacts({ contacts, setContacts }: { contacts: any[]; setContac
 
   async function del(id: string) {
     const res = await fetch(`/api/contacts?id=${id}`, { method: "DELETE" });
-    if (res.ok) setContacts(contacts.filter((c) => c.id !== id));
+    if (res.ok) setContacts(contacts.filter((c) => String(c.id) !== id));
   }
 
   return (
@@ -1009,7 +1010,7 @@ function SectionContacts({ contacts, setContacts }: { contacts: any[]; setContac
         ) : (
           contacts.map((c) => (
             <div
-              key={c.id}
+              key={String(c.id)}
               style={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -1023,19 +1024,19 @@ function SectionContacts({ contacts, setContacts }: { contacts: any[]; setContac
             >
               <div>
                 <p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>
-                  {c.name}
-                  {c.role && <span style={{ color: MUTED, fontWeight: 400 }}> · {c.role}</span>}
+                  {String(c.name)}
+                  {c.role && <span style={{ color: MUTED, fontWeight: 400 }}> · {String(c.role)}</span>}
                 </p>
                 <p style={{ fontSize: 12, color: MUTED, margin: "2px 0 0" }}>
-                  {c.email}
-                  {c.phone && ` · ${c.phone}`}
+                  {String(c.email)}
+                  {c.phone && ` · ${String(c.phone)}`}
                 </p>
                 {c.notes && (
-                  <p style={{ fontSize: 12, color: MUTED, margin: "2px 0 0", fontStyle: "italic" }}>{c.notes}</p>
+                  <p style={{ fontSize: 12, color: MUTED, margin: "2px 0 0", fontStyle: "italic" }}>{String(c.notes)}</p>
                 )}
               </div>
               <button
-                onClick={() => del(c.id)}
+                onClick={() => del(String(c.id))}
                 style={{ background: "none", border: "none", color: "#dc2626", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
               >
                 Elimina
@@ -1049,7 +1050,7 @@ function SectionContacts({ contacts, setContacts }: { contacts: any[]; setContac
 }
 
 // ── Sezione Utenti ────────────────────────────────────────────
-function SectionUsers({ users }: { users: any[] }) {
+function SectionUsers({ users }: { users: Record<string, unknown>[] }) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -1077,8 +1078,8 @@ function SectionUsers({ users }: { users: any[] }) {
     const matchRole = filter === "all" || u.role === filter;
     const matchSearch =
       !search ||
-      (u.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (u.email || "").toLowerCase().includes(search.toLowerCase());
+      String(u.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(u.email || "").toLowerCase().includes(search.toLowerCase());
     return matchRole && matchSearch;
   });
 
@@ -1103,12 +1104,13 @@ function SectionUsers({ users }: { users: any[] }) {
     setSaving(false);
   }
 
-  const byRole = { organizer: 0, artist: 0, promoter: 0, admin: 0 };
+  const byRole: Record<string, number> = { organizer: 0, artist: 0, promoter: 0, admin: 0 };
   users.forEach((u) => {
-    if (byRole[u.role] !== undefined) byRole[u.role]++;
+    const role = String(u.role || "");
+    if (byRole[role] !== undefined) byRole[role]++;
   });
 
-  const inp = {
+  const inp: React.CSSProperties = {
     background: "#f5f5f6",
     border: "1px solid rgba(0,0,0,.08)",
     borderRadius: 10,
@@ -1122,13 +1124,13 @@ function SectionUsers({ users }: { users: any[] }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* KPI utenti */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 10 }}>
-        {[
+        {([
           ["Totale", users.length, "#0a0a0b"],
           ["Locali", byRole.organizer, "#2563eb"],
           ["Artisti", byRole.artist, "#7c3aed"],
           ["Promoter", byRole.promoter, "#d97706"],
           ["Admin", byRole.admin, "#ff5a00"],
-        ].map(([label, val, color]) => (
+        ] as [string, number, string][]).map(([label, val, color]) => (
           <div
             key={label}
             style={{
@@ -1150,7 +1152,7 @@ function SectionUsers({ users }: { users: any[] }) {
             >
               {label}
             </p>
-            <p style={{ fontFamily: "Sora,sans-serif", fontWeight: 800, fontSize: 20, color, margin: 0 }}>{val}</p>
+            <p style={{ fontFamily: "Sora,sans-serif", fontWeight: 800, fontSize: 20, color: color, margin: 0 }}>{val}</p>
           </div>
         ))}
       </div>
@@ -1208,193 +1210,199 @@ function SectionUsers({ users }: { users: any[] }) {
             <p style={{ fontSize: 13, color: "rgba(0,0,0,.3)" }}>Nessun utente trovato.</p>
           </Card>
         ) : (
-          filtered.map((u) => (
-            <div
-              key={u.id}
-              style={{
-                background: "white",
-                border: "1px solid rgba(0,0,0,.07)",
-                borderRadius: 16,
-                padding: "14px 18px",
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                flexWrap: "wrap",
-              }}
-            >
-              {/* Avatar */}
+          filtered.map((u) => {
+            const userId = Number(u.id);
+            const role = String(u.role || "");
+            const isVerified = Boolean(u.verified);
+            const userPlan = String(u.plan || "free");
+            return (
               <div
+                key={userId}
                 style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  background: `${ROLE_COLORS[u.role] || "#6b7280"}20`,
-                  border: `1px solid ${ROLE_COLORS[u.role] || "#6b7280"}30`,
+                  background: "white",
+                  border: "1px solid rgba(0,0,0,.07)",
+                  borderRadius: 16,
+                  padding: "14px 18px",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: "Sora,sans-serif",
-                  fontWeight: 800,
-                  fontSize: 14,
-                  color: ROLE_COLORS[u.role] || "#6b7280",
-                  flexShrink: 0,
+                  gap: 14,
+                  flexWrap: "wrap",
                 }}
               >
-                {(u.name || "?").charAt(0).toUpperCase()}
-              </div>
-              {/* Info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <p
-                      style={{
-                        fontWeight: 700,
-                        fontSize: 14,
-                        margin: 0,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {u.name || "—"}
-                    </p>
-                    {u.verified && <VerifiedBadge size={15} />}
-                  </div>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: 100,
-                      background: `${ROLE_COLORS[u.role] || "#6b7280"}15`,
-                      color: ROLE_COLORS[u.role] || "#6b7280",
-                    }}
-                  >
-                    {ROLE_LABELS[u.role] || u.role}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: 100,
-                      background: u.plan === "pro" ? "rgba(255,90,0,.1)" : "rgba(0,0,0,.05)",
-                      color: u.plan === "pro" ? "#ff5a00" : "#6b6b73",
-                    }}
-                  >
-                    {u.plan === "pro" ? "PRO" : "Free"}
-                  </span>
+                {/* Avatar */}
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: "50%",
+                    background: `${ROLE_COLORS[role] || "#6b7280"}20`,
+                    border: `1px solid ${ROLE_COLORS[role] || "#6b7280"}30`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "Sora,sans-serif",
+                    fontWeight: 800,
+                    fontSize: 14,
+                    color: ROLE_COLORS[role] || "#6b7280",
+                    flexShrink: 0,
+                  }}
+                >
+                  {(String(u.name || "?")).charAt(0).toUpperCase()}
                 </div>
-                <p style={{ fontSize: 12, color: "#6b6b73", margin: "3px 0 0" }}>
-                  {u.email || "—"} · ID #{u.id}
-                </p>
-                {u.createdAt && (
-                  <p style={{ fontSize: 11, color: "rgba(0,0,0,.3)", margin: "2px 0 0" }}>
-                    Iscritto il {new Date(u.createdAt).toLocaleDateString("it-IT")}
-                  </p>
-                )}
-              </div>
-              {/* Piano edit */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                {editingId === u.id ? (
-                  <>
-                    <select
-                      value={editPlan}
-                      onChange={(e) => setEditPlan(e.target.value)}
-                      style={{ ...inp, padding: "6px 10px" }}
-                    >
-                      <option value="free">Free</option>
-                      <option value="pro">Pro</option>
-                    </select>
-                    <button
-                      onClick={() => savePlan(u.id)}
-                      disabled={saving}
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <p
+                        style={{
+                          fontWeight: 700,
+                          fontSize: 14,
+                          margin: 0,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {String(u.name || "—")}
+                      </p>
+                      {isVerified && <VerifiedBadge size={15} />}
+                    </div>
+                    <span
                       style={{
-                        background: "#ff5a00",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 100,
-                        padding: "6px 14px",
+                        fontSize: 10,
                         fontWeight: 700,
-                        fontSize: 12,
-                        cursor: "pointer",
-                        fontFamily: "inherit",
+                        padding: "2px 8px",
+                        borderRadius: 100,
+                        background: `${ROLE_COLORS[role] || "#6b7280"}15`,
+                        color: ROLE_COLORS[role] || "#6b7280",
                       }}
                     >
-                      {saving ? "..." : "Salva"}
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
+                      {ROLE_LABELS[role] || role}
+                    </span>
+                    <span
                       style={{
-                        background: "none",
-                        border: "1px solid rgba(0,0,0,.1)",
-                        borderRadius: 100,
-                        padding: "6px 12px",
+                        fontSize: 10,
                         fontWeight: 700,
-                        fontSize: 12,
-                        cursor: "pointer",
-                        fontFamily: "inherit",
+                        padding: "2px 8px",
+                        borderRadius: 100,
+                        background: userPlan === "pro" ? "rgba(255,90,0,.1)" : "rgba(0,0,0,.05)",
+                        color: userPlan === "pro" ? "#ff5a00" : "#6b6b73",
                       }}
                     >
-                      ×
-                    </button>
-                  </>
-                ) : (
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    {!u.verified &&
-                      (u.role === "artist" || u.role === "organizer" || u.role === "promoter") && (
-                        <button
-                          onClick={async () => {
-                            const res = await fetch("/api/admin/user-plan", {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ userId: u.id, verified: true }),
-                            });
-                            if (res.ok) setMsg("✓ Utente verificato");
-                          }}
-                          style={{
-                            background: "#1877F2",
-                            color: "white",
-                            border: "none",
-                            borderRadius: 100,
-                            padding: "6px 14px",
-                            fontWeight: 700,
-                            fontSize: 12,
-                            cursor: "pointer",
-                            fontFamily: "inherit",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 5,
-                          }}
-                        >
-                          <VerifiedBadge size={13} /> Verifica
-                        </button>
-                      )}
-                    {u.verified && <VerifiedBadge size={18} />}
-                    <button
-                      onClick={() => {
-                        setEditingId(u.id);
-                        setEditPlan(u.plan || "free");
-                      }}
-                      style={{
-                        background: "none",
-                        border: "1px solid rgba(0,0,0,.1)",
-                        borderRadius: 100,
-                        padding: "6px 14px",
-                        fontWeight: 700,
-                        fontSize: 12,
-                        cursor: "pointer",
-                        fontFamily: "inherit",
-                        color: "#6b6b73",
-                      }}
-                    >
-                      Piano
-                    </button>
+                      {userPlan === "pro" ? "PRO" : "Free"}
+                    </span>
                   </div>
-                )}
+                  <p style={{ fontSize: 12, color: "#6b6b73", margin: "3px 0 0" }}>
+                    {String(u.email || "—")} · ID #{userId}
+                  </p>
+                  {u.createdAt && (
+                    <p style={{ fontSize: 11, color: "rgba(0,0,0,.3)", margin: "2px 0 0" }}>
+                      Iscritto il {new Date(String(u.createdAt)).toLocaleDateString("it-IT")}
+                    </p>
+                  )}
+                </div>
+                {/* Piano edit */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                  {editingId === userId ? (
+                    <>
+                      <select
+                        value={editPlan}
+                        onChange={(e) => setEditPlan(e.target.value)}
+                        style={{ ...inp, padding: "6px 10px" }}
+                      >
+                        <option value="free">Free</option>
+                        <option value="pro">Pro</option>
+                      </select>
+                      <button
+                        onClick={() => savePlan(userId)}
+                        disabled={saving}
+                        style={{
+                          background: "#ff5a00",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 100,
+                          padding: "6px 14px",
+                          fontWeight: 700,
+                          fontSize: 12,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        {saving ? "..." : "Salva"}
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        style={{
+                          background: "none",
+                          border: "1px solid rgba(0,0,0,.1)",
+                          borderRadius: 100,
+                          padding: "6px 12px",
+                          fontWeight: 700,
+                          fontSize: 12,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      {!isVerified &&
+                        (role === "artist" || role === "organizer" || role === "promoter") && (
+                          <button
+                            onClick={async () => {
+                              const res = await fetch("/api/admin/user-plan", {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ userId, verified: true }),
+                              });
+                              if (res.ok) setMsg("✓ Utente verificato");
+                            }}
+                            style={{
+                              background: "#1877F2",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 100,
+                              padding: "6px 14px",
+                              fontWeight: 700,
+                              fontSize: 12,
+                              cursor: "pointer",
+                              fontFamily: "inherit",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 5,
+                            }}
+                          >
+                            <VerifiedBadge size={13} /> Verifica
+                          </button>
+                        )}
+                      {isVerified && <VerifiedBadge size={18} />}
+                      <button
+                        onClick={() => {
+                          setEditingId(userId);
+                          setEditPlan(userPlan);
+                        }}
+                        style={{
+                          background: "none",
+                          border: "1px solid rgba(0,0,0,.1)",
+                          borderRadius: 100,
+                          padding: "6px 14px",
+                          fontWeight: 700,
+                          fontSize: 12,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                          color: "#6b6b73",
+                        }}
+                      >
+                        Piano
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -1408,14 +1416,14 @@ export default function AdminArea({
   bookings = [],
   tab: initialTab,
 }: {
-  users?: any[];
-  events?: any[];
-  bookings?: any[];
+  users?: Record<string, unknown>[];
+  events?: Record<string, unknown>[];
+  bookings?: Record<string, unknown>[];
   tab?: string;
 }) {
-  const [finance, setFinance] = useState<any>({});
-  const [contacts, setContacts] = useState<any[]>([]);
-  const [contactRequests, setContactRequests] = useState<any[]>([]);
+  const [finance, setFinance] = useState<Record<string, unknown>>({});
+  const [contacts, setContacts] = useState<Record<string, unknown>[]>([]);
+  const [contactRequests, setContactRequests] = useState<Record<string, unknown>[]>([]);
 
   useEffect(() => {
     fetch("/api/finance")
@@ -1433,17 +1441,11 @@ export default function AdminArea({
   }, []);
 
   const rate = Number(finance.commission_rate) || 0.08;
-  
-  // Nota: aggregate e financials sono importati da ./commissions nel tuo codice originale. 
-  // Assicurati che quel file esista o sostituisci con logiche mock se necessario per la build.
-  // Qui assumo che siano disponibili globalmente o importati correttamente nel tuo ambiente.
-  // Se mancano, definiscili qui o importa il file corretto.
-  
-  // Mock temporaneo per evitare errori di build se ./commissions manca
-  const aggregate = (bookings: any[], rate: number) => {
+
+  const aggregate = (bks: Record<string, unknown>[], r: number) => {
     return { confirmedCount: 0, volume: 0, commission: 0 };
   };
-  const financials = (finance: any, stats: any) => {
+  const financials = (fin: Record<string, unknown>, sts: { confirmedCount: number; volume: number; commission: number }) => {
     return { revenue: 0, ebitda: 0, ebit: 0, netProfit: 0, ros: 0, roi: 0, totalOpCosts: 0, depreciation: 0, interest: 0, taxes: 0 };
   };
 
@@ -1475,9 +1477,10 @@ export default function AdminArea({
   }, [finance, stats]);
 
   const byRole = useMemo(() => {
-    const r: Record<string, any[]> = { organizer: [], artist: [], promoter: [], referent: [], admin: [] };
+    const r: Record<string, Record<string, unknown>[]> = { organizer: [], artist: [], promoter: [], referent: [], admin: [] };
     (users || []).forEach((u) => {
-      if (r[u.role]) r[u.role].push(u);
+      const role = String(u.role || "");
+      if (r[role]) r[role].push(u);
     });
     return r;
   }, [users]);
@@ -1502,7 +1505,7 @@ export default function AdminArea({
       const data = await res.json();
       setContactRequests((prev) =>
         prev.map((r) =>
-          r.id === id
+          String(r.id) === id
             ? { ...r, status, booking_id: data.booking_id || r.booking_id, booking: data.booking || r.booking }
             : r
         )
@@ -1536,7 +1539,6 @@ export default function AdminArea({
       {tab === "moderazione" && <AdminModerazione />}
       {tab === "pricing" && <AdminPricingApprovals />}
       {tab === "contacts" && <SectionContacts contacts={contacts} setContacts={setContacts} />}
-      {/* ── Nuova Tab Tour Managers ───────────────────────────── */}
       {tab === "tour_managers" && <AdminTourManagers />}
     </div>
   );
