@@ -11,7 +11,7 @@ import OrganizerPublicProfile from "./organizer/OrganizerPublicProfile";
 
 // ── Tipi ────────────────────────────────────────────────────────
 interface OrganizerUser {
-  id: string;
+  id: number | string;
   plan?: string;
   [key: string]: unknown;
 }
@@ -61,15 +61,15 @@ export default function OrganizerArea({
       )}
 
       {tab === "marketplace" && (
-        <OrganizerMarketplace artists={artists as any[]} plan={plan} currentUser={currentUser} />
+        <OrganizerMarketplace artists={artists} plan={plan} />
       )}
 
       {tab === "crm" && (
-        <OrganizerCRM bookings={bookings as any[]} plan={plan} />
+        <OrganizerCRM bookings={bookings} plan={plan} />
       )}
 
       {tab === "preferiti" && (
-        <OrganizerFavourites artists={artists as any[]} currentUser={currentUser} />
+        <OrganizerFavourites artists={artists} currentUser={currentUser} />
       )}
 
       {tab === "profilo" && (

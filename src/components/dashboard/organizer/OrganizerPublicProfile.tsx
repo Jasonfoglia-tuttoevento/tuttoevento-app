@@ -1,42 +1,81 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, INK, MUTED, O, SectionTitle } from "./shared";
 
-const Inp = {
-  width:"100%", background:"#fbfaf8", border:"1px solid rgba(0,0,0,.1)",
-  borderRadius:12, padding:"10px 14px", fontSize:13, color:INK,
-  fontFamily:"'Manrope',system-ui,sans-serif", outline:"none",
-  transition:"border-color .15s", boxSizing:"border-box",
+const Inp: React.CSSProperties = {
+  width: "100%", background: "#fbfaf8", border: "1px solid rgba(0,0,0,.1)",
+  borderRadius: 12, padding: "10px 14px", fontSize: 13, color: INK,
+  fontFamily: "'Manrope',system-ui,sans-serif", outline: "none",
+  transition: "border-color .15s", boxSizing: "border-box",
 };
 
-const Label = ({ children }) => (
-  <label style={{ fontSize:11, fontWeight:700, color:MUTED, textTransform:"uppercase",
-    letterSpacing:".1em", display:"block", marginBottom:5, fontFamily:"'Manrope',system-ui,sans-serif" }}>
+const Label = ({ children }: { children: React.ReactNode }) => (
+  <label style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase",
+    letterSpacing: ".1em", display: "block", marginBottom: 5, fontFamily: "'Manrope',system-ui,sans-serif" }}>
     {children}
   </label>
 );
 
+interface PhotonFeature {
+  geometry?: {
+    coordinates?: [number, number];
+  };
+  properties?: {
+    street?: string;
+    housenumber?: string;
+    name?: string;
+    city?: string;
+    district?: string;
+    locality?: string;
+    postcode?: string;
+    state?: string;
+    county?: string;
+    country?: string;
+    [key: string]: unknown;
+  };
+}
+
+interface AddressDetails {
+  address: string;
+  city: string;
+  zip: string;
+  region: string;
+  country: string;
+  lat: number | null;
+  lng: number | null;
+}
+
+interface AddressAutocompleteProps {
+  value?: string;
+  onChange: (v: string) => void;
+  onSelect: (data: AddressDetails) => void;
+}
+
 // ── Autocomplete indirizzo con Photon (OpenStreetMap) ──
-function AddressAutocomplete({ value, onChange, onSelect }) {
-  const [query, setQuery] = useState(value || "");
-  const [suggestions, setSuggestions] = useState([]);
+function AddressAutocomplete({ value = "", onChange, onSelect }: AddressAutocompleteProps) {
+  const [query, setQuery] = useState(value);
+  const [prevValue, setPrevValue] = useState(value);
+  const [suggestions, setSuggestions] = useState<PhotonFeature[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const timerRef = useRef(null);
-  const wrapRef = useRef(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => setQuery(value || ""), [value]);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setQuery(value);
+  }
 
   // Chiudi dropdown cliccando fuori
   useEffect(() => {
-    function handleClick(e) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    function handleClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  function handleChange(v) {
+  function handleChange(v: string) {
     setQuery(v);
     onChange(v);
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -57,26 +96,26 @@ function AddressAutocomplete({ value, onChange, onSelect }) {
     }, 300);
   }
 
-  function pick(feat) {
+  function pick(feat: PhotonFeature) {
     const p = feat.properties || {};
     const addr = [p.street, p.housenumber].filter(Boolean).join(" ");
-    const full = {
+    const full: AddressDetails = {
       address: addr || p.name || "",
       city: p.city || p.district || p.locality || "",
       zip: p.postcode || "",
       region: p.state || p.county || "",
       country: p.country || "",
-      lat: feat.geometry?.coordinates?.[1] || null,
-      lng: feat.geometry?.coordinates?.[0] || null,
+      lat: feat.geometry?.coordinates?.[1] ?? null,
+      lng: feat.geometry?.coordinates?.[0] ?? null,
     };
-    setQuery(feat.properties.name || addr);
+    setQuery(p.name || addr);
     onSelect(full);
     setSuggestions([]);
     setOpen(false);
   }
 
   return (
-    <div ref={wrapRef} style={{ position:"relative" }}>
+    <div ref={wrapRef} style={{ position: "relative" }}>
       <Label>Cerca indirizzo (autocomplete)</Label>
       <input
         value={query}
@@ -86,14 +125,14 @@ function AddressAutocomplete({ value, onChange, onSelect }) {
         style={{ ...Inp, borderColor: open ? O : "rgba(0,0,0,.1)" }}
       />
       {loading && (
-        <p style={{ fontSize:11, color:MUTED, margin:"6px 0 0" }}>🔍 Ricerca...</p>
+        <p style={{ fontSize: 11, color: MUTED, margin: "6px 0 0" }}>🔍 Ricerca...</p>
       )}
       {open && suggestions.length > 0 && (
         <div style={{
-          position:"absolute", top:"100%", left:0, right:0, zIndex:100,
-          background:"white", border:"1px solid rgba(0,0,0,.1)",
-          borderRadius:12, marginTop:4, overflow:"hidden",
-          boxShadow:"0 12px 24px -8px rgba(0,0,0,.15)", maxHeight:260, overflowY:"auto"
+          position: "absolute", top: "100%", left: 0, right: 0, zIndex: 100,
+          background: "white", border: "1px solid rgba(0,0,0,.1)",
+          borderRadius: 12, marginTop: 4, overflow: "hidden",
+          boxShadow: "0 12px 24px -8px rgba(0,0,0,.15)", maxHeight: 260, overflowY: "auto"
         }}>
           {suggestions.map((f, i) => {
             const p = f.properties || {};
@@ -102,15 +141,15 @@ function AddressAutocomplete({ value, onChange, onSelect }) {
             return (
               <button key={i} type="button" onClick={() => pick(f)}
                 style={{
-                  width:"100%", textAlign:"left", background:"white", border:"none",
+                  width: "100%", textAlign: "left", background: "white", border: "none",
                   borderBottom: i < suggestions.length - 1 ? "1px solid rgba(0,0,0,.05)" : "none",
-                  padding:"10px 14px", cursor:"pointer", fontFamily:"inherit",
-                  display:"flex", flexDirection:"column", gap:2
+                  padding: "10px 14px", cursor: "pointer", fontFamily: "inherit",
+                  display: "flex", flexDirection: "column", gap: 2
                 }}
                 onMouseEnter={e => e.currentTarget.style.background = "#fbfaf8"}
                 onMouseLeave={e => e.currentTarget.style.background = "white"}>
-                <span style={{ fontSize:13, fontWeight:700, color:INK }}>{main}</span>
-                <span style={{ fontSize:11, color:MUTED }}>{sub}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: INK }}>{main}</span>
+                <span style={{ fontSize: 11, color: MUTED }}>{sub}</span>
               </button>
             );
           })}
@@ -120,8 +159,25 @@ function AddressAutocomplete({ value, onChange, onSelect }) {
   );
 }
 
-export default function OrganizerPublicProfile({ userId }) {
-  const [form, setForm] = useState({});
+interface ProfileForm {
+  address?: string;
+  city?: string;
+  zip?: string;
+  region?: string;
+  lat?: number | string | null;
+  lng?: number | string | null;
+  phone?: string;
+  public_email?: string;
+  website?: string;
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+export default function OrganizerPublicProfile({ userId }: { userId?: string }) {
+  const [form, setForm] = useState<ProfileForm>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
@@ -135,10 +191,10 @@ export default function OrganizerPublicProfile({ userId }) {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const upd = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const upd = (k: string, v: unknown) => setForm(p => ({ ...p, [k]: v }));
 
   // Chiamato quando l'utente seleziona un indirizzo dal dropdown
-  function handleAddressSelect(data) {
+  function handleAddressSelect(data: AddressDetails) {
     setForm(p => ({
       ...p,
       address: data.address,
@@ -150,7 +206,7 @@ export default function OrganizerPublicProfile({ userId }) {
     }));
   }
 
-  async function handleSave(e) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true); setMsg("");
     try {
@@ -170,28 +226,28 @@ export default function OrganizerPublicProfile({ userId }) {
     }
   }
 
-  if (loading) return <Card><p style={{ fontSize:13, color:"rgba(0,0,0,.3)" }}>Caricamento...</p></Card>;
+  if (loading) return <Card><p style={{ fontSize: 13, color: "rgba(0,0,0,.3)" }}>Caricamento...</p></Card>;
 
-  const mapUrl = form.lat && form.lng ? `https://www.google.com/maps?q=${form.lat},${form.lng}` : null;
+  const mapUrl = form.lat && form.lng ? `https://www.google.com/maps?q=${form.lat},${form.lng}` : undefined;
 
   return (
-    <form onSubmit={handleSave} style={{ display:"flex", flexDirection:"column", gap:16 }}>
+    <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
       {/* Geolocalizzazione con autocomplete */}
       <Card>
         <SectionTitle>📍 Posizione del locale</SectionTitle>
-        <p style={{ fontSize:12, color:MUTED, margin:"0 0 14px", lineHeight:1.5 }}>
-          Inizia a digitare l'indirizzo e seleziona un risultato dal menu. Città, CAP, coordinate e mappa si compileranno automaticamente.
+        <p style={{ fontSize: 12, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
+          Inizia a digitare l&apos;indirizzo e seleziona un risultato dal menu. Città, CAP, coordinate e mappa si compileranno automaticamente.
         </p>
 
-        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <AddressAutocomplete
             value={form.address}
             onChange={v => upd("address", v)}
             onSelect={handleAddressSelect}
           />
 
-          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 10 }}>
             <div>
               <Label>Città</Label>
               <input value={form.city || ""} onChange={e => upd("city", e.target.value)}
@@ -210,12 +266,12 @@ export default function OrganizerPublicProfile({ userId }) {
           </div>
 
           {form.lat && form.lng && (
-            <div style={{ background:`${O}08`, border:`1px solid ${O}30`, borderRadius:12, padding:"10px 14px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <span style={{ fontSize:12, color:INK, fontWeight:600 }}>
+            <div style={{ background: `${O}08`, border: `1px solid ${O}30`, borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 12, color: INK, fontWeight: 600 }}>
                 📍 Coordinate: {Number(form.lat).toFixed(5)}, {Number(form.lng).toFixed(5)}
               </span>
               <a href={mapUrl} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize:12, color:O, fontWeight:700, textDecoration:"none" }}>
+                style={{ fontSize: 12, color: O, fontWeight: 700, textDecoration: "none" }}>
                 Apri mappa →
               </a>
             </div>
@@ -226,7 +282,7 @@ export default function OrganizerPublicProfile({ userId }) {
       {/* Contatti pubblici */}
       <Card>
         <SectionTitle>📞 Contatti pubblici</SectionTitle>
-        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div>
             <Label>Telefono pubblico</Label>
             <input value={form.phone || ""} onChange={e => upd("phone", e.target.value)}
@@ -249,7 +305,7 @@ export default function OrganizerPublicProfile({ userId }) {
       {/* Social */}
       <Card>
         <SectionTitle>📱 Social media</SectionTitle>
-        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div>
             <Label>Instagram</Label>
             <input value={form.instagram || ""} onChange={e => upd("instagram", e.target.value)}
@@ -275,20 +331,20 @@ export default function OrganizerPublicProfile({ userId }) {
           onChange={e => upd("description", e.target.value)}
           rows={4}
           placeholder="Racconta com'è il tuo locale: capienza, atmosfera, genere musicale..."
-          style={{ ...Inp, resize:"vertical", lineHeight:1.6 }} />
+          style={{ ...Inp, resize: "vertical", lineHeight: 1.6 }} />
       </Card>
 
       {/* Submit */}
-      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <button type="submit" disabled={saving}
-          style={{ background:O, color:"white", border:"none", borderRadius:100,
-            padding:"12px 28px", fontWeight:800, fontSize:14, cursor: saving ? "not-allowed" : "pointer",
-            fontFamily:"'Manrope',system-ui,sans-serif", opacity: saving ? .7 : 1,
-            boxShadow:`0 10px 24px -10px ${O}80` }}>
+          style={{ background: O, color: "white", border: "none", borderRadius: 100,
+            padding: "12px 28px", fontWeight: 800, fontSize: 14, cursor: saving ? "not-allowed" : "pointer",
+            fontFamily: "'Manrope',system-ui,sans-serif", opacity: saving ? .7 : 1,
+            boxShadow: `0 10px 24px -10px ${O}80` }}>
           {saving ? "Salvataggio..." : "Salva profilo pubblico"}
         </button>
         {msg && (
-          <p style={{ fontSize:12, fontWeight:700, margin:0,
+          <p style={{ fontSize: 12, fontWeight: 700, margin: 0,
             color: msg.startsWith("✓") ? "#16a34a" : "#dc2626" }}>{msg}</p>
         )}
       </div>

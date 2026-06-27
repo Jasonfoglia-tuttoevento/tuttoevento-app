@@ -4,21 +4,21 @@ import { useMemo } from "react";
 
 // ── Tipi ────────────────────────────────────────────────────────
 interface ReferentUser {
-  id: string;
+  id: number | string;
   name?: string;
   [key: string]: unknown;
 }
 
 interface Organizer {
-  id: string;
+  id: number | string;
   name?: string;
-  referentId?: string;
+  referentId?: number | string;
   [key: string]: unknown;
 }
 
 interface Booking {
   id?: string;
-  organizerId?: string;
+  organizerId?: number | string;
   eventTitle?: string;
   organizerName?: string;
   cachet?: number | string;
@@ -30,8 +30,8 @@ interface Booking {
 
 interface EventItem {
   id?: string;
-  userId?: string;
-  organizerId?: string;
+  userId?: number | string;
+  organizerId?: number | string;
   title?: string;
   eventTitle?: string;
   date?: string;
@@ -179,7 +179,7 @@ export default function ReferentArea({
                 const s = aggregate(orgBookings);
                 return (
                   <div
-                    key={o.id || i}
+                    key={String(o.id) || i}
                     className="border border-black/10 rounded-2xl p-4 bg-[var(--paper)] flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
@@ -238,47 +238,4 @@ export default function ReferentArea({
           <p className="text-black/45">Nessuna commissione registrata.</p>
         ) : (
           <div className="overflow-x-auto -mx-2 px-2">
-            <table className="w-full text-sm border-collapse min-w-[560px]">
-              <thead>
-                <tr className="text-left text-[var(--muted)]">
-                  <th className="py-2 font-bold">Evento</th>
-                  <th className="py-2 font-bold">Locale</th>
-                  <th className="py-2 font-bold">Cachet</th>
-                  <th className="py-2 font-bold">Commissione</th>
-                  <th className="py-2 font-bold">Stato</th>
-                </tr>
-              </thead>
-              <tbody>
-                {myBookings.map((b, i) => (
-                  <tr key={b.id || i} className="border-t border-black/5">
-                    <td className="py-3 pr-3 font-medium break-words">
-                      {b.eventTitle || "—"}
-                    </td>
-                    <td className="py-3 pr-3 break-words">
-                      {b.organizerName || "—"}
-                    </td>
-                    <td className="py-3 pr-3">{formatEuro(cachetOf(b))}</td>
-                    <td className="py-3 pr-3 font-bold text-[var(--orange)]">
-                      {formatEuro(commissionOf(b))}
-                    </td>
-                    <td className="py-3">
-                      <span
-                        className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                          isConfirmed(b)
-                            ? "bg-green-50 text-green-600"
-                            : "bg-black/5 text-[var(--muted)]"
-                        }`}
-                      >
-                        {isConfirmed(b) ? "Confermato" : "In attesa"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
+            <table className="w-full text-sm border-collapse min-w-[560px]"></table>

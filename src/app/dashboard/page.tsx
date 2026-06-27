@@ -19,9 +19,12 @@ import ArtistEstratto from "@/components/dashboard/ArtistEstratto";
 import PromoterCommissions from "@/components/dashboard/PromoterCommissions";
 import OrganizerBookings from "@/components/dashboard/OrganizerBookings";
 
+// Tour Management
+import TourHub from "@/modules/tour-management/TourHub";
+
 // ── Tipi ────────────────────────────────────────────────────────
 interface User {
-  id: string;
+  id: number;
   role: "artist" | "organizer" | "promoter" | "admin" | "referent";
   name?: string;
   plan?: string;
@@ -74,6 +77,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isTourManager, setIsTourManager] = useState(false);
 
   // Dati globali
   const [users, setUsers] = useState<unknown[]>([]);
@@ -151,7 +155,7 @@ export default function DashboardPage() {
     } catch {}
   }, []);
 
-  const loadEvents = useCallback(async (uid?: string) => {
+  const loadEvents = useCallback(async (uid?: number) => {
     try {
       const r = await fetch(`/api/events${uid ? `?userId=${uid}` : ""}`);
       setEvents(await r.json());
@@ -172,7 +176,7 @@ export default function DashboardPage() {
     } catch {}
   }, []);
 
-  const loadArtistProfile = useCallback(async (uid: string) => {
+  const loadArtistProfile = useCallback(async (uid: number) => {
     try {
       const d = await (await fetch(`/api/artist-profile?userId=${uid}`)).json();
       if (!d) return;
@@ -211,6 +215,15 @@ export default function DashboardPage() {
       }
       const u: User = await res.json();
       setUser(u);
+
+      // Check se è Tour Manager
+      try {
+        const tmRes = await fetch(`/api/tour/is-tm?userId=${u.id}`);
+        const tmData = await tmRes.json();
+        setIsTourManager(tmData.isTM === true);
+      } catch {
+        setIsTourManager(false);
+      }
 
       const loaders: Promise<void>[] = [];
       switch (u.role) {
@@ -290,6 +303,12 @@ export default function DashboardPage() {
   // ── Render tab content ────────────────────────────────────────
   const renderTab = () => {
     if (activeTab === "settings") return <AccountSettings user={user} />;
+
+    // Tour Hub — visibile solo ai TM
+    if (activeTab === "tour_hub" && isTourManager && user) {
+      return <TourHub currentUser={{ id: String(user.id), name: user.name }} />;
+    }
+
     const role = user?.role;
 
     if (role === "artist") {
@@ -360,6 +379,7 @@ export default function DashboardPage() {
         requests: <AdminArea {...admProps} tab="requests" />,
         moderazione: <AdminArea {...admProps} tab="moderazione" />,
         pricing: <AdminArea {...admProps} tab="pricing" />,
+        tour_managers: <AdminArea {...admProps} tab="tour_managers" />,
       };
       return tabMap[activeTab] ?? null;
     }
@@ -382,18 +402,15 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0b] p-6 space-y-8">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <Skeleton variant="text" className="w-48 h-8 bg-gray-800" />
           <Skeleton className="w-32 h-10 rounded-full bg-gray-800" />
         </div>
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Skeleton className="h-32 w-full bg-gray-800" />
           <Skeleton className="h-32 w-full bg-gray-800" />
           <Skeleton className="h-32 w-full bg-gray-800" />
         </div>
-        {/* Content */}
         <div className="space-y-4">
           <Skeleton className="h-16 w-full bg-gray-800" />
           <Skeleton className="h-16 w-full bg-gray-800" />
